@@ -18,6 +18,7 @@ PLAN.md
 !settings.html
 !prompts/*.md
 !README.md
+!LICENSE.md
 !style.css
 regex/*
 !docs/*
