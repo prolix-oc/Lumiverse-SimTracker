@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "name": "Silly Sim Tracker",
+  "identifier": "silly_sim_tracker",
+  "author": "Prolix OCs",
+  "github": "https://github.com/prolix-oc/SillyTavern-SimTracker",
+  "homepage": "https://github.com/prolix-oc/SillyTavern-SimTracker",
+  "description": "Lumiverse port in progress for rendering tracker cards from sim code blocks.",
+  "permissions": [
+    "interceptor",
+    "ephemeral_storage",
+    "chat_mutation",
+    "event_tracking",
+    "generation"
+  ],
+  "entry_backend": "dist/backend.js",
+  "entry_frontend": "dist/frontend.js",
+  "storage_seed_files": [
+    {
+      "from": "tracker-card-templates",
+      "to": "templates",
+      "overwrite": false,
+      "required": true
+    }
+  ],
+  "minimum_lumiverse_version": "0.1.0"
+}

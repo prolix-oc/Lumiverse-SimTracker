@@ -1,0 +1,457 @@
+<div id="silly-sim-tracker-settings">
+  <!-- Header / Main Title -->
+  <div class="sst-glass-panel sst-panel-collapsed">
+    <div class="sst-panel-header" onclick="$(this).parent().toggleClass('sst-panel-collapsed');">
+      <div class="sst-header-title">
+        <!-- App Icon SVG -->
+        <svg class="sst-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+        </svg>
+        <span>Silly Sim Tracker</span>
+      </div>
+      <svg class="sst-chevron" viewBox="0 0 24 24">
+        <path d="M7 10l5 5 5-5z" />
+      </svg>
+    </div>
+    
+    <div class="sst-panel-content">
+      
+      <!-- Basic Settings -->
+      <div class="sst-glass-panel">
+        <div class="sst-panel-header" onclick="$(this).next('.sst-panel-content').slideToggle(200); $(this).find('.sst-chevron').toggleClass('rotate-180');">
+          <div class="sst-header-title">
+            <!-- Gear Icon -->
+            <svg class="sst-header-icon" viewBox="0 0 24 24">
+               <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+            </svg>
+            <span>Basic Settings</span>
+          </div>
+          <svg class="sst-chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+        </div>
+        <div class="sst-panel-content">
+          <!-- Enable Tracker -->
+          <div class="sst-setting-row">
+            <div class="sst-setting-info">
+              <label class="sst-setting-label" for="isEnabled">Enable Tracker</label>
+              <p class="sst-setting-desc">Master switch to enable or disable the extension functionality.</p>
+            </div>
+            <div class="sst-setting-control">
+              <label class="sst-toggle">
+                <input type="checkbox" id="isEnabled">
+                <span class="sst-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Code Block Identifier -->
+          <div class="sst-setting-row">
+            <div class="sst-setting-info">
+              <label class="sst-setting-label" for="codeBlockIdentifier">Code Block Identifier</label>
+              <p class="sst-setting-desc">Keyword used to identify tracker blocks (e.g., ```sim).</p>
+            </div>
+            <div class="sst-setting-control">
+              <input type="text" id="codeBlockIdentifier" class="sst-input" style="width: 120px;">
+            </div>
+          </div>
+
+          <!-- Default Color -->
+          <div class="sst-setting-row">
+            <div class="sst-setting-info">
+              <label class="sst-setting-label" for="defaultBgColor">Default Card Color</label>
+              <p class="sst-setting-desc">Background color for cards when not specified in JSON.</p>
+            </div>
+            <div class="sst-setting-control">
+              <div class="sst-color-wrapper">
+                <input type="color" id="defaultBgColor" class="sst-color-input">
+              </div>
+            </div>
+          </div>
+
+          <!-- Show Thought Bubble -->
+          <div class="sst-setting-row">
+            <div class="sst-setting-info">
+              <label class="sst-setting-label" for="showThoughtBubble">Show Thought Bubble</label>
+              <p class="sst-setting-desc">Display the internal thoughts section at the bottom of cards.</p>
+            </div>
+            <div class="sst-setting-control">
+              <label class="sst-toggle">
+                <input type="checkbox" id="showThoughtBubble">
+                <span class="sst-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Display & Formatting -->
+      <div class="sst-glass-panel">
+        <div class="sst-panel-header" onclick="$(this).next('.sst-panel-content').slideToggle(200); $(this).find('.sst-chevron').toggleClass('rotate-180');">
+          <div class="sst-header-title">
+            <!-- Palette Icon -->
+            <svg class="sst-header-icon" viewBox="0 0 24 24">
+              <path d="M12 3a9 9 0 0 0 0 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+            </svg>
+            <span>Display & Formatting</span>
+          </div>
+          <svg class="sst-chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+        </div>
+        <div class="sst-panel-content">
+          <!-- Hide Sim Blocks -->
+          <div class="sst-setting-row">
+            <div class="sst-setting-info">
+              <label class="sst-setting-label" for="hideSimBlocks">Hide Sim Blocks</label>
+              <p class="sst-setting-desc">Hide raw JSON/YAML code blocks in the chat view.</p>
+            </div>
+            <div class="sst-setting-control">
+              <label class="sst-toggle">
+                <input type="checkbox" id="hideSimBlocks">
+                <span class="sst-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Tracker Format -->
+          <div class="sst-setting-row">
+            <div class="sst-setting-info">
+              <label class="sst-setting-label" for="trackerFormat">Tracker Format</label>
+              <p class="sst-setting-desc">Choose between JSON or YAML for data structure.</p>
+            </div>
+            <div class="sst-setting-control">
+              <select id="trackerFormat" class="sst-select">
+                <option value="json">JSON</option>
+                <option value="yaml">YAML</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Enable Inline Templates -->
+          <div class="sst-setting-row">
+            <div class="sst-setting-info">
+              <label class="sst-setting-label" for="enableInlineTemplates">Inline Templates</label>
+              <p class="sst-setting-desc">Render inline markers (phones, notes) mid-message.</p>
+            </div>
+            <div class="sst-setting-control">
+              <label class="sst-toggle">
+                <input type="checkbox" id="enableInlineTemplates">
+                <span class="sst-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Retain N Trackers -->
+          <div class="sst-setting-row">
+            <div class="sst-setting-info">
+              <label class="sst-setting-label" for="retainTrackerCount">Retain N Trackers</label>
+              <p class="sst-setting-desc">Keep only this many recent trackers in chat history.</p>
+            </div>
+            <div class="sst-setting-control">
+              <input type="number" id="retainTrackerCount" class="sst-input" min="0" max="50" value="3" style="width: 60px;">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Template Configuration -->
+      <div class="sst-glass-panel">
+        <div class="sst-panel-header" onclick="$(this).next('.sst-panel-content').slideToggle(200); $(this).find('.sst-chevron').toggleClass('rotate-180');">
+          <div class="sst-header-title">
+            <!-- Clipboard Icon -->
+            <svg class="sst-header-icon" viewBox="0 0 24 24">
+              <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+            </svg>
+            <span>Template Configuration</span>
+          </div>
+          <svg class="sst-chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+        </div>
+        <div class="sst-panel-content">
+          <!-- Default Template -->
+          <div class="sst-setting-row">
+            <div class="sst-setting-info">
+              <label class="sst-setting-label" for="templateFile">Active Template</label>
+              <p class="sst-setting-desc">Select a built-in template or preset.</p>
+            </div>
+            <div class="sst-setting-control">
+              <select id="templateFile" class="sst-select" style="max-width: 250px;"></select>
+            </div>
+          </div>
+
+          <!-- Custom Template Controls -->
+          <div class="sst-setting-row">
+            <div class="sst-setting-info">
+              <label class="sst-setting-label">Custom Template</label>
+              <p class="sst-setting-desc">Load a custom .html file or clear current customization.</p>
+            </div>
+            <div class="sst-setting-control sst-flex-wrap">
+              <button id="uploadCustomTemplateBtn" class="sst-btn sst-btn-primary">
+                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+                 Load File
+              </button>
+              <button id="clearCustomTemplateBtn" class="sst-btn">
+                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                 Clear
+              </button>
+            </div>
+            <input type="file" id="customTemplateUpload" hidden accept=".html" />
+          </div>
+
+          <!-- Custom Fields -->
+          <div class="sst-setting-row">
+            <div class="sst-setting-info">
+              <label class="sst-setting-label">Data Fields</label>
+              <p class="sst-setting-desc">Define Sim Data structure for <code>{{sim_format}}</code>.</p>
+            </div>
+            <div class="sst-setting-control">
+              <button id="manageCustomFieldsBtn" class="sst-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                Manage Fields
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Secondary LLM -->
+      <div class="sst-glass-panel">
+        <div class="sst-panel-header" onclick="$(this).next('.sst-panel-content').slideToggle(200); $(this).find('.sst-chevron').toggleClass('rotate-180');">
+          <div class="sst-header-title">
+            <!-- Robot Icon -->
+            <svg class="sst-header-icon" viewBox="0 0 24 24">
+              <path d="M22 13h-2.81a6.002 6.002 0 0 0-1.86-3.69A5.992 5.992 0 0 0 16.5 5.5v-2c0-.55-.45-1-1-1s-1 .45-1 1v1.17c-.31-.07-.63-.12-.96-.15C13.41 4.51 13.21 4.5 13 4.5h-2c-.21 0-.41.01-.61.02-.34.03-.66.08-.98.15V3.5c0-.55-.45-1-1-1s-1 .45-1 1v2A5.992 5.992 0 0 0 6.67 9.31 6.002 6.002 0 0 0 4.81 13H2c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h2.81c.91 2.33 3.19 4 5.86 4h2.66c2.67 0 4.95-1.67 5.86-4H22c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1zM7.5 15c-.83 0-1.5-.67-1.5-1.5S6.67 12 7.5 12s1.5.67 1.5 1.5S8.33 15 7.5 15zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+            </svg>
+            <span>Secondary LLM Generation</span>
+          </div>
+          <svg class="sst-chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+        </div>
+        <div class="sst-panel-content">
+          <div class="sst-setting-row">
+            <div class="sst-setting-info">
+              <label class="sst-setting-label" for="useSecondaryLLM">Enable Secondary LLM</label>
+              <p class="sst-setting-desc">Generate tracker updates using a separate LLM call.</p>
+            </div>
+            <div class="sst-setting-control">
+              <label class="sst-toggle">
+                <input type="checkbox" id="useSecondaryLLM">
+                <span class="sst-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Advanced Sub-panel -->
+          <div class="sst-sub-panel">
+            <div class="sst-sub-header" onclick="$(this).next('.sst-sub-content').slideToggle(200);">
+              <span>Advanced Parameters</span>
+              <svg class="sst-chevron" style="width:14px;height:14px;" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+            </div>
+            <div class="sst-sub-content" style="display:none;">
+              
+              <div class="sst-setting-row">
+                <div class="sst-setting-info">
+                  <label class="sst-setting-label" for="secondaryLLMMessageCount">Context Messages</label>
+                </div>
+                <div class="sst-setting-control">
+                  <input type="number" id="secondaryLLMMessageCount" class="sst-input" min="1" max="50" value="5">
+                </div>
+              </div>
+
+              <div class="sst-setting-row">
+                <div class="sst-setting-info">
+                  <label class="sst-setting-label" for="secondaryLLMAPI">Provider</label>
+                  <p id="sst-provider-hint" class="sst-setting-desc" style="margin-top:4px;">Uses API key from SillyTavern settings.</p>
+                </div>
+                <div class="sst-setting-control">
+                  <select id="secondaryLLMAPI" class="sst-select">
+                    <option value="openai">OpenAI</option>
+                    <option value="anthropic">Anthropic Claude</option>
+                    <option value="openrouter">OpenRouter</option>
+                    <option value="google">Google AI Studio</option>
+                    <option value="chutes">Chutes.ai</option>
+                    <option value="custom">Custom (OpenAI-Compatible)</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div class="sst-setting-row">
+                <div class="sst-setting-info">
+                  <label class="sst-setting-label" for="secondaryLLMModel">Model</label>
+                </div>
+                <div class="sst-setting-control">
+                  <input type="text" id="secondaryLLMModel" class="sst-input" placeholder="gpt-4o-mini">
+                </div>
+              </div>
+
+              <div id="sst-custom-api-fields" style="display: none;">
+                <div class="sst-setting-row">
+                  <div class="sst-setting-info">
+                    <label class="sst-setting-label" for="secondaryLLMEndpoint">Endpoint URL</label>
+                  </div>
+                  <div class="sst-setting-control">
+                    <input type="text" id="secondaryLLMEndpoint" class="sst-input" placeholder="https://api.example.com/v1/chat/completions">
+                  </div>
+                </div>
+                
+                <div class="sst-setting-row">
+                  <div class="sst-setting-info">
+                    <label class="sst-setting-label" for="secondaryLLMAPIKey">API Key</label>
+                  </div>
+                  <div class="sst-setting-control">
+                    <input type="password" id="secondaryLLMAPIKey" class="sst-input" placeholder="sk-...">
+                  </div>
+                </div>
+              </div>
+
+              <div class="sst-setting-row">
+                <div class="sst-setting-info">
+                  <label class="sst-setting-label" for="secondaryLLMTemperature">Temperature</label>
+                </div>
+                <div class="sst-setting-control">
+                  <input type="number" id="secondaryLLMTemperature" class="sst-input" min="0" max="2" step="0.1" value="0.7">
+                </div>
+              </div>
+              
+              <div class="sst-setting-row">
+                <div class="sst-setting-info">
+                  <label class="sst-setting-label" for="secondaryLLMStreaming">Streaming</label>
+                </div>
+                <div class="sst-setting-control">
+                  <label class="sst-toggle">
+                    <input type="checkbox" id="secondaryLLMStreaming">
+                    <span class="sst-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="sst-setting-row" id="sst-reverse-proxy-row">
+                <div class="sst-setting-info">
+                  <label class="sst-setting-label" for="secondaryLLMUseReverseProxy">Use Reverse Proxy</label>
+                  <p class="sst-setting-desc" style="margin-top:4px;">Route requests through ST's configured proxy.</p>
+                </div>
+                <div class="sst-setting-control">
+                  <label class="sst-toggle">
+                    <input type="checkbox" id="secondaryLLMUseReverseProxy">
+                    <span class="sst-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="sst-setting-row">
+                <div class="sst-setting-info">
+                  <label class="sst-setting-label" for="secondaryLLMStripHTML">Strip HTML</label>
+                  <p class="sst-setting-desc" style="margin-top:4px;">Remove tags from context to save tokens.</p>
+                </div>
+                <div class="sst-setting-control">
+                  <label class="sst-toggle">
+                    <input type="checkbox" id="secondaryLLMStripHTML">
+                    <span class="sst-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="sst-setting-row">
+                <div class="sst-setting-info">
+                  <label class="sst-setting-label" for="maxSimBlocksInContext">Max Sim Blocks</label>
+                </div>
+                <div class="sst-setting-control">
+                  <input type="number" id="maxSimBlocksInContext" class="sst-input" min="0" max="50" value="3">
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prompts & Instructions -->
+      <div class="sst-glass-panel">
+        <div class="sst-panel-header" onclick="$(this).next('.sst-panel-content').slideToggle(200); $(this).find('.sst-chevron').toggleClass('rotate-180');">
+          <div class="sst-header-title">
+            <!-- File Text Icon -->
+            <svg class="sst-header-icon" viewBox="0 0 24 24">
+              <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+            </svg>
+            <span>Prompts & Instructions</span>
+          </div>
+          <svg class="sst-chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+        </div>
+        <div class="sst-panel-content">
+          <div class="sst-setting-row" style="flex-direction: column; align-items: stretch;">
+            <div class="sst-setting-info">
+              <label class="sst-setting-label" for="datingSimPrompt">Sim Tracker System Prompt</label>
+              <p class="sst-setting-desc">Base prompt injected via <code>{{sim_tracker}}</code>.</p>
+            </div>
+            <div class="sst-setting-control" style="width:100%;">
+              <textarea id="datingSimPrompt" class="sst-textarea" rows="6"></textarea>
+            </div>
+          </div>
+          
+          <div class="sst-setting-row" style="flex-direction: column; align-items: stretch;">
+            <div class="sst-setting-info">
+              <label class="sst-setting-label" for="displayInstructionsPrompt">Display Instructions Prompt</label>
+              <p class="sst-setting-desc">Injected via <code>{{sim_displays}}</code>.</p>
+            </div>
+            <div class="sst-setting-control" style="width:100%;">
+              <textarea id="displayInstructionsPrompt" class="sst-textarea" rows="6"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Management -->
+      <div class="sst-glass-panel">
+        <div class="sst-panel-header" onclick="$(this).next('.sst-panel-content').slideToggle(200); $(this).find('.sst-chevron').toggleClass('rotate-180');">
+          <div class="sst-header-title">
+            <!-- Save/Disk Icon -->
+            <svg class="sst-header-icon" viewBox="0 0 24 24">
+              <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
+            </svg>
+            <span>Import/Export & Management</span>
+          </div>
+          <svg class="sst-chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+        </div>
+        <div class="sst-panel-content">
+          <div class="sst-setting-row">
+            <div class="sst-setting-info">
+              <label class="sst-setting-label">Presets</label>
+              <p class="sst-setting-desc">Backup and restore configuration.</p>
+            </div>
+            <div class="sst-setting-control sst-flex-wrap">
+              <button id="exportPresetBtn" class="sst-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> Export
+              </button>
+              <button id="importPresetBtn" class="sst-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg> Import
+              </button>
+              <button id="managePresetsBtn" class="sst-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg> Manage
+              </button>
+              <input type="file" id="presetImportInput" hidden accept=".json" />
+            </div>
+          </div>
+
+          <div class="sst-setting-row">
+             <div class="sst-setting-info">
+              <label class="sst-setting-label">Legacy Migration</label>
+              <p class="sst-setting-desc">Convert old data format to new structure.</p>
+            </div>
+            <div class="sst-setting-control">
+              <button id="migrateJsonFormatBtn" class="sst-btn">Migrate Data</button>
+            </div>
+          </div>
+
+          <div class="sst-setting-row" style="border-top: 1px solid rgba(255, 69, 58, 0.3); margin-top: 10px; padding-top: 20px;">
+            <div class="sst-setting-info">
+              <label class="sst-setting-label" style="color: var(--sst-danger-color);">Danger Zone</label>
+              <p class="sst-setting-desc">Irreversible actions.</p>
+            </div>
+            <div class="sst-setting-control">
+              <button id="resetDefaultsBtn" class="sst-btn sst-btn-danger">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                Reset Defaults
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

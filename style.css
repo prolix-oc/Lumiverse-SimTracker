@@ -1,0 +1,627 @@
+/* --- Silly Sim Tracker Styles - Glassmorphism Redesign --- */
+
+:root {
+  --sst-glass-bg: rgba(30, 30, 35, 0.7);
+  --sst-glass-border: rgba(255, 255, 255, 0.08);
+  --sst-glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  --sst-accent-color: #0a84ff; /* Apple Blue */
+  --sst-accent-gradient: linear-gradient(135deg, #0a84ff 0%, #007aff 100%);
+  --sst-text-primary: rgba(255, 255, 255, 0.92);
+  --sst-text-secondary: rgba(255, 255, 255, 0.6);
+  --sst-danger-color: #ff453a;
+  --sst-success-color: #30d158;
+  --sst-card-bg: rgba(255, 255, 255, 0.03);
+  --sst-card-hover: rgba(255, 255, 255, 0.07);
+  --sst-input-bg: rgba(0, 0, 0, 0.2);
+}
+
+/* Main Container */
+#silly-sim-tracker-settings {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--sst-text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 10px;
+}
+
+/* Glass Panels (Sections) */
+.sst-glass-panel {
+  background: var(--sst-glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--sst-glass-border);
+  border-radius: 16px;
+  box-shadow: var(--sst-glass-shadow);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  margin-bottom: 20px;
+}
+
+.sst-glass-panel:hover {
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Header */
+.sst-panel-header {
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--sst-glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s ease;
+}
+
+.sst-panel-header:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sst-header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.1em;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.sst-header-icon {
+  width: 24px;
+  height: 24px;
+  fill: var(--sst-text-primary);
+  opacity: 0.9;
+}
+
+.sst-chevron {
+  width: 16px;
+  height: 16px;
+  fill: var(--sst-text-secondary);
+  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.sst-panel-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Hide content when collapsed (controlled by JS or separate class) */
+.sst-panel-collapsed .sst-panel-content {
+  display: none;
+}
+.sst-panel-collapsed .sst-chevron {
+  transform: rotate(-90deg);
+}
+
+/* Settings Row */
+.sst-setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sst-setting-row:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.sst-setting-info {
+  flex: 1;
+}
+
+.sst-setting-label {
+  display: block;
+  font-size: 1em;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--sst-text-primary);
+}
+
+.sst-setting-desc {
+  font-size: 0.85em;
+  color: var(--sst-text-secondary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.sst-setting-control {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* Inputs & Selects - Apple Style */
+.sst-input,
+.sst-select,
+.sst-textarea {
+  background: var(--sst-input-bg);
+  border: 1px solid var(--sst-glass-border);
+  color: var(--sst-text-primary);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.95em;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.sst-input:focus,
+.sst-select:focus,
+.sst-textarea:focus {
+  outline: none;
+  border-color: var(--sst-accent-color);
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.2);
+}
+
+.sst-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='rgba(255,255,255,0.6)'%3E%3Cpath d='M6 8.825L1.175 4 2.238 2.938 6 6.7 9.763 2.938 10.825 4z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+
+.sst-textarea {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.5;
+}
+
+/* Toggle Switch - Apple Style */
+.sst-toggle {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 30px;
+}
+
+.sst-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.sst-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.15);
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.sst-slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+input:checked + .sst-slider {
+  background-color: var(--sst-success-color);
+}
+
+input:focus + .sst-slider {
+  box-shadow: 0 0 1px var(--sst-success-color);
+}
+
+input:checked + .sst-slider:before {
+  transform: translateX(20px);
+}
+
+/* Buttons - Glass/Apple Style */
+.sst-btn {
+  background: var(--sst-card-bg);
+  border: 1px solid var(--sst-glass-border);
+  color: var(--sst-text-primary);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.9em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.sst-btn:hover {
+  background: var(--sst-card-hover);
+  transform: translateY(-1px);
+}
+
+.sst-btn:active {
+  transform: translateY(0);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.sst-btn-primary {
+  background: var(--sst-accent-gradient);
+  border: none;
+  box-shadow: 0 2px 8px rgba(10, 132, 255, 0.3);
+}
+
+.sst-btn-primary:hover {
+  background: linear-gradient(135deg, #2090ff 0%, #1085ff 100%);
+  box-shadow: 0 4px 12px rgba(10, 132, 255, 0.4);
+}
+
+.sst-btn-danger {
+  background: rgba(255, 69, 58, 0.1);
+  border-color: rgba(255, 69, 58, 0.3);
+  color: #ff453a;
+}
+
+.sst-btn-danger:hover {
+  background: rgba(255, 69, 58, 0.2);
+  border-color: rgba(255, 69, 58, 0.5);
+}
+
+/* Color Input */
+.sst-color-wrapper {
+  position: relative;
+  overflow: hidden;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--sst-glass-border);
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+.sst-color-input {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  padding: 0;
+  margin: 0;
+  border: none;
+  cursor: pointer;
+}
+
+/* Nested Sub-sections */
+.sst-sub-panel {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.sst-sub-header {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 0.95em;
+  font-weight: 600;
+  color: var(--sst-text-secondary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.sst-sub-content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Tags/Badges */
+.sst-tag {
+  font-size: 0.75em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--sst-text-secondary);
+  margin-left: 8px;
+}
+
+/* Helper Classes */
+.sst-flex-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.sst-full-width {
+  width: 100%;
+}
+.sst-hidden {
+  display: none !important;
+}
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+/* Modals - Adapted for ST Compatibility */
+/* We target the specific dialog IDs to override ST defaults */
+#sst-custom-fields-modal,
+#sst-export-preset-modal,
+#sst-manage-presets-modal {
+  background: #1c1c1e !important;
+  border: 1px solid var(--sst-glass-border) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  color: var(--sst-text-primary);
+}
+
+/* Use standard ST overlay opacity/blur if possible, or force it on dialog::backdrop */
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+}
+
+.sst-modal-header {
+  padding: 16px 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--sst-glass-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sst-modal-title {
+  font-size: 1.2em;
+  font-weight: 600;
+  margin: 0;
+}
+
+.sst-modal-close {
+  background: none;
+  border: none;
+  color: var(--sst-text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sst-modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--sst-text-primary);
+}
+
+.sst-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  /* ST sets max-height on popups, but we want our body to scroll */
+  max-height: 60vh;
+}
+
+.sst-modal-footer {
+  padding: 16px 24px;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid var(--sst-glass-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* Tabs in Modal */
+.sst-tabs {
+  display: flex;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 4px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+.sst-tab {
+  flex: 1;
+  text-align: center;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 0.9em;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--sst-text-secondary);
+  transition: all 0.2s;
+}
+.sst-tab.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--sst-text-primary);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* Animations */
+@keyframes sstFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes sstScaleIn {
+  from { transform: scale(0.95); }
+  to { transform: scale(1); }
+}
+
+/* Custom Field Item */
+.sst-field-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--sst-glass-border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: border-color 0.2s;
+}
+.sst-field-item:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+.sst-field-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Array Schema Editor */
+.sst-array-schema-section {
+  margin-top: 12px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  border-left: 3px solid var(--SmartThemeQuoteColor, #6a5acd);
+}
+
+.sst-array-prop-item {
+  display: grid;
+  grid-template-columns: 1fr 90px 2fr 32px;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+@media (max-width: 600px) {
+  .sst-array-prop-item {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .sst-array-prop-item .array-prop-desc {
+    grid-column: 1 / -1;
+  }
+
+  .sst-array-prop-item .remove-array-prop {
+    grid-column: 2;
+    justify-self: end;
+  }
+}
+
+.sst-btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  color: var(--sst-text-secondary);
+}
+
+.sst-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--sst-text-primary);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .sst-setting-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .sst-setting-control {
+    width: 100%;
+  }
+  
+  .sst-setting-control input[type="text"],
+  .sst-setting-control input[type="number"],
+  .sst-setting-control select {
+    width: 100%;
+  }
+  
+  /* Ensure flex-wrap containers wrap properly and buttons fill space */
+  .sst-setting-control.sst-flex-wrap {
+    width: 100%;
+  }
+
+  .sst-setting-control.sst-flex-wrap .sst-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-width: 80px;
+  }
+  
+  .sst-panel-content {
+    padding: 16px;
+  }
+  
+  #sst-custom-fields-modal,
+  #sst-export-preset-modal,
+  #sst-manage-presets-modal {
+    width: 95% !important;
+    max-width: 95% !important;
+  }
+}
+
+/* Global Sidebars (Preserve functionality) */
+#sst-global-sidebar-left,
+#sst-global-sidebar-right {
+  position: fixed !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  height: 100dvh !important; /* Use dvh for mobile keyboard compatibility */
+  width: auto !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 10px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  visibility: visible !important;
+  overflow: visible !important;
+  pointer-events: none !important;
+  z-index: 100 !important;
+  touch-action: manipulation !important; /* Improve mobile touch handling */
+}
+#sst-global-sidebar-left #silly-sim-tracker-container,
+#sst-global-sidebar-right #silly-sim-tracker-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  visibility: visible !important;
+  pointer-events: none !important;
+}
+
+/* Mobile touch improvements */
+@media (pointer: coarse), (hover: none) {
+  #sst-global-sidebar-left,
+  #sst-global-sidebar-right {
+    /* Ensure sidebars don't block input areas on mobile */
+    touch-action: manipulation !important;
+  }
+
+  /* Ensure interactive elements within sidebars receive touch events properly */
+  #sst-global-sidebar-left .sim-tracker-tab,
+  #sst-global-sidebar-right .sim-tracker-tab,
+  #sst-global-sidebar-left .sim-tracker-card,
+  #sst-global-sidebar-right .sim-tracker-card,
+  #sst-global-sidebar-left label,
+  #sst-global-sidebar-right label,
+  #sst-global-sidebar-left input,
+  #sst-global-sidebar-right input {
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+  }
+}
+
+/* Fallback for browsers that don't support dvh */
+@supports not (height: 100dvh) {
+  #sst-global-sidebar-left,
+  #sst-global-sidebar-right {
+    height: 100vh !important;
+    /* Use top+bottom=0 as implicit height fallback */
+  }
+}
