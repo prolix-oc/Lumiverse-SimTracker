@@ -1,6 +1,6 @@
 {
   "name": "silly-sim-tracker-lumiverse",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "handlebars": "^4.7.8",
-    "lumiverse-spindle-types": "file:../lumiverse-spindle-types",
+    "lumiverse-spindle-types": "^0.1.1",
     "typescript": "^5.7.3",
     "yaml": "^2.8.1"
   }
