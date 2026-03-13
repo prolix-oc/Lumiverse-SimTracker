@@ -685,7 +685,7 @@ function stripOldTrackerBlocks(content: string, identifier: string, keepNewest: 
 
 async function loadConfig(): Promise<void> {
   try {
-    const parsed = await spindle.userStorage.getJson<Partial<TrackerConfig>>(CONFIG_PATH, { fallback: { ...DEFAULT_CONFIG } });
+    const parsed = await spindle.userStorage.getJson<Partial<TrackerConfig>>(CONFIG_PATH, { fallback: { ...DEFAULT_CONFIG }, userId: activeUserId || undefined });
     config = {
       trackerTagName: sanitizeTagName(parsed.trackerTagName),
       codeBlockIdentifier: sanitizeIdentifier(parsed.codeBlockIdentifier),
@@ -777,7 +777,7 @@ async function loadSeededTemplatePresets(): Promise<void> {
 }
 
 async function saveConfig(): Promise<void> {
-  await spindle.userStorage.setJson(CONFIG_PATH, config, { indent: 2 });
+  await spindle.userStorage.setJson(CONFIG_PATH, config, { indent: 2, userId: activeUserId || undefined });
 }
 
 spindle.on("MESSAGE_SENT", (payload: unknown) => {
@@ -1240,6 +1240,7 @@ spindle.onFrontendMessage(async (payload: unknown, userId: string) => {
   const message = payload as Record<string, unknown>;
 
   if (message.type === "get_config") {
+    await loadConfig();
     await sendConfigState();
     return;
   }

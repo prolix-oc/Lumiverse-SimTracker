@@ -943,6 +943,14 @@ export function setup(ctx: SpindleFrontendContext) {
     }
   };
 
+  const clearAllMessageTrackerRenders = (exceptMessageId?: string) => {
+    for (const [id, mount] of trackerMessageMounts) {
+      if (id === exceptMessageId) continue;
+      mount.remove();
+      trackerMessageMounts.delete(id);
+    }
+  };
+
   const clearInlineArtifacts = (messageId: string) => {
     const artifacts = inlineMessageArtifacts.get(messageId);
     if (!artifacts) return;
@@ -1072,6 +1080,7 @@ export function setup(ctx: SpindleFrontendContext) {
       if (messageId) clearMessageTrackerRender(messageId);
     } else if (messageId) {
       clearSideTrackerRender();
+      clearAllMessageTrackerRenders(messageId);
       renderTrackerIntoMessage(messageId, parsed, preset, previousTrackerData, mountMode);
     }
 
