@@ -943,9 +943,13 @@ export function setup(ctx: SpindleFrontendContext) {
     }
   };
 
-  const clearAllMessageTrackerRenders = (exceptMessageId?: string) => {
+  const pruneNonLatestMessageTrackers = () => {
+    const allHosts = document.querySelectorAll("[data-sst-message-tracker-id]");
+    if (allHosts.length <= 1) return;
+    const latestHost = allHosts[allHosts.length - 1];
+    const latestId = latestHost.getAttribute("data-sst-message-tracker-id");
     for (const [id, mount] of trackerMessageMounts) {
-      if (id === exceptMessageId) continue;
+      if (id === latestId) continue;
       mount.remove();
       trackerMessageMounts.delete(id);
     }
@@ -1080,8 +1084,8 @@ export function setup(ctx: SpindleFrontendContext) {
       if (messageId) clearMessageTrackerRender(messageId);
     } else if (messageId) {
       clearSideTrackerRender();
-      clearAllMessageTrackerRenders(messageId);
       renderTrackerIntoMessage(messageId, parsed, preset, previousTrackerData, mountMode);
+      pruneNonLatestMessageTrackers();
     }
 
     if (messageId) {

@@ -1,10 +1,10 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": "Silly Sim Tracker",
   "identifier": "silly_sim_tracker",
   "author": "Prolix OCs",
-  "github": "https://github.com/prolix-oc/SillyTavern-SimTracker",
-  "homepage": "https://github.com/prolix-oc/SillyTavern-SimTracker",
+  "github": "https://github.com/prolix-oc/Lumiverse-SimTracker",
+  "homepage": "https://github.com/prolix-oc/Lumiverse-SimTracker",
   "description": "Lumiverse port in progress for rendering tracker cards from sim code blocks.",
   "permissions": [
     "interceptor",
