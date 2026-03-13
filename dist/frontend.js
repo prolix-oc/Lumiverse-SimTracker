@@ -14578,6 +14578,8 @@ function setup(ctx) {
   let previousTrackerData = null;
   let latestContent = null;
   let latestTrackerMessageId = null;
+  let latestTrackerRaw = null;
+  let latestTrackerSourceContent = null;
   const trackerMessageIds = new Set;
   const trackerMessageMounts = new Map;
   const inlineMessageArtifacts = new Map;
@@ -14720,6 +14722,8 @@ function setup(ctx) {
       mount.remove();
       trackerMessageMounts.delete(id);
     }
+    if (latestId)
+      latestTrackerMessageId = latestId;
   };
   const clearInlineArtifacts = (messageId) => {
     const artifacts = inlineMessageArtifacts.get(messageId);
@@ -14826,6 +14830,8 @@ function setup(ctx) {
         clearInlineArtifacts(messageId);
       return;
     }
+    latestTrackerRaw = raw;
+    latestTrackerSourceContent = sourceContent;
     setStatus(`Tracker updated (${preset.templateName})`);
     renderTracker(parsed, raw, preset, previousTrackerData, (html) => {
       injectIntoPanelBody(html);
@@ -14948,6 +14954,8 @@ function setup(ctx) {
     renderCapabilities(grantedPermissions, requestedPermissions, ephemeralPoolStatus);
     if (latestContent) {
       handleContent(latestContent);
+    } else if (latestTrackerRaw) {
+      handleTrackerPayload(latestTrackerRaw, latestTrackerSourceContent || latestTrackerRaw);
     }
   });
   const onEvent = (payload) => {
@@ -14970,8 +14978,10 @@ function setup(ctx) {
     applyThemeClass(getPresetById(config, config.templateId));
     if (latestContent) {
       handleContent(latestContent);
-      setStatus(`Previewing template: ${getPresetById(config, config.templateId).templateName}`);
+    } else if (latestTrackerRaw) {
+      handleTrackerPayload(latestTrackerRaw, latestTrackerSourceContent || latestTrackerRaw);
     }
+    setStatus(`Previewing template: ${getPresetById(config, config.templateId).templateName}`);
   });
   saveButton?.addEventListener("click", () => {
     const templateSelectLocal = byId("sst-lumi-template");

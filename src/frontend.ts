@@ -804,6 +804,8 @@ export function setup(ctx: SpindleFrontendContext) {
   let previousTrackerData: TrackerData | null = null;
   let latestContent: string | null = null;
   let latestTrackerMessageId: string | null = null;
+  let latestTrackerRaw: string | null = null;
+  let latestTrackerSourceContent: string | null = null;
   const trackerMessageIds = new Set<string>();
   const trackerMessageMounts = new Map<string, Element>();
   const inlineMessageArtifacts = new Map<string, { mounts: Element[]; slots: Element[] }>();
@@ -953,6 +955,7 @@ export function setup(ctx: SpindleFrontendContext) {
       mount.remove();
       trackerMessageMounts.delete(id);
     }
+    if (latestId) latestTrackerMessageId = latestId;
   };
 
   const clearInlineArtifacts = (messageId: string) => {
@@ -1075,6 +1078,8 @@ export function setup(ctx: SpindleFrontendContext) {
       if (messageId) clearInlineArtifacts(messageId);
       return;
     }
+    latestTrackerRaw = raw;
+    latestTrackerSourceContent = sourceContent;
     setStatus(`Tracker updated (${preset.templateName})`);
     renderTracker(parsed, raw, preset, previousTrackerData, (html) => {
       injectIntoPanelBody(html);
@@ -1210,6 +1215,8 @@ export function setup(ctx: SpindleFrontendContext) {
     renderCapabilities(grantedPermissions, requestedPermissions, ephemeralPoolStatus);
     if (latestContent) {
       handleContent(latestContent);
+    } else if (latestTrackerRaw) {
+      handleTrackerPayload(latestTrackerRaw, latestTrackerSourceContent || latestTrackerRaw);
     }
   });
 
@@ -1232,8 +1239,10 @@ export function setup(ctx: SpindleFrontendContext) {
     applyThemeClass(getPresetById(config, config.templateId));
     if (latestContent) {
       handleContent(latestContent);
-      setStatus(`Previewing template: ${getPresetById(config, config.templateId).templateName}`);
+    } else if (latestTrackerRaw) {
+      handleTrackerPayload(latestTrackerRaw, latestTrackerSourceContent || latestTrackerRaw);
     }
+    setStatus(`Previewing template: ${getPresetById(config, config.templateId).templateName}`);
   });
 
   saveButton?.addEventListener("click", () => {
