@@ -1079,17 +1079,18 @@ export function setup(ctx: SpindleFrontendContext) {
     renderTracker(parsed, raw, preset, previousTrackerData, (html) => {
       injectIntoPanelBody(html);
     });
+    const effectiveMessageId = messageId || latestTrackerMessageId;
     if (mountMode === "side_left" || mountMode === "side_right") {
       renderTrackerInSidebar(parsed, preset, previousTrackerData, mountMode);
-      if (messageId) clearMessageTrackerRender(messageId);
-    } else if (messageId) {
+      if (effectiveMessageId) clearMessageTrackerRender(effectiveMessageId);
+    } else if (effectiveMessageId) {
       clearSideTrackerRender();
-      renderTrackerIntoMessage(messageId, parsed, preset, previousTrackerData, mountMode);
+      renderTrackerIntoMessage(effectiveMessageId, parsed, preset, previousTrackerData, mountMode);
       pruneNonLatestMessageTrackers();
     }
 
-    if (messageId) {
-      renderInlineDisplaysInMessage(messageId, sourceContent, preset);
+    if (effectiveMessageId) {
+      renderInlineDisplaysInMessage(effectiveMessageId, sourceContent, preset);
     }
 
     previousTrackerData = parsed;
