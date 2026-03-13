@@ -30,4 +30,3 @@ potential_bundled_js_investigation.txt
 docs/template-guide-bundled-javascript-dead.md
 .DS_Store
 node_modules/
-dist/
