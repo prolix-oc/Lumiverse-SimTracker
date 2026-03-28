@@ -1,5 +1,5 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": "Silly Sim Tracker",
   "identifier": "silly_sim_tracker",
   "author": "Prolix OCs",
@@ -11,7 +11,8 @@
     "ephemeral_storage",
     "chat_mutation",
     "event_tracking",
-    "generation"
+    "generation",
+    "app_manipulation"
   ],
   "entry_backend": "dist/backend.js",
   "entry_frontend": "dist/frontend.js",
@@ -23,5 +24,5 @@
       "required": true
     }
   ],
-  "minimum_lumiverse_version": "0.1.0"
+  "minimum_lumiverse_version": "0.6.0"
 }

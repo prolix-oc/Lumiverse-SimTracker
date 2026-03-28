@@ -134,9 +134,11 @@ const PANEL_CSS = `
   .sst-lumi-llm-status { font-size: 11px; color: var(--lumiverse-text-muted); min-height: 16px; }
   .sst-lumi-llm-status.sst-generating { color: var(--lumiverse-accent, #7c6aef); }
   .sst-lumi-llm-status.sst-error { color: #ff6b6b; }
-  .sst-side-tracker-root { width: 100%; height: 100%; position: relative; pointer-events: none; }
-  .sst-side-tracker-root.sst-side-left { left: 0; }
-  .sst-side-tracker-root.sst-side-right { right: 0; }
+  .sst-disabled { opacity: 0.5; pointer-events: none; }
+  .sst-app-side-panel { position: fixed; top: 0; bottom: 0; width: 340px; z-index: 50; pointer-events: auto; }
+  .sst-app-side-panel.sst-app-side-right { right: 48px; }
+  .sst-app-side-panel.sst-app-side-left { left: 0; }
+  .sst-side-tracker-root { width: 100%; height: 100%; position: relative; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; padding: 8px; display: flex; flex-direction: column; }
   .sst-message-tracker-host { width: 100%; }
   .sst-theme-tactical #silly-sim-tracker-container { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lumiverse-accent) 15%, transparent); }
 `;
@@ -810,6 +812,7 @@ export function setup(ctx: SpindleFrontendContext) {
   const trackerMessageMounts = new Map<string, Element>();
   const inlineMessageArtifacts = new Map<string, { mounts: Element[]; slots: Element[] }>();
   let sideTrackerMount: Element | null = null;
+  let sideAppMount: { mount: any; side: string } | null = null;
   let grantedPermissions: string[] = [];
   let requestedPermissions: string[] = [];
   let ephemeralPoolStatus: Record<string, unknown> | null = null;
@@ -868,6 +871,26 @@ export function setup(ctx: SpindleFrontendContext) {
     if (!el) return;
     el.textContent = text;
     el.className = "sst-lumi-llm-status" + (type ? ` sst-${type}` : "");
+  };
+
+  const hasPermission = (name: string): boolean => grantedPermissions.includes(name);
+
+  const updatePermissionGatedControls = () => {
+    const llmSection = byId<HTMLDetailsElement>("sst-lumi-llm-section");
+    const llmEnable = byId<HTMLInputElement>("sst-lumi-llm-enable");
+    if (llmSection) {
+      const genGranted = hasPermission("generation");
+      const mutGranted = hasPermission("chat_mutation");
+      const llmAvailable = genGranted && mutGranted;
+      llmSection.classList.toggle("sst-disabled", !llmAvailable);
+      if (llmEnable) llmEnable.disabled = !llmAvailable;
+      if (!llmAvailable) {
+        const missing: string[] = [];
+        if (!genGranted) missing.push("generation");
+        if (!mutGranted) missing.push("chat_mutation");
+        setLLMStatus(`Requires permission: ${missing.join(", ")}`, "error");
+      }
+    }
   };
 
   const applyTagInterceptor = () => {
@@ -967,9 +990,14 @@ export function setup(ctx: SpindleFrontendContext) {
   };
 
   const clearSideTrackerRender = () => {
-    if (!sideTrackerMount) return;
-    sideTrackerMount.remove();
-    sideTrackerMount = null;
+    if (sideTrackerMount) {
+      sideTrackerMount.remove();
+      sideTrackerMount = null;
+    }
+    if (sideAppMount) {
+      try { sideAppMount.mount.destroy(); } catch { /* already cleaned up */ }
+      sideAppMount = null;
+    }
   };
 
   const replaceFirstTokenInNodeHtml = (node: Element, marker: string, replacement: string): boolean => {
@@ -1028,11 +1056,45 @@ export function setup(ctx: SpindleFrontendContext) {
     previousData: TrackerData | null,
     mode: TrackerMountMode,
   ) => {
+    const markup = buildTrackerMarkup(data, preset, previousData);
+    if (!markup.html) return;
+
+    const side = mode === "side_left" ? "left" : "right";
+
+    // Use mountApp if app_manipulation permission is granted
+    if (hasPermission("app_manipulation")) {
+      // Reuse existing mount on the same side — just update content
+      if (sideAppMount && sideAppMount.side === side) {
+        const wrapper = sideAppMount.mount.root.querySelector(".sst-side-tracker-root");
+        if (wrapper) {
+          wrapper.innerHTML = markup.html;
+        } else {
+          sideAppMount.mount.root.innerHTML = `<div class="sst-side-tracker-root sst-side-${side}">${markup.html}</div>`;
+        }
+        return;
+      }
+
+      // Switching sides or first mount — tear down old one, create new
+      clearSideTrackerRender();
+
+      try {
+        const mount = ctx.ui.mountApp({
+          className: `sst-app-side-panel sst-app-side-${side}`,
+          position: side === "right" ? "end" : "start",
+        });
+
+        mount.root.innerHTML = `<div class="sst-side-tracker-root sst-side-${side}">${markup.html}</div>`;
+        sideAppMount = { mount, side };
+        return;
+      } catch {
+        // mountApp failed — fall through to legacy
+      }
+    }
+
+    // Fallback: legacy ctx.ui.mount("sidebar")
     clearSideTrackerRender();
     const sidebarRoot = ctx.ui.mount("sidebar");
     if (!sidebarRoot) return;
-    const markup = buildTrackerMarkup(data, preset, previousData);
-    if (!markup.html) return;
     const sideClass = mode === "side_left" ? "sst-side-left" : "sst-side-right";
     const wrapped = `<div class="sst-side-tracker-root ${sideClass}">${markup.html}</div>`;
     sideTrackerMount = ctx.dom.inject(sidebarRoot, wrapped, "beforeend");
@@ -1173,6 +1235,15 @@ export function setup(ctx: SpindleFrontendContext) {
       setLLMStatus(msg, "error");
       return;
     }
+    if (obj?.type === "permission_changed") {
+      const allGranted = Array.isArray(obj.allGranted)
+        ? obj.allGranted.filter((p): p is string => typeof p === "string")
+        : grantedPermissions;
+      grantedPermissions = allGranted;
+      renderCapabilities(grantedPermissions, requestedPermissions, ephemeralPoolStatus);
+      updatePermissionGatedControls();
+      return;
+    }
     if (obj?.type !== "config" || !obj.config || typeof obj.config !== "object") return;
     const incoming = obj.config as Record<string, unknown>;
     grantedPermissions = Array.isArray(obj.grantedPermissions)
@@ -1213,6 +1284,7 @@ export function setup(ctx: SpindleFrontendContext) {
     applyTagInterceptor();
     applyThemeClass(getPresetById(config, config.templateId));
     renderCapabilities(grantedPermissions, requestedPermissions, ephemeralPoolStatus);
+    updatePermissionGatedControls();
     if (latestContent) {
       handleContent(latestContent);
     } else if (latestTrackerRaw) {
@@ -1227,10 +1299,47 @@ export function setup(ctx: SpindleFrontendContext) {
     if (context.content) handleContent(context.content, context.messageId);
   };
 
+  const onSwipe = (payload: unknown) => {
+    const context = readMessageContext(payload);
+    if (!context) return;
+    if (context.isUser === true) return;
+
+    // Proactively clear all tracker renders on every swipe.
+    // Historical swipes (content has tracker data) will re-render immediately below.
+    // New-generation swipes (empty content) stay cleared until GENERATION_ENDED.
+    clearSideTrackerRender();
+    if (latestTrackerMessageId) {
+      clearMessageTrackerRender(latestTrackerMessageId);
+      clearInlineArtifacts(latestTrackerMessageId);
+    }
+    previousTrackerData = null;
+    latestTrackerRaw = null;
+    latestTrackerSourceContent = null;
+    latestContent = null;
+
+    // If the swiped-to message already has content (historical), process it now.
+    if (context.content) {
+      handleContent(context.content, context.messageId);
+    }
+  };
+
   const generationUnsub = ctx.events.on("GENERATION_ENDED", onEvent);
   const messageUnsub = ctx.events.on("MESSAGE_SENT", onEvent);
   const messageEditedUnsub = ctx.events.on("MESSAGE_EDITED", onEvent);
-  const messageSwipedUnsub = ctx.events.on("MESSAGE_SWIPED", onEvent);
+  const messageSwipedUnsub = ctx.events.on("MESSAGE_SWIPED", onSwipe);
+
+  const permissionUnsub = ctx.events.on("PERMISSION_CHANGED", (detail: unknown) => {
+    if (!detail || typeof detail !== "object") return;
+    const ev = detail as Record<string, unknown>;
+    const allGranted = Array.isArray(ev.allGranted)
+      ? ev.allGranted.filter((p): p is string => typeof p === "string")
+      : null;
+    if (allGranted) {
+      grantedPermissions = allGranted;
+      renderCapabilities(grantedPermissions, requestedPermissions, ephemeralPoolStatus);
+      updatePermissionGatedControls();
+    }
+  });
 
   const saveButton = byId<HTMLElement>("sst-lumi-save");
   const templateSelect = byId<HTMLSelectElement>("sst-lumi-template");
@@ -1344,6 +1453,7 @@ export function setup(ctx: SpindleFrontendContext) {
   ctx.sendToBackend({ type: "get_connections" });
   applyHideStyle();
   applyTagInterceptor();
+  updatePermissionGatedControls();
   setStatus("Ready");
   renderEmpty("When a message includes a tracker tag, cards will appear here.");
 
@@ -1354,6 +1464,7 @@ export function setup(ctx: SpindleFrontendContext) {
     messageUnsub();
     messageEditedUnsub();
     messageSwipedUnsub();
+    permissionUnsub();
     if (removeHideStyle) removeHideStyle();
     if (removeTagInterceptor) removeTagInterceptor();
     clearSideTrackerRender();

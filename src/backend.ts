@@ -1081,25 +1081,36 @@ spindle.on("GENERATION_ENDED", (payload: unknown) => {
   })();
 });
 
-try {
-  spindle.registerInterceptor(async (messages: any[]) => {
-    const keepNewest = config.retainTrackerCount;
-    if (keepNewest < 0) return messages;
+let interceptorRegistered = false;
 
-    const updated = messages.map((message) => {
-      if (!message || typeof message.content !== "string") return message;
-      return {
-        ...message,
-        content: stripOldTrackerBlocks(message.content, config.codeBlockIdentifier, keepNewest),
-      };
-    });
+function tryRegisterInterceptor(): void {
+  if (interceptorRegistered) return;
+  if (!hasPermission("interceptor")) return;
 
-    return updated;
-  }, 90);
-  spindle.log.info("Interceptor registered");
-} catch {
-  spindle.log.warn("Interceptor unavailable (permission not granted yet)");
+  try {
+    spindle.registerInterceptor(async (messages: any[]) => {
+      const keepNewest = config.retainTrackerCount;
+      if (keepNewest < 0) return messages;
+
+      const updated = messages.map((message) => {
+        if (!message || typeof message.content !== "string") return message;
+        return {
+          ...message,
+          content: stripOldTrackerBlocks(message.content, config.codeBlockIdentifier, keepNewest),
+        };
+      });
+
+      return updated;
+    }, 90);
+    interceptorRegistered = true;
+    spindle.log.info("Interceptor registered");
+  } catch {
+    spindle.log.warn("Interceptor registration failed");
+  }
 }
+
+// Attempt initial interceptor registration
+tryRegisterInterceptor();
 
 async function initGrantedPermissions(): Promise<void> {
   try {
@@ -1120,6 +1131,32 @@ async function refreshGrantedPermissions(): Promise<void> {
     // Keep last known permissions snapshot.
   }
 }
+
+// ── Real-time Permission Gating ──────────────────────────────────────
+
+spindle.permissions.onChanged(({ permission, granted, allGranted }) => {
+  runtime.grantedPermissions = new Set(allGranted);
+  spindle.log.info(
+    `Permission "${permission}" ${granted ? "granted" : "revoked"} — active: ${allGranted.join(", ") || "none"}`,
+  );
+
+  // Re-register interceptor if it becomes available
+  if (permission === "interceptor" && granted) {
+    tryRegisterInterceptor();
+  }
+
+  // Push updated permission state to frontend
+  spindle.sendToFrontend({
+    type: "permission_changed",
+    permission,
+    granted,
+    allGranted,
+  });
+});
+
+spindle.permissions.onDenied(({ permission, operation }) => {
+  spindle.log.warn(`Permission "${permission}" denied for operation: ${operation}`);
+});
 
 async function getEphemeralPoolStatusSafe(): Promise<Record<string, unknown> | null> {
   if (!hasPermission("ephemeral_storage")) return null;
