@@ -45,6 +45,21 @@ let config: TrackerConfig = { ...DEFAULT_CONFIG };
 let lastSimStats = "{}";
 let activeUserId: string | null = null;
 
+type TrackerHistoryEntry = { messageId: string; payload: string };
+
+/**
+ * Per-chat ordered history of tracker payloads, keyed by chat id. The list is
+ * ordered oldest → newest. Entries are appended when a tracker tag is first
+ * seen in a message, and upserted when a message is edited. This is a
+ * side-channel that survives `registerTagInterceptor`'s `removeFromMessage`
+ * behaviour — the frontend asks Lumiverse to remove the tracker tag from the
+ * displayed/canonical message so users don't see raw JSON, but by capturing
+ * the content via `MESSAGE_TAG_INTERCEPTED` we retain a complete history that
+ * can still be referenced by the main and secondary LLM generation flows.
+ */
+const chatTrackerHistory = new Map<string, TrackerHistoryEntry[]>();
+const rehydratedChats = new Set<string>();
+
 type MessageContext = {
   chatId: string | null;
   messageId: string | null;
@@ -269,6 +284,107 @@ function readMessageContext(payload: unknown): MessageContext {
     messageId: messageId || null,
     content,
   };
+}
+
+// ── Per-Chat Tracker History (side-channel) ──────────────────────────
+//
+// Maintains a backend-owned record of every tracker payload the extension
+// has seen in each chat, keyed by message id. Populated from:
+//   1. MESSAGE_TAG_INTERCEPTED — fires as soon as the frontend tag
+//      interceptor observes a tracker tag, BEFORE `removeFromMessage`
+//      has a chance to clear it from the canonical message content.
+//   2. MESSAGE_SENT / MESSAGE_EDITED — fallback for messages whose
+//      tracker blocks survived as code fences or tags in the content.
+//   3. rehydrateChatTrackerHistory — initial scan of the current chat
+//      on demand, so history is populated even for chats the extension
+//      wasn't active in when the message was originally generated.
+
+function recordChatTracker(chatId: string | null, messageId: string | null, payload: string): void {
+  if (!chatId || !messageId) return;
+  const trimmed = payload.trim();
+  if (!trimmed) return;
+  let history = chatTrackerHistory.get(chatId);
+  if (!history) {
+    history = [];
+    chatTrackerHistory.set(chatId, history);
+  }
+  const existingIdx = history.findIndex((entry) => entry.messageId === messageId);
+  if (existingIdx >= 0) {
+    history[existingIdx] = { messageId, payload: trimmed };
+  } else {
+    history.push({ messageId, payload: trimmed });
+  }
+}
+
+function forgetChatTracker(chatId: string | null, messageId: string | null): void {
+  if (!chatId || !messageId) return;
+  const history = chatTrackerHistory.get(chatId);
+  if (!history) return;
+  const idx = history.findIndex((entry) => entry.messageId === messageId);
+  if (idx >= 0) history.splice(idx, 1);
+}
+
+function getChatTrackerHistory(chatId: string | null): TrackerHistoryEntry[] {
+  if (!chatId) return [];
+  return chatTrackerHistory.get(chatId) || [];
+}
+
+async function rehydrateChatTrackerHistory(chatId: string | null): Promise<void> {
+  if (!chatId || rehydratedChats.has(chatId)) return;
+  rehydratedChats.add(chatId);
+  try {
+    const messages = await spindle.chat.getMessages(chatId);
+    let history = chatTrackerHistory.get(chatId);
+    if (!history) {
+      history = [];
+      chatTrackerHistory.set(chatId, history);
+    }
+    const known = new Set(history.map((entry) => entry.messageId));
+    // Preserve existing (interceptor-sourced) order: append any newly
+    // discovered trackers that haven't been recorded yet, in chat order.
+    for (const msg of messages) {
+      if (known.has(msg.id)) continue;
+      const payload = extractTrackerPayloadFromMessage(msg.content);
+      if (payload) {
+        history.push({ messageId: msg.id, payload });
+        known.add(msg.id);
+      }
+    }
+    // Re-sort entries to match current chat order where possible.
+    const order = new Map<string, number>();
+    messages.forEach((msg, idx) => order.set(msg.id, idx));
+    history.sort((a, b) => {
+      const ai = order.get(a.messageId);
+      const bi = order.get(b.messageId);
+      if (ai === undefined && bi === undefined) return 0;
+      if (ai === undefined) return 1;
+      if (bi === undefined) return -1;
+      return ai - bi;
+    });
+  } catch {
+    // Rehydration is best-effort.
+  }
+}
+
+/**
+ * Return the `limit` most recent tracker entries for a chat, optionally
+ * excluding the target message id (used when searching for *prior*
+ * trackers relative to an in-progress generation target). Results are
+ * returned oldest → newest so callers can present a progression.
+ */
+function getRecentChatTrackers(
+  chatId: string | null,
+  limit: number,
+  excludeMessageId?: string | null,
+): TrackerHistoryEntry[] {
+  if (!chatId || limit <= 0) return [];
+  const history = chatTrackerHistory.get(chatId);
+  if (!history || history.length === 0) return [];
+  const filtered = excludeMessageId
+    ? history.filter((entry) => entry.messageId !== excludeMessageId)
+    : history.slice();
+  if (filtered.length <= limit) return filtered;
+  return filtered.slice(filtered.length - limit);
 }
 
 function parseTrackerPayload(raw: string): Record<string, unknown> | null {
@@ -786,6 +902,8 @@ spindle.on("MESSAGE_SENT", (payload: unknown) => {
     const message = ctx.content;
     if (typeof message !== "string") return;
 
+    if (ctx.chatId) void rehydrateChatTrackerHistory(ctx.chatId);
+
     const commandResult = await handleSlashCommand(message, ctx);
     if (commandResult) {
       spindle.sendToFrontend(commandResult, activeUserId || undefined);
@@ -803,6 +921,7 @@ spindle.on("MESSAGE_SENT", (payload: unknown) => {
     const sim = extractTrackerPayloadFromMessage(message);
     if (sim) {
       lastSimStats = sim;
+      recordChatTracker(ctx.chatId, ctx.messageId, sim);
       pushMacroValues();
       await trackEvent("sst.tracker.detected", { identifier: config.codeBlockIdentifier }, ctx.chatId ? { chatId: ctx.chatId } : undefined);
     }
@@ -814,10 +933,16 @@ spindle.on("MESSAGE_EDITED", (payload: unknown) => {
     const ctx = readMessageContext(payload);
     if (typeof ctx.content !== "string") return;
     const sim = extractTrackerPayloadFromMessage(ctx.content);
-    if (!sim) return;
-    lastSimStats = sim;
-    pushMacroValues();
-    await trackEvent("sst.tracker.detected", { identifier: config.codeBlockIdentifier, source: "message_edited" }, ctx.chatId ? { chatId: ctx.chatId } : undefined);
+    if (sim) {
+      lastSimStats = sim;
+      recordChatTracker(ctx.chatId, ctx.messageId, sim);
+      pushMacroValues();
+      await trackEvent("sst.tracker.detected", { identifier: config.codeBlockIdentifier, source: "message_edited" }, ctx.chatId ? { chatId: ctx.chatId } : undefined);
+      return;
+    }
+    // Edit removed the tracker (e.g. swipe to a variant without one) — drop
+    // the side-channel entry so stale data doesn't leak into generation.
+    forgetChatTracker(ctx.chatId, ctx.messageId);
   })();
 });
 
@@ -834,7 +959,19 @@ spindle.on("MESSAGE_TAG_INTERCEPTED", (payload: unknown) => {
 
     const content = typeof obj.content === "string" ? obj.content.trim() : "";
     if (!content) return;
+
+    const isStreaming = obj.isStreaming === true;
+    // Skip mid-stream fragments — they're usually incomplete tracker payloads
+    // and would overwrite the last good record with a partial one. The final
+    // completed tag is delivered with isStreaming=false (or via MESSAGE_SENT /
+    // MESSAGE_EDITED as a fallback).
+    if (isStreaming) return;
+
+    const chatId = typeof obj.chatId === "string" ? obj.chatId : null;
+    const messageId = typeof obj.messageId === "string" ? obj.messageId : null;
+
     lastSimStats = content;
+    recordChatTracker(chatId, messageId, content);
     pushMacroValues();
     await trackEvent("sst.tracker.detected", { identifier: config.codeBlockIdentifier, source: "message_tag_intercepted" });
   })();
@@ -936,6 +1073,10 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
   spindle.sendToFrontend({ type: "secondary_generation_started" }, activeUserId || undefined);
 
   try {
+    // Ensure the side-channel history is primed for this chat before we
+    // rely on it. Safe to call repeatedly — rehydration is idempotent.
+    await rehydrateChatTrackerHistory(chatId);
+
     const messages = await spindle.chat.getMessages(chatId);
     if (!messages.length) return;
 
@@ -956,13 +1097,30 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
       .filter((m) => m.role !== "system")
       .slice(-messageCount);
 
-    let previousTrackerData: string | null = null;
-    for (let i = recentMessages.length - 2; i >= 0; i -= 1) {
-      const payload = extractTrackerPayloadFromMessage(recentMessages[i].content);
-      if (payload) {
-        previousTrackerData = payload;
-        break;
+    // ── Historical tracker progression ────────────────────────────────
+    //
+    // Pull the most recent historical trackers so the secondary LLM can
+    // see how the state has been evolving rather than only the single
+    // latest value. The side-channel history is the primary source
+    // (survives `removeFromMessage`) with a full-chat scan as a fallback
+    // in case events were missed or the extension was reloaded.
+    const historyLimit = Math.max(1, Math.min(10, config.retainTrackerCount || 3));
+    let historicalTrackers = getRecentChatTrackers(chatId, historyLimit, targetMessageId).map(
+      (entry) => entry.payload,
+    );
+
+    if (historicalTrackers.length === 0) {
+      // Fallback: scan the entire chat (not just the recentMessages window)
+      // for tracker blocks embedded in message content.
+      const nonSystem = messages.filter((m) => m.role !== "system");
+      const targetIdx = nonSystem.findIndex((m) => m.id === targetMessageId);
+      const scanEnd = targetIdx >= 0 ? targetIdx : nonSystem.length;
+      const found: string[] = [];
+      for (let i = scanEnd - 1; i >= 0 && found.length < historyLimit; i -= 1) {
+        const payload = extractTrackerPayloadFromMessage(nonSystem[i].content);
+        if (payload) found.unshift(payload); // oldest → newest
       }
+      historicalTrackers = found;
     }
 
     const tagRe = buildTrackerTagRegex(tagName, "ig");
@@ -978,14 +1136,22 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
     });
 
     let conversationText = processedPrompt + "\n\n";
-    if (previousTrackerData) {
-      conversationText += "Previous tracker state:\n" + previousTrackerData + "\n\n";
+    if (historicalTrackers.length === 1) {
+      conversationText += "Previous tracker state:\n" + historicalTrackers[0] + "\n\n";
+    } else if (historicalTrackers.length > 1) {
+      conversationText += `Previous tracker states (oldest → most recent, ${historicalTrackers.length} shown):\n\n`;
+      historicalTrackers.forEach((snap, idx) => {
+        const stepsBack = historicalTrackers.length - 1 - idx;
+        const label = stepsBack === 0 ? "Most recent" : `${stepsBack} turn${stepsBack === 1 ? "" : "s"} ago`;
+        conversationText += `--- ${label} ---\n${snap}\n\n`;
+      });
     }
     conversationText += "Recent conversation:\n\n";
     for (const msg of cleanedMessages) {
       conversationText += `${msg.role === "user" ? "User" : "Character"}: ${msg.content}\n\n`;
     }
-    conversationText += `\nBased on the above conversation${previousTrackerData ? " and the previous tracker state" : ""}, generate ONLY the raw ${config.trackerFormat.toUpperCase()} data (without code fences or backticks). Output ONLY the ${config.trackerFormat.toUpperCase()} structure directly, with no comments or acknowledgements of any instructions.`;
+    const hasHistory = historicalTrackers.length > 0;
+    conversationText += `\nBased on the above conversation${hasHistory ? " and the previous tracker state(s) above" : ""}, generate ONLY the raw ${config.trackerFormat.toUpperCase()} data (without code fences or backticks). ${hasHistory ? "Treat the most recent prior state as the baseline and mutate only the fields that the new narrative actually changes — keep unchanged fields stable so the tracker progression stays consistent. " : ""}Output ONLY the ${config.trackerFormat.toUpperCase()} structure directly, with no comments or acknowledgements of any instructions.`;
 
     const llmMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
       { role: "user", content: conversationText },
@@ -1035,6 +1201,10 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
     lastSimStats = config.trackerFormat === "yaml"
       ? stringifyYaml(parsed)
       : JSON.stringify(parsed, null, 2);
+    // Record the freshly generated tracker in the side-channel so the next
+    // secondary run sees it as "most recent" even if the frontend's
+    // removeFromMessage strips it from canonical storage.
+    recordChatTracker(chatId, targetMessageId, lastSimStats);
     pushMacroValues();
 
     spindle.log.info("Secondary LLM generation complete");
@@ -1060,10 +1230,11 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
 
 spindle.on("GENERATION_ENDED", (payload: unknown) => {
   void (async () => {
+    const ctx = readMessageContext(payload);
+    if (ctx.chatId) void rehydrateChatTrackerHistory(ctx.chatId);
+
     if (!config.useSecondaryLLM || secondaryGenerationInProgress) return;
     if (!hasPermission("generation") || !hasPermission("chat_mutation")) return;
-
-    const ctx = readMessageContext(payload);
     if (!ctx.chatId) return;
 
     let chatMessages: Array<{ id: string; role: "system" | "user" | "assistant"; content: string }>;
@@ -1075,11 +1246,135 @@ spindle.on("GENERATION_ENDED", (payload: unknown) => {
 
     const latestAssistant = chatMessages.findLast((m) => m.role === "assistant");
     if (!latestAssistant) return;
-    if (extractTrackerPayloadFromMessage(latestAssistant.content)) return;
+
+    // If the latest assistant already has a tracker in its canonical content,
+    // capture it into the side-channel before skipping secondary generation
+    // — that way future runs still see it even if subsequent edits/swipes
+    // strip the tag.
+    const existingPayload = extractTrackerPayloadFromMessage(latestAssistant.content);
+    if (existingPayload) {
+      recordChatTracker(ctx.chatId, latestAssistant.id, existingPayload);
+      return;
+    }
 
     await generateTrackerWithSecondaryLLM(ctx.chatId, latestAssistant.id);
   })();
 });
+
+/**
+ * Global variant of `stripOldTrackerBlocks`: counts tracker blocks across
+ * the entire message array (not per-message) and retains the `keepNewest`
+ * most recent ones globally. Older blocks are removed from whichever
+ * messages contained them. This matches the user-facing semantics of
+ * `retainTrackerCount` — "keep the N most recent tracker snapshots in the
+ * LLM context" — whereas the previous per-message implementation could
+ * never strip anything once each message only held a single tracker.
+ */
+function stripOldTrackerBlocksGlobal<T extends { content: string }>(
+  messages: T[],
+  identifier: string,
+  keepNewest: number,
+): T[] {
+  if (keepNewest < 0) return messages;
+
+  const desiredType = sanitizeIdentifier(identifier);
+
+  type BlockRef = { msgIdx: number; start: number; end: number };
+  const allBlocks: BlockRef[] = [];
+
+  messages.forEach((msg, msgIdx) => {
+    if (!msg || typeof msg.content !== "string") return;
+    const fenceRe = buildTrackerFenceRegex(identifier, "gi");
+    const tagRe = buildTrackerTagRegex(config.trackerTagName, "gi");
+    for (const match of msg.content.matchAll(fenceRe)) {
+      const text = match[0] || "";
+      if (typeof match.index !== "number" || !text) continue;
+      allBlocks.push({ msgIdx, start: match.index, end: match.index + text.length });
+    }
+    for (const match of msg.content.matchAll(tagRe)) {
+      const text = match[0] || "";
+      if (typeof match.index !== "number" || !text) continue;
+      const attrs = parseTagAttributes(match[1] || "");
+      const foundType = sanitizeIdentifier(attrs.type || "");
+      if (foundType && foundType !== desiredType) continue;
+      allBlocks.push({ msgIdx, start: match.index, end: match.index + text.length });
+    }
+  });
+
+  if (allBlocks.length === 0) return messages;
+
+  // Sort chronologically (by message, then by position in message) and
+  // drop duplicates where the fence and tag regex both captured the same
+  // span.
+  allBlocks.sort((a, b) => a.msgIdx - b.msgIdx || a.start - b.start);
+  const deduped: BlockRef[] = [];
+  for (const block of allBlocks) {
+    const prev = deduped[deduped.length - 1];
+    if (prev && prev.msgIdx === block.msgIdx && prev.start === block.start) continue;
+    deduped.push(block);
+  }
+
+  const stripUpTo = keepNewest === 0 ? deduped.length : Math.max(0, deduped.length - keepNewest);
+  if (stripUpTo === 0) return messages;
+
+  const stripByMessage = new Map<number, Set<number>>();
+  for (let i = 0; i < stripUpTo; i += 1) {
+    const ref = deduped[i];
+    let set = stripByMessage.get(ref.msgIdx);
+    if (!set) {
+      set = new Set<number>();
+      stripByMessage.set(ref.msgIdx, set);
+    }
+    set.add(ref.start);
+  }
+
+  return messages.map((msg, msgIdx) => {
+    if (!msg || typeof msg.content !== "string") return msg;
+    const stripStarts = stripByMessage.get(msgIdx);
+    if (!stripStarts || stripStarts.size === 0) return msg;
+
+    const content = msg.content;
+    const fenceRe = buildTrackerFenceRegex(identifier, "gi");
+    const tagRe = buildTrackerTagRegex(config.trackerTagName, "gi");
+    const ranges: Array<{ start: number; end: number; shouldStrip: boolean }> = [];
+
+    for (const match of content.matchAll(fenceRe)) {
+      const text = match[0] || "";
+      if (typeof match.index !== "number" || !text) continue;
+      ranges.push({
+        start: match.index,
+        end: match.index + text.length,
+        shouldStrip: stripStarts.has(match.index),
+      });
+    }
+    for (const match of content.matchAll(tagRe)) {
+      const text = match[0] || "";
+      if (typeof match.index !== "number" || !text) continue;
+      const attrs = parseTagAttributes(match[1] || "");
+      const foundType = sanitizeIdentifier(attrs.type || "");
+      if (foundType && foundType !== desiredType) continue;
+      ranges.push({
+        start: match.index,
+        end: match.index + text.length,
+        shouldStrip: stripStarts.has(match.index),
+      });
+    }
+    ranges.sort((a, b) => a.start - b.start);
+
+    let out = "";
+    let cursor = 0;
+    for (const range of ranges) {
+      out += content.slice(cursor, range.start);
+      if (!range.shouldStrip) {
+        out += content.slice(range.start, range.end);
+      }
+      cursor = range.end;
+    }
+    out += content.slice(cursor);
+    const cleaned = out.replace(/\n\s*\n\s*\n/g, "\n\n").trim();
+    return { ...msg, content: cleaned };
+  });
+}
 
 let interceptorRegistered = false;
 
@@ -1091,16 +1386,9 @@ function tryRegisterInterceptor(): void {
     spindle.registerInterceptor(async (messages: any[]) => {
       const keepNewest = config.retainTrackerCount;
       if (keepNewest < 0) return messages;
+      if (!Array.isArray(messages) || messages.length === 0) return messages;
 
-      const updated = messages.map((message) => {
-        if (!message || typeof message.content !== "string") return message;
-        return {
-          ...message,
-          content: stripOldTrackerBlocks(message.content, config.codeBlockIdentifier, keepNewest),
-        };
-      });
-
-      return updated;
+      return stripOldTrackerBlocksGlobal(messages, config.codeBlockIdentifier, keepNewest);
     }, 90);
     interceptorRegistered = true;
     spindle.log.info("Interceptor registered");
