@@ -5846,6 +5846,29 @@ var bento_style_tracker_default = {
 
 **Display**: Day counter (starts at 1), BG color (hex based on {{char}} appearance/personality)
 
+### JSON Type Discipline (mission-critical)
+
+Every field in the sim codeblock MUST use the correct JSON type. The model is being reminded explicitly because enum-coded numeric fields are routinely mis-emitted as quoted strings, which breaks downstream parsing.
+
+**Numbers — emit as unquoted JSON numbers**:
+- \`ap\`, \`dp\`, \`tp\`, \`cp\` (0-200 / 0-150)
+- \`health\` (0, 1, 2)
+- \`last_react\` (0, 1, 2)
+- \`inactiveReason\` (0, 1, 2, 3, 4, 5)
+- \`days_preg\`, \`days_since_first_meeting\` (integers)
+- Correct: \`"last_react": 1\`
+- WRONG: \`"last_react": "1"\` — the value is a quoted string, parsing will break
+
+**Booleans — lowercase true/false, unquoted**:
+- \`preg\`, \`inactive\`
+- Correct: \`"preg": false\`
+- WRONG: \`"preg": "false"\` or \`"preg": False\`
+
+**Strings — wrap in double quotes**:
+- \`relationshipStatus\`, \`desireStatus\`, \`internal_thought\`, \`bg\`, \`conception_date\`, \`cycle_stage\`
+
+If a numeric enum field would otherwise be empty, emit \`0\` (the zero code). Never \`null\`, never \`""\`, never \`"0"\`. A literal JSON number is required so downstream code can compare it arithmetically.
+
 ### Output Workflow
 
 1. Process narrative events
@@ -5877,71 +5900,71 @@ var bento_style_tracker_default = {
   customFields: [
     {
       key: "ap",
-      description: "Affection Points (0-200)"
+      description: "[number] Affection Points (0-200)"
     },
     {
       key: "dp",
-      description: "Desire Points (0-150)"
+      description: "[number] Desire Points (0-150)"
     },
     {
       key: "tp",
-      description: "Trust Points (0-150)"
+      description: "[number] Trust Points (0-150)"
     },
     {
       key: "cp",
-      description: "Contempt Points (0-150)"
+      description: "[number] Contempt Points (0-150)"
     },
     {
       key: "relationshipStatus",
-      description: "Relationship status text (e.g., 'Romantic Interest')"
+      description: "[string] Relationship status text (e.g., 'Romantic Interest')"
     },
     {
       key: "desireStatus",
-      description: "Desire status text (e.g., 'A smoldering flame builds.')"
+      description: "[string] Desire status text (e.g., 'A smoldering flame builds.')"
     },
     {
       key: "preg",
-      description: "Boolean for pregnancy status (true/false)"
+      description: "[boolean] Pregnancy status (true/false)"
     },
     {
       key: "days_preg",
-      description: "Days pregnant (if applicable)"
+      description: "[number] Days pregnant as an integer (0 if not applicable)"
     },
     {
       key: "conception_date",
-      description: "Date of conception (YYYY-MM-DD)"
+      description: "[string] Date of conception (YYYY-MM-DD)"
     },
     {
       key: "health",
-      description: "Health Status (0=Unharmed, 1=Injured, 2=Critical)"
+      description: "[number] Health Status enum code (0=Unharmed, 1=Injured, 2=Critical)"
     },
     {
       key: "bg",
-      description: "Hex color for card background (e.g., #6a5acd)"
+      description: "[string] Hex color for card background (e.g., #6a5acd)"
     },
     {
       key: "last_react",
-      description: "Reaction to User (0=Neutral, 1=Like, 2=Dislike)"
+      description: "[number] Reaction to user enum code (0=Neutral, 1=Like, 2=Dislike)"
     },
     {
       key: "internal_thought",
-      description: "Character's current internal thoughts/feelings"
+      description: "[string] Character's current internal thoughts/feelings"
     },
     {
       key: "days_since_first_meeting",
-      description: "Total days since first meeting"
+      description: "[number] Total days since first meeting (integer)"
     },
     {
       key: "inactive",
-      description: "Boolean for character inactivity (true/false)"
+      description: "[boolean] Character inactivity flag (true/false)"
     },
     {
       key: "inactiveReason",
-      description: "Reason for inactivity (0=Not inactive, 1=Asleep, 2=Comatose, 3=Contempt/anger, 4=Incapacitated, 5=Death)"
+      description: "[number] Inactivity reason enum code (0=Not inactive, 1=Asleep, 2=Comatose, 3=Contempt/anger, 4=Incapacitated, 5=Death)"
     },
     {
       key: "cycle_stage",
-      description: "Current biological cycle stage: 'pregnancy', 'ovulation', 'menstruation', 'rut', 'follicular', 'luteal', or empty/null"
+      description: "[string] Current biological cycle stage: 'pregnancy', 'ovulation', 'menstruation', 'rut', 'follicular', 'luteal', or empty/null"
     }
   ],
   extSettings: {
