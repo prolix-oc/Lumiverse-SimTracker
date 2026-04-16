@@ -5382,7 +5382,7 @@ var require_handlebars = __commonJS((exports, module) => {
 });
 
 // src/frontend.ts
-var import_handlebars = __toESM(require_handlebars(), 1);
+var import_handlebars2 = __toESM(require_handlebars(), 1);
 // tracker-card-templates/bento-style-tracker.json
 var bento_style_tracker_default = {
   templateName: "Bento Style Tracker",
@@ -13941,6 +13941,204 @@ function normalizeTrackerData(data) {
   };
 }
 
+// src/inlineTemplates.ts
+var import_handlebars = __toESM(require_handlebars(), 1);
+var LEGACY_MARKER_REGEX = /\[\[(?:DISPLAY|D)=([^,\]]+),\s*DATA=(\{[\s\S]*?\})\s*\]\]/g;
+var INLINE_TAG = "sst-inline";
+var MARKER_CLASS = "sst-inline-render";
+var MAX_ITERATIONS = 32;
+var templateCache = new Map;
+function hashString(s) {
+  let h = 0;
+  for (let i = 0;i < s.length; i += 1) {
+    h = (h << 5) - h + s.charCodeAt(i);
+    h |= 0;
+  }
+  return h.toString(36);
+}
+function compileInline(name, html) {
+  const key = `${name}:${hashString(html)}`;
+  let fn = templateCache.get(key);
+  if (!fn) {
+    fn = import_handlebars.default.compile(html);
+    templateCache.set(key, fn);
+  }
+  return fn;
+}
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function renderErrorSpan(name, reason) {
+  return `<span class="sst-inline-error" style="color:#e66;font-style:italic;">[${reason}: ${escapeHtml(name)}]</span>`;
+}
+function collectInlineDefs(config, preset) {
+  const out = [];
+  const presetInline = preset.inlineTemplates;
+  if (Array.isArray(presetInline))
+    out.push(...presetInline);
+  for (const pack of config.inlinePacks) {
+    if (pack && pack.enabled === false)
+      continue;
+    const packInline = pack?.inlineTemplates;
+    if (Array.isArray(packInline))
+      out.push(...packInline);
+  }
+  return out;
+}
+function findInlineDef(name, config, preset) {
+  return collectInlineDefs(config, preset).find((t) => t.insertName === name) ?? null;
+}
+function parseJsonish(raw) {
+  const cleaned = raw.replace(/<[^>]*>/g, "").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").trim();
+  const normalized = cleaned.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');
+  try {
+    const parsed = JSON.parse(normalized);
+    if (!parsed || typeof parsed !== "object")
+      return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+function renderTemplateHtml(name, data, def) {
+  if (!def || typeof def.htmlContent !== "string")
+    return renderErrorSpan(name, "Unknown inline template");
+  try {
+    return compileInline(name, def.htmlContent)(data);
+  } catch {
+    return renderErrorSpan(name, "Inline render error");
+  }
+}
+function buildContainer(name, html) {
+  const container = document.createElement("span");
+  container.className = MARKER_CLASS;
+  container.setAttribute("data-sst-inline-template", name);
+  container.innerHTML = html;
+  return container;
+}
+function collectTextNodes(root) {
+  const out = [];
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let n = walker.nextNode();
+  while (n) {
+    out.push(n);
+    n = walker.nextNode();
+  }
+  return out;
+}
+function locateOffset(nodes, globalOffset) {
+  let pos = 0;
+  for (const node of nodes) {
+    const len = (node.nodeValue ?? "").length;
+    if (globalOffset <= pos + len) {
+      return { node, offset: globalOffset - pos };
+    }
+    pos += len;
+  }
+  const last = nodes[nodes.length - 1];
+  if (last && globalOffset === pos)
+    return { node: last, offset: (last.nodeValue ?? "").length };
+  return null;
+}
+function processTagElements(root, config, preset, artifacts) {
+  const tagNodes = Array.from(root.querySelectorAll(INLINE_TAG));
+  for (const el of tagNodes) {
+    const name = (el.getAttribute("name") || el.getAttribute("template") || "").trim();
+    if (!name)
+      continue;
+    const attrData = el.getAttribute("data");
+    const dataRaw = attrData !== null && attrData !== "" ? attrData : el.textContent ?? "{}";
+    const data = parseJsonish(dataRaw);
+    const def = findInlineDef(name, config, preset);
+    const rendered = data === null ? renderErrorSpan(name, "Invalid inline template data") : renderTemplateHtml(name, data, def);
+    const container = buildContainer(name, rendered);
+    el.replaceWith(container);
+    artifacts.push(container);
+  }
+}
+function processLegacyMarkers(root, config, preset, artifacts) {
+  for (let i = 0;i < MAX_ITERATIONS; i += 1) {
+    const textNodes = collectTextNodes(root);
+    if (textNodes.length === 0)
+      return;
+    const fullText = textNodes.map((n) => n.nodeValue ?? "").join("");
+    if (!fullText.includes("[["))
+      return;
+    LEGACY_MARKER_REGEX.lastIndex = 0;
+    const match = LEGACY_MARKER_REGEX.exec(fullText);
+    if (!match)
+      return;
+    const startLoc = locateOffset(textNodes, match.index);
+    const endLoc = locateOffset(textNodes, match.index + match[0].length);
+    if (!startLoc || !endLoc)
+      return;
+    const name = (match[1] || "").trim();
+    const data = parseJsonish(match[2] || "{}");
+    const def = findInlineDef(name, config, preset);
+    const rendered = data === null ? renderErrorSpan(name, "Invalid inline template data") : renderTemplateHtml(name, data, def);
+    const range = document.createRange();
+    try {
+      range.setStart(startLoc.node, startLoc.offset);
+      range.setEnd(endLoc.node, endLoc.offset);
+    } catch {
+      return;
+    }
+    range.deleteContents();
+    const container = buildContainer(name, rendered);
+    range.insertNode(container);
+    artifacts.push(container);
+  }
+}
+function createInlineTemplateProcessor(deps) {
+  const artifactsByMessage = new Map;
+  const clearMessage = (messageId) => {
+    const list = artifactsByMessage.get(messageId);
+    if (!list)
+      return;
+    for (const el of list) {
+      if (el.isConnected)
+        el.remove();
+    }
+    artifactsByMessage.delete(messageId);
+  };
+  const processMessage = (messageId) => {
+    if (!messageId)
+      return;
+    const config = deps.getConfig();
+    clearMessage(messageId);
+    if (!config.enableInlineTemplates)
+      return;
+    const messageNode = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (!messageNode)
+      return;
+    const proseNodes = Array.from(messageNode.querySelectorAll("div[class*='prose']"));
+    const roots = proseNodes.length > 0 ? proseNodes : [messageNode];
+    const preset = deps.getPreset();
+    const messageArtifacts = [];
+    for (const root of roots) {
+      processTagElements(root, config, preset, messageArtifacts);
+      processLegacyMarkers(root, config, preset, messageArtifacts);
+    }
+    if (messageArtifacts.length > 0) {
+      artifactsByMessage.set(messageId, messageArtifacts);
+    }
+  };
+  const processAll = () => {
+    const hosts = Array.from(document.querySelectorAll("[data-message-id]"));
+    for (const el of hosts) {
+      const id = el.getAttribute("data-message-id");
+      if (id)
+        processMessage(id);
+    }
+  };
+  const destroy = () => {
+    for (const id of Array.from(artifactsByMessage.keys()))
+      clearMessage(id);
+    artifactsByMessage.clear();
+  };
+  return { processMessage, processAll, clearMessage, destroy };
+}
+
 // src/frontend.ts
 var DEFAULT_CONFIG = {
   trackerTagName: "tracker",
@@ -14118,69 +14316,6 @@ function readMessageContext(payload) {
     messageId: typeof nested?.id === "string" ? nested.id : typeof nested?.messageId === "string" ? nested.messageId : messageIdCandidate,
     isUser: typeof nested?.is_user === "boolean" ? nested.is_user : null
   };
-}
-function parseInlineData(dataString) {
-  try {
-    const decoded = dataString.replace(/<[^>]*>/g, "").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
-    const normalized = decoded.trim().replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');
-    const parsed = JSON.parse(normalized);
-    if (!parsed || typeof parsed !== "object")
-      return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-function getAllInlineTemplates(config, preset) {
-  const templates = [];
-  if (Array.isArray(preset.inlineTemplates)) {
-    templates.push(...preset.inlineTemplates);
-  }
-  for (const pack of config.inlinePacks) {
-    const isEnabled = pack.enabled !== false;
-    if (!isEnabled)
-      continue;
-    if (Array.isArray(pack.inlineTemplates)) {
-      templates.push(...pack.inlineTemplates);
-    }
-  }
-  return templates;
-}
-function findInlineTemplate(config, preset, name) {
-  const all = getAllInlineTemplates(config, preset);
-  return all.find((t) => t.insertName === name) || null;
-}
-var INLINE_TEMPLATE_REGEX = /\[\[(?:DISPLAY|D)=([^,\]]+),\s*DATA=(\{[\s\S]*?\})\s*\]\]/g;
-function renderInlineDisplays(content, config, preset) {
-  const out = [];
-  if (!config.enableInlineTemplates)
-    return out;
-  if (!content.includes("[["))
-    return out;
-  const matches = [...content.matchAll(INLINE_TEMPLATE_REGEX)];
-  for (const match of matches) {
-    const name = (match[1] || "").trim();
-    const dataRaw = match[2] || "{}";
-    if (!name)
-      continue;
-    const templateDef = findInlineTemplate(config, preset, name);
-    if (!templateDef || typeof templateDef.htmlContent !== "string") {
-      out.push({ templateName: name, html: `<span style="color: orange;">[Unknown inline template: ${name}]</span>`, marker: match[0] || "" });
-      continue;
-    }
-    const data = parseInlineData(dataRaw);
-    if (!data) {
-      out.push({ templateName: name, html: `<span style="color: red;">[Invalid inline template data: ${name}]</span>`, marker: match[0] || "" });
-      continue;
-    }
-    try {
-      const compiled = import_handlebars.default.compile(templateDef.htmlContent);
-      out.push({ templateName: name, html: compiled(data), marker: match[0] || "" });
-    } catch {
-      out.push({ templateName: name, html: `<span style="color: red;">[Inline render error: ${name}]</span>`, marker: match[0] || "" });
-    }
-  }
-  return out;
 }
 function resolveTrackerMountMode(preset) {
   const fromPreset = typeof preset.templatePosition === "string" ? preset.templatePosition : "";
@@ -14388,43 +14523,43 @@ function registerTemplateHelpers() {
   if (helpersRegistered)
     return;
   helpersRegistered = true;
-  import_handlebars.default.registerHelper("eq", (a, b) => a === b);
-  import_handlebars.default.registerHelper("or", function(...args) {
+  import_handlebars2.default.registerHelper("eq", (a, b) => a === b);
+  import_handlebars2.default.registerHelper("or", function(...args) {
     const values = args.slice(0, -1);
     return values.some((v) => !!v);
   });
-  import_handlebars.default.registerHelper("and", function(...args) {
+  import_handlebars2.default.registerHelper("and", function(...args) {
     const values = args.slice(0, -1);
     return values.every((v) => !!v);
   });
-  import_handlebars.default.registerHelper("not", (value) => !value);
-  import_handlebars.default.registerHelper("gt", (a, b) => Number(a) > Number(b));
-  import_handlebars.default.registerHelper("gte", (a, b) => Number(a) >= Number(b));
-  import_handlebars.default.registerHelper("abs", (a) => Math.abs(Number(a) || 0));
-  import_handlebars.default.registerHelper("multiply", (a, b) => (Number(a) || 0) * (Number(b) || 0));
-  import_handlebars.default.registerHelper("subtract", (a, b) => (Number(a) || 0) - (Number(b) || 0));
-  import_handlebars.default.registerHelper("add", (a, b) => (Number(a) || 0) + (Number(b) || 0));
-  import_handlebars.default.registerHelper("divide", (a, b) => {
+  import_handlebars2.default.registerHelper("not", (value) => !value);
+  import_handlebars2.default.registerHelper("gt", (a, b) => Number(a) > Number(b));
+  import_handlebars2.default.registerHelper("gte", (a, b) => Number(a) >= Number(b));
+  import_handlebars2.default.registerHelper("abs", (a) => Math.abs(Number(a) || 0));
+  import_handlebars2.default.registerHelper("multiply", (a, b) => (Number(a) || 0) * (Number(b) || 0));
+  import_handlebars2.default.registerHelper("subtract", (a, b) => (Number(a) || 0) - (Number(b) || 0));
+  import_handlebars2.default.registerHelper("add", (a, b) => (Number(a) || 0) + (Number(b) || 0));
+  import_handlebars2.default.registerHelper("divide", (a, b) => {
     const divisor = Number(b) || 0;
     return divisor === 0 ? 0 : (Number(a) || 0) / divisor;
   });
-  import_handlebars.default.registerHelper("divideRoundUp", (a, b) => {
+  import_handlebars2.default.registerHelper("divideRoundUp", (a, b) => {
     const divisor = Number(b) || 0;
     return divisor === 0 ? 0 : Math.ceil((Number(a) || 0) / divisor);
   });
-  import_handlebars.default.registerHelper("tabZIndex", (i) => 5 - (Number(i) || 0));
-  import_handlebars.default.registerHelper("tabOffset", (i) => (Number(i) || 0) * 65);
-  import_handlebars.default.registerHelper("initials", (name) => typeof name === "string" && name.length ? name.charAt(0).toUpperCase() : "?");
-  import_handlebars.default.registerHelper("rawFirstLetter", (name) => typeof name === "string" && name.length ? name.charAt(0) : "?");
-  import_handlebars.default.registerHelper("slugifyUnderscore", (name) => typeof name === "string" ? name.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s-]+/g, "_") : "");
-  import_handlebars.default.registerHelper("slugifyDash", (name) => typeof name === "string" ? name.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-") : "");
-  import_handlebars.default.registerHelper("camelCase", (name) => {
+  import_handlebars2.default.registerHelper("tabZIndex", (i) => 5 - (Number(i) || 0));
+  import_handlebars2.default.registerHelper("tabOffset", (i) => (Number(i) || 0) * 65);
+  import_handlebars2.default.registerHelper("initials", (name) => typeof name === "string" && name.length ? name.charAt(0).toUpperCase() : "?");
+  import_handlebars2.default.registerHelper("rawFirstLetter", (name) => typeof name === "string" && name.length ? name.charAt(0) : "?");
+  import_handlebars2.default.registerHelper("slugifyUnderscore", (name) => typeof name === "string" ? name.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s-]+/g, "_") : "");
+  import_handlebars2.default.registerHelper("slugifyDash", (name) => typeof name === "string" ? name.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-") : "");
+  import_handlebars2.default.registerHelper("camelCase", (name) => {
     if (typeof name !== "string")
       return "";
     return name.toLowerCase().replace(/[^a-z0-9\s]+/g, " ").trim().split(/\s+/).map((part, idx) => idx === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1)).join("");
   });
-  import_handlebars.default.registerHelper("adjustColorBrightness", (hexColor, brightnessPercent) => adjustColorBrightness(String(hexColor || "#000000"), Number(brightnessPercent) || 100));
-  import_handlebars.default.registerHelper("adjustHSL", (hexColor, hueShift, saturationAdjust, lightnessAdjust) => adjustHslColor(String(hexColor || "#000000"), Number(hueShift) || 0, Number(saturationAdjust) || 0, Number(lightnessAdjust) || 0));
+  import_handlebars2.default.registerHelper("adjustColorBrightness", (hexColor, brightnessPercent) => adjustColorBrightness(String(hexColor || "#000000"), Number(brightnessPercent) || 100));
+  import_handlebars2.default.registerHelper("adjustHSL", (hexColor, hueShift, saturationAdjust, lightnessAdjust) => adjustHslColor(String(hexColor || "#000000"), Number(hueShift) || 0, Number(saturationAdjust) || 0, Number(lightnessAdjust) || 0));
 }
 function extractCardTemplate(htmlTemplate) {
   const raw = htmlTemplate || "";
@@ -14443,7 +14578,7 @@ function compileTemplate(preset) {
   if (!html)
     return null;
   try {
-    const compiled = import_handlebars.default.compile(html);
+    const compiled = import_handlebars2.default.compile(html);
     TEMPLATE_CACHE.set(key, compiled);
     return compiled;
   } catch {
@@ -14630,7 +14765,13 @@ function setup(ctx) {
   let latestTrackerSourceContent = null;
   const trackerMessageIds = new Set;
   const trackerMessageMounts = new Map;
-  const inlineMessageArtifacts = new Map;
+  const inlineProcessor = createInlineTemplateProcessor({
+    getConfig: () => ({
+      enableInlineTemplates: config.enableInlineTemplates,
+      inlinePacks: config.inlinePacks
+    }),
+    getPreset: () => getPresetById(config, config.templateId)
+  });
   let sideTrackerMount = null;
   let sideAppMount = null;
   let grantedPermissions = [];
@@ -14795,16 +14936,6 @@ function setup(ctx) {
     if (latestId)
       latestTrackerMessageId = latestId;
   };
-  const clearInlineArtifacts = (messageId) => {
-    const artifacts = inlineMessageArtifacts.get(messageId);
-    if (!artifacts)
-      return;
-    for (const mount of artifacts.mounts)
-      mount.remove();
-    for (const slot of artifacts.slots)
-      slot.remove();
-    inlineMessageArtifacts.delete(messageId);
-  };
   const clearSideTrackerRender = () => {
     if (sideTrackerMount) {
       sideTrackerMount.remove();
@@ -14815,51 +14946,6 @@ function setup(ctx) {
         sideAppMount.mount.destroy();
       } catch {}
       sideAppMount = null;
-    }
-  };
-  const replaceFirstTokenInNodeHtml = (node, marker, replacement) => {
-    if (!marker)
-      return false;
-    const html = node.innerHTML;
-    if (!html.includes(marker))
-      return false;
-    node.innerHTML = html.replace(marker, replacement);
-    return true;
-  };
-  const renderInlineDisplaysInMessage = (messageId, sourceContent, preset) => {
-    clearInlineArtifacts(messageId);
-    const messageNode = document.querySelector(`[data-message-id="${messageId}"]`);
-    if (!messageNode)
-      return;
-    const inlineRenders = renderInlineDisplays(sourceContent, config, preset);
-    if (inlineRenders.length === 0)
-      return;
-    const proseNodes = Array.from(messageNode.querySelectorAll("div[class*='prose']"));
-    if (proseNodes.length === 0)
-      return;
-    const artifacts = { mounts: [], slots: [] };
-    for (let i = 0;i < inlineRenders.length; i += 1) {
-      const item = inlineRenders[i];
-      const slotId = `sst-inline-slot-${messageId}-${i}-${Date.now()}`;
-      const slotHtml = `<span data-sst-inline-slot="${slotId}"></span>`;
-      let inserted = false;
-      for (const proseNode of proseNodes) {
-        if (replaceFirstTokenInNodeHtml(proseNode, item.marker, slotHtml)) {
-          inserted = true;
-          break;
-        }
-      }
-      if (!inserted)
-        continue;
-      const slot = messageNode.querySelector(`[data-sst-inline-slot="${slotId}"]`);
-      if (!slot)
-        continue;
-      const mount = ctx.dom.inject(slot, item.html, "beforeend");
-      artifacts.mounts.push(mount);
-      artifacts.slots.push(slot);
-    }
-    if (artifacts.mounts.length > 0 || artifacts.slots.length > 0) {
-      inlineMessageArtifacts.set(messageId, artifacts);
     }
   };
   const renderTrackerInSidebar = (data, preset, previousData, mode) => {
@@ -14924,8 +15010,6 @@ function setup(ctx) {
       renderEmpty(raw);
       if (messageId)
         clearMessageTrackerRender(messageId);
-      if (messageId)
-        clearInlineArtifacts(messageId);
       return;
     }
     latestTrackerRaw = raw;
@@ -14944,9 +15028,6 @@ function setup(ctx) {
       renderTrackerIntoMessage(effectiveMessageId, parsed, preset, previousTrackerData, mountMode);
       pruneNonLatestMessageTrackers();
     }
-    if (effectiveMessageId) {
-      renderInlineDisplaysInMessage(effectiveMessageId, sourceContent, preset);
-    }
     previousTrackerData = parsed;
   };
   const handleContent = (content, messageId = null) => {
@@ -14957,7 +15038,6 @@ function setup(ctx) {
       if (messageId && trackerMessageIds.has(messageId)) {
         trackerMessageIds.delete(messageId);
         clearMessageTrackerRender(messageId);
-        clearInlineArtifacts(messageId);
         if (latestTrackerMessageId === messageId) {
           latestTrackerMessageId = null;
           wasLatest = true;
@@ -15063,7 +15143,14 @@ function setup(ctx) {
     } else if (latestTrackerRaw) {
       handleTrackerPayload(latestTrackerRaw, latestTrackerSourceContent || latestTrackerRaw);
     }
+    inlineProcessor.processAll();
   });
+  const runInlinePass = (messageId) => {
+    if (messageId)
+      inlineProcessor.processMessage(messageId);
+    else
+      inlineProcessor.processAll();
+  };
   const onEvent = (payload) => {
     const context = readMessageContext(payload);
     if (!context)
@@ -15072,6 +15159,7 @@ function setup(ctx) {
       return;
     if (context.content)
       handleContent(context.content, context.messageId);
+    runInlinePass(context.messageId);
   };
   const onSwipe = (payload) => {
     const context = readMessageContext(payload);
@@ -15082,8 +15170,10 @@ function setup(ctx) {
     clearSideTrackerRender();
     if (latestTrackerMessageId) {
       clearMessageTrackerRender(latestTrackerMessageId);
-      clearInlineArtifacts(latestTrackerMessageId);
+      inlineProcessor.clearMessage(latestTrackerMessageId);
     }
+    if (context.messageId)
+      inlineProcessor.clearMessage(context.messageId);
     previousTrackerData = null;
     latestTrackerRaw = null;
     latestTrackerSourceContent = null;
@@ -15091,11 +15181,19 @@ function setup(ctx) {
     if (context.content) {
       handleContent(context.content, context.messageId);
     }
+    runInlinePass(context.messageId);
+  };
+  const onMessageRendered = (payload) => {
+    const context = readMessageContext(payload);
+    if (!context || context.isUser === true)
+      return;
+    runInlinePass(context.messageId);
   };
   const generationUnsub = ctx.events.on("GENERATION_ENDED", onEvent);
   const messageUnsub = ctx.events.on("MESSAGE_SENT", onEvent);
   const messageEditedUnsub = ctx.events.on("MESSAGE_EDITED", onEvent);
   const messageSwipedUnsub = ctx.events.on("MESSAGE_SWIPED", onSwipe);
+  const messageRenderedUnsub = ctx.events.on("CHARACTER_MESSAGE_RENDERED", onMessageRendered);
   const permissionUnsub = ctx.events.on("PERMISSION_CHANGED", (detail) => {
     if (!detail || typeof detail !== "object")
       return;
@@ -15117,6 +15215,7 @@ function setup(ctx) {
     } else if (latestTrackerRaw) {
       handleTrackerPayload(latestTrackerRaw, latestTrackerSourceContent || latestTrackerRaw);
     }
+    inlineProcessor.processAll();
     setStatus(`Previewing template: ${getPresetById(config, config.templateId).templateName}`);
   });
   saveButton?.addEventListener("click", () => {
@@ -15155,6 +15254,7 @@ function setup(ctx) {
     persistConfig();
     configTrackerTagNameHint = config.trackerTagName;
     applyTagInterceptor();
+    inlineProcessor.processAll();
     setStatus("Config saved");
   });
   const exportButton = byId("sst-lumi-export");
@@ -15218,6 +15318,7 @@ function setup(ctx) {
     messageUnsub();
     messageEditedUnsub();
     messageSwipedUnsub();
+    messageRenderedUnsub();
     permissionUnsub();
     if (removeHideStyle)
       removeHideStyle();
@@ -15227,13 +15328,7 @@ function setup(ctx) {
     for (const mount of trackerMessageMounts.values())
       mount.remove();
     trackerMessageMounts.clear();
-    for (const artifacts of inlineMessageArtifacts.values()) {
-      for (const mount of artifacts.mounts)
-        mount.remove();
-      for (const slot of artifacts.slots)
-        slot.remove();
-    }
-    inlineMessageArtifacts.clear();
+    inlineProcessor.destroy();
     removePanelStyle();
     ctx.dom.cleanup();
   };

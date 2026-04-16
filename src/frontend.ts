@@ -2,6 +2,7 @@ import Handlebars from "handlebars";
 import type { SpindleFrontendContext } from "lumiverse-spindle-types";
 import { getTemplatePresets, type TemplatePreset } from "./templatePresets";
 import { parseTrackerBlock, type TrackerData } from "./trackerData";
+import { createInlineTemplateProcessor } from "./inlineTemplates";
 
 type TrackerConfig = {
   trackerTagName: string;
@@ -224,84 +225,6 @@ function readMessageContext(payload: unknown): { content: string | null; message
           : messageIdCandidate,
     isUser: typeof nested?.is_user === "boolean" ? nested.is_user : null,
   };
-}
-
-function parseInlineData(dataString: string): Record<string, unknown> | null {
-  try {
-    const decoded = dataString
-      .replace(/<[^>]*>/g, "")
-      .replace(/&quot;/g, '"')
-      .replace(/&apos;/g, "'")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
-      .replace(/&amp;/g, "&");
-    const normalized = decoded.trim().replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');
-    const parsed = JSON.parse(normalized) as unknown;
-    if (!parsed || typeof parsed !== "object") return null;
-    return parsed as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
-
-function getAllInlineTemplates(config: TrackerConfig, preset: TemplatePreset): Array<Record<string, unknown>> {
-  const templates: Array<Record<string, unknown>> = [];
-  if (Array.isArray(preset.inlineTemplates)) {
-    templates.push(...(preset.inlineTemplates as Array<Record<string, unknown>>));
-  }
-  for (const pack of config.inlinePacks) {
-    const isEnabled = pack.enabled !== false;
-    if (!isEnabled) continue;
-    if (Array.isArray(pack.inlineTemplates)) {
-      templates.push(...(pack.inlineTemplates as Array<Record<string, unknown>>));
-    }
-  }
-  return templates;
-}
-
-function findInlineTemplate(config: TrackerConfig, preset: TemplatePreset, name: string): Record<string, unknown> | null {
-  const all = getAllInlineTemplates(config, preset);
-  return all.find((t) => t.insertName === name) || null;
-}
-
-const INLINE_TEMPLATE_REGEX = /\[\[(?:DISPLAY|D)=([^,\]]+),\s*DATA=(\{[\s\S]*?\})\s*\]\]/g;
-
-function renderInlineDisplays(
-  content: string,
-  config: TrackerConfig,
-  preset: TemplatePreset,
-): Array<{ templateName: string; html: string; marker: string }> {
-  const out: Array<{ templateName: string; html: string; marker: string }> = [];
-  if (!config.enableInlineTemplates) return out;
-  if (!content.includes("[[")) return out;
-
-  const matches = [...content.matchAll(INLINE_TEMPLATE_REGEX)];
-  for (const match of matches) {
-    const name = (match[1] || "").trim();
-    const dataRaw = match[2] || "{}";
-    if (!name) continue;
-
-    const templateDef = findInlineTemplate(config, preset, name);
-    if (!templateDef || typeof templateDef.htmlContent !== "string") {
-      out.push({ templateName: name, html: `<span style="color: orange;">[Unknown inline template: ${name}]</span>`, marker: match[0] || "" });
-      continue;
-    }
-
-    const data = parseInlineData(dataRaw);
-    if (!data) {
-      out.push({ templateName: name, html: `<span style="color: red;">[Invalid inline template data: ${name}]</span>`, marker: match[0] || "" });
-      continue;
-    }
-
-    try {
-      const compiled = Handlebars.compile(templateDef.htmlContent);
-      out.push({ templateName: name, html: compiled(data), marker: match[0] || "" });
-    } catch {
-      out.push({ templateName: name, html: `<span style="color: red;">[Inline render error: ${name}]</span>`, marker: match[0] || "" });
-    }
-  }
-
-  return out;
 }
 
 function resolveTrackerMountMode(preset: TemplatePreset): TrackerMountMode {
@@ -722,17 +645,6 @@ function rawJson(data: TrackerData): string {
   }
 }
 
-function renderInlineSection(
-  inlineHtmlItems: Array<{ templateName: string; html: string; marker: string }>,
-  injectSanitized: (html: string) => void,
-): void {
-  if (inlineHtmlItems.length === 0) return;
-  const content = inlineHtmlItems
-    .map((item) => `<div class="sst-inline-item" data-inline-template="${item.templateName}">${item.html}</div>`)
-    .join("");
-  injectSanitized(`<section class="sst-inline-section"><div class="sst-inline-title">Inline Displays</div>${content}</section>`);
-}
-
 function showCommandResult(payload: Record<string, unknown>): void {
   const panel = byId<HTMLElement>("sst-lumi-command");
   if (!panel) return;
@@ -822,7 +734,13 @@ export function setup(ctx: SpindleFrontendContext) {
   let latestTrackerSourceContent: string | null = null;
   const trackerMessageIds = new Set<string>();
   const trackerMessageMounts = new Map<string, Element>();
-  const inlineMessageArtifacts = new Map<string, { mounts: Element[]; slots: Element[] }>();
+  const inlineProcessor = createInlineTemplateProcessor({
+    getConfig: () => ({
+      enableInlineTemplates: config.enableInlineTemplates,
+      inlinePacks: config.inlinePacks,
+    }),
+    getPreset: () => getPresetById(config, config.templateId),
+  });
   let sideTrackerMount: Element | null = null;
   let sideAppMount: { mount: any; side: string } | null = null;
   let grantedPermissions: string[] = [];
@@ -993,14 +911,6 @@ export function setup(ctx: SpindleFrontendContext) {
     if (latestId) latestTrackerMessageId = latestId;
   };
 
-  const clearInlineArtifacts = (messageId: string) => {
-    const artifacts = inlineMessageArtifacts.get(messageId);
-    if (!artifacts) return;
-    for (const mount of artifacts.mounts) mount.remove();
-    for (const slot of artifacts.slots) slot.remove();
-    inlineMessageArtifacts.delete(messageId);
-  };
-
   const clearSideTrackerRender = () => {
     if (sideTrackerMount) {
       sideTrackerMount.remove();
@@ -1009,56 +919,6 @@ export function setup(ctx: SpindleFrontendContext) {
     if (sideAppMount) {
       try { sideAppMount.mount.destroy(); } catch { /* already cleaned up */ }
       sideAppMount = null;
-    }
-  };
-
-  const replaceFirstTokenInNodeHtml = (node: Element, marker: string, replacement: string): boolean => {
-    if (!marker) return false;
-    const html = node.innerHTML;
-    if (!html.includes(marker)) return false;
-    node.innerHTML = html.replace(marker, replacement);
-    return true;
-  };
-
-  const renderInlineDisplaysInMessage = (
-    messageId: string,
-    sourceContent: string,
-    preset: TemplatePreset,
-  ) => {
-    clearInlineArtifacts(messageId);
-    const messageNode = document.querySelector(`[data-message-id="${messageId}"]`);
-    if (!messageNode) return;
-
-    const inlineRenders = renderInlineDisplays(sourceContent, config, preset);
-    if (inlineRenders.length === 0) return;
-
-    const proseNodes = Array.from(messageNode.querySelectorAll("div[class*='prose']"));
-    if (proseNodes.length === 0) return;
-
-    const artifacts: { mounts: Element[]; slots: Element[] } = { mounts: [], slots: [] };
-    for (let i = 0; i < inlineRenders.length; i += 1) {
-      const item = inlineRenders[i];
-      const slotId = `sst-inline-slot-${messageId}-${i}-${Date.now()}`;
-      const slotHtml = `<span data-sst-inline-slot="${slotId}"></span>`;
-      let inserted = false;
-
-      for (const proseNode of proseNodes) {
-        if (replaceFirstTokenInNodeHtml(proseNode, item.marker, slotHtml)) {
-          inserted = true;
-          break;
-        }
-      }
-      if (!inserted) continue;
-
-      const slot = messageNode.querySelector(`[data-sst-inline-slot="${slotId}"]`) as Element | null;
-      if (!slot) continue;
-      const mount = ctx.dom.inject(slot, item.html, "beforeend");
-      artifacts.mounts.push(mount);
-      artifacts.slots.push(slot);
-    }
-
-    if (artifacts.mounts.length > 0 || artifacts.slots.length > 0) {
-      inlineMessageArtifacts.set(messageId, artifacts);
     }
   };
 
@@ -1149,7 +1009,6 @@ export function setup(ctx: SpindleFrontendContext) {
       setStatus("Tracker found (invalid JSON/YAML)");
       renderEmpty(raw);
       if (messageId) clearMessageTrackerRender(messageId);
-      if (messageId) clearInlineArtifacts(messageId);
       return;
     }
     latestTrackerRaw = raw;
@@ -1168,10 +1027,6 @@ export function setup(ctx: SpindleFrontendContext) {
       pruneNonLatestMessageTrackers();
     }
 
-    if (effectiveMessageId) {
-      renderInlineDisplaysInMessage(effectiveMessageId, sourceContent, preset);
-    }
-
     previousTrackerData = parsed;
   };
 
@@ -1183,7 +1038,6 @@ export function setup(ctx: SpindleFrontendContext) {
       if (messageId && trackerMessageIds.has(messageId)) {
         trackerMessageIds.delete(messageId);
         clearMessageTrackerRender(messageId);
-        clearInlineArtifacts(messageId);
         if (latestTrackerMessageId === messageId) {
           latestTrackerMessageId = null;
           wasLatest = true;
@@ -1302,13 +1156,20 @@ export function setup(ctx: SpindleFrontendContext) {
     } else if (latestTrackerRaw) {
       handleTrackerPayload(latestTrackerRaw, latestTrackerSourceContent || latestTrackerRaw);
     }
+    inlineProcessor.processAll();
   });
+
+  const runInlinePass = (messageId: string | null) => {
+    if (messageId) inlineProcessor.processMessage(messageId);
+    else inlineProcessor.processAll();
+  };
 
   const onEvent = (payload: unknown) => {
     const context = readMessageContext(payload);
     if (!context) return;
     if (context.isUser === true) return;
     if (context.content) handleContent(context.content, context.messageId);
+    runInlinePass(context.messageId);
   };
 
   const onSwipe = (payload: unknown) => {
@@ -1322,8 +1183,9 @@ export function setup(ctx: SpindleFrontendContext) {
     clearSideTrackerRender();
     if (latestTrackerMessageId) {
       clearMessageTrackerRender(latestTrackerMessageId);
-      clearInlineArtifacts(latestTrackerMessageId);
+      inlineProcessor.clearMessage(latestTrackerMessageId);
     }
+    if (context.messageId) inlineProcessor.clearMessage(context.messageId);
     previousTrackerData = null;
     latestTrackerRaw = null;
     latestTrackerSourceContent = null;
@@ -1333,12 +1195,20 @@ export function setup(ctx: SpindleFrontendContext) {
     if (context.content) {
       handleContent(context.content, context.messageId);
     }
+    runInlinePass(context.messageId);
+  };
+
+  const onMessageRendered = (payload: unknown) => {
+    const context = readMessageContext(payload);
+    if (!context || context.isUser === true) return;
+    runInlinePass(context.messageId);
   };
 
   const generationUnsub = ctx.events.on("GENERATION_ENDED", onEvent);
   const messageUnsub = ctx.events.on("MESSAGE_SENT", onEvent);
   const messageEditedUnsub = ctx.events.on("MESSAGE_EDITED", onEvent);
   const messageSwipedUnsub = ctx.events.on("MESSAGE_SWIPED", onSwipe);
+  const messageRenderedUnsub = ctx.events.on("CHARACTER_MESSAGE_RENDERED", onMessageRendered);
 
   const permissionUnsub = ctx.events.on("PERMISSION_CHANGED", (detail: unknown) => {
     if (!detail || typeof detail !== "object") return;
@@ -1363,6 +1233,7 @@ export function setup(ctx: SpindleFrontendContext) {
     } else if (latestTrackerRaw) {
       handleTrackerPayload(latestTrackerRaw, latestTrackerSourceContent || latestTrackerRaw);
     }
+    inlineProcessor.processAll();
     setStatus(`Previewing template: ${getPresetById(config, config.templateId).templateName}`);
   });
 
@@ -1405,6 +1276,7 @@ export function setup(ctx: SpindleFrontendContext) {
     persistConfig();
     configTrackerTagNameHint = config.trackerTagName;
     applyTagInterceptor();
+    inlineProcessor.processAll();
     setStatus("Config saved");
   });
 
@@ -1476,17 +1348,14 @@ export function setup(ctx: SpindleFrontendContext) {
     messageUnsub();
     messageEditedUnsub();
     messageSwipedUnsub();
+    messageRenderedUnsub();
     permissionUnsub();
     if (removeHideStyle) removeHideStyle();
     if (removeTagInterceptor) removeTagInterceptor();
     clearSideTrackerRender();
     for (const mount of trackerMessageMounts.values()) mount.remove();
     trackerMessageMounts.clear();
-    for (const artifacts of inlineMessageArtifacts.values()) {
-      for (const mount of artifacts.mounts) mount.remove();
-      for (const slot of artifacts.slots) slot.remove();
-    }
-    inlineMessageArtifacts.clear();
+    inlineProcessor.destroy();
     removePanelStyle();
     ctx.dom.cleanup();
   };
