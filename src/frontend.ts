@@ -1491,6 +1491,12 @@ export function setup(ctx: SpindleFrontendContext) {
 
   ctx.sendToBackend({ type: "get_config" });
   ctx.sendToBackend({ type: "get_connections" });
+  try {
+    const active = ctx.getActiveChat();
+    if (active?.chatId) maybeRequestTrackerRehydrate(active.chatId);
+  } catch {
+    // getActiveChat is best-effort; ignore if unavailable.
+  }
   applyHideStyle();
   applyTagInterceptor();
   updatePermissionGatedControls();

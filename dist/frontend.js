@@ -15547,6 +15547,11 @@ function setup(ctx) {
   });
   ctx.sendToBackend({ type: "get_config" });
   ctx.sendToBackend({ type: "get_connections" });
+  try {
+    const active = ctx.getActiveChat();
+    if (active?.chatId)
+      maybeRequestTrackerRehydrate(active.chatId);
+  } catch {}
   applyHideStyle();
   applyTagInterceptor();
   updatePermissionGatedControls();
