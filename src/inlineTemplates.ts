@@ -55,8 +55,9 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function renderErrorSpan(name: string, reason: string): string {
-  return `<span class="sst-inline-error" style="color:#e66;font-style:italic;">[${reason}: ${escapeHtml(name)}]</span>`;
+function renderErrorSpan(name: string, reason: string, detail?: string): string {
+  const suffix = detail ? ` ${escapeHtml(detail)}` : "";
+  return `<span class="sst-inline-error" style="color:#e66;font-style:italic;">[${reason}: ${escapeHtml(name)}${suffix}]</span>`;
 }
 
 function collectInlineDefs(config: InlineProcessorConfig, preset: TemplatePreset): InlineTemplateDef[] {
@@ -69,10 +70,6 @@ function collectInlineDefs(config: InlineProcessorConfig, preset: TemplatePreset
     if (Array.isArray(packInline)) out.push(...(packInline as InlineTemplateDef[]));
   }
   return out;
-}
-
-function findInlineDef(name: string, config: InlineProcessorConfig, preset: TemplatePreset): InlineTemplateDef | null {
-  return collectInlineDefs(config, preset).find((t) => t.insertName === name) ?? null;
 }
 
 function parseJsonish(raw: string): Record<string, unknown> | null {
@@ -95,8 +92,18 @@ function parseJsonish(raw: string): Record<string, unknown> | null {
   }
 }
 
-function renderTemplateHtml(name: string, data: Record<string, unknown>, def: InlineTemplateDef | null): string {
-  if (!def || typeof def.htmlContent !== "string") return renderErrorSpan(name, "Unknown inline template");
+function renderTemplateHtml(
+  name: string,
+  data: Record<string, unknown>,
+  def: InlineTemplateDef | null,
+  allDefs: InlineTemplateDef[],
+  config: InlineProcessorConfig,
+): string {
+  if (!def || typeof def.htmlContent !== "string") {
+    const enabledPacks = config.inlinePacks.filter((p) => p && (p as Record<string, unknown>).enabled !== false).length;
+    const detail = `(${enabledPacks} pack${enabledPacks === 1 ? "" : "s"}, ${allDefs.length} template${allDefs.length === 1 ? "" : "s"} loaded)`;
+    return renderErrorSpan(name, "Unknown inline template", detail);
+  }
   try {
     return compileInline(name, def.htmlContent)(data);
   } catch {
@@ -146,14 +153,16 @@ function processTagElements(
   artifacts: Element[],
 ): void {
   const tagNodes = Array.from(root.querySelectorAll(INLINE_TAG));
+  if (tagNodes.length === 0) return;
+  const allDefs = collectInlineDefs(config, preset);
   for (const el of tagNodes) {
     const name = (el.getAttribute("name") || el.getAttribute("template") || "").trim();
     if (!name) continue;
     const attrData = el.getAttribute("data");
     const dataRaw = attrData !== null && attrData !== "" ? attrData : (el.textContent ?? "{}");
     const data = parseJsonish(dataRaw);
-    const def = findInlineDef(name, config, preset);
-    const rendered = data === null ? renderErrorSpan(name, "Invalid inline template data") : renderTemplateHtml(name, data, def);
+    const def = allDefs.find((t) => t.insertName === name) ?? null;
+    const rendered = data === null ? renderErrorSpan(name, "Invalid inline template data") : renderTemplateHtml(name, data, def, allDefs, config);
     const container = buildContainer(name, rendered);
     el.replaceWith(container);
     artifacts.push(container);
@@ -181,8 +190,9 @@ function processLegacyMarkers(
 
     const name = (match[1] || "").trim();
     const data = parseJsonish(match[2] || "{}");
-    const def = findInlineDef(name, config, preset);
-    const rendered = data === null ? renderErrorSpan(name, "Invalid inline template data") : renderTemplateHtml(name, data, def);
+    const allDefs = collectInlineDefs(config, preset);
+    const def = allDefs.find((t) => t.insertName === name) ?? null;
+    const rendered = data === null ? renderErrorSpan(name, "Invalid inline template data") : renderTemplateHtml(name, data, def, allDefs, config);
 
     const range = document.createRange();
     try {
@@ -265,11 +275,11 @@ export function createInlineTemplateProcessor(deps: InlineProcessorDeps): Inline
     const flush = () => {
       scheduled = false;
       for (const id of pending) {
-        // Observer-driven reprocessing is only for messages we haven't rendered yet.
-        // Lifecycle events (edits, swipes, re-gens) explicitly call processMessage to force re-render.
-        // This breaks the echo loop where MutationObserver sees our own DOM writes async and
-        // would otherwise wipe our container on the next flush.
-        if (artifactsByMessage.has(id)) continue;
+        // Skip messages whose artifacts are still live — reprocessing would echo-loop.
+        // If Lumiverse wiped our container (re-rendering prose), artifacts are disconnected
+        // and we need to restore the render.
+        const prior = artifactsByMessage.get(id);
+        if (prior && prior.length > 0 && prior.some((el) => el.isConnected)) continue;
         processMessage(id);
       }
       pending.clear();
@@ -305,6 +315,9 @@ export function createInlineTemplateProcessor(deps: InlineProcessorDeps): Inline
           const host = m.target.parentNode.closest("[data-message-id]");
           const id = host?.getAttribute("data-message-id");
           if (id) pending.add(id);
+        } else if (m.type === "attributes" && m.target instanceof Element && m.attributeName === "data-message-id") {
+          const id = m.target.getAttribute("data-message-id");
+          if (id) pending.add(id);
         }
       }
       if (pending.size > 0) schedule();
@@ -313,6 +326,8 @@ export function createInlineTemplateProcessor(deps: InlineProcessorDeps): Inline
       childList: true,
       subtree: true,
       characterData: true,
+      attributes: true,
+      attributeFilter: ["data-message-id"],
     });
     return () => observer.disconnect();
   };

@@ -13968,8 +13968,9 @@ function compileInline(name, html) {
 function escapeHtml(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
-function renderErrorSpan(name, reason) {
-  return `<span class="sst-inline-error" style="color:#e66;font-style:italic;">[${reason}: ${escapeHtml(name)}]</span>`;
+function renderErrorSpan(name, reason, detail) {
+  const suffix = detail ? ` ${escapeHtml(detail)}` : "";
+  return `<span class="sst-inline-error" style="color:#e66;font-style:italic;">[${reason}: ${escapeHtml(name)}${suffix}]</span>`;
 }
 function collectInlineDefs(config, preset) {
   const out = [];
@@ -13985,9 +13986,6 @@ function collectInlineDefs(config, preset) {
   }
   return out;
 }
-function findInlineDef(name, config, preset) {
-  return collectInlineDefs(config, preset).find((t) => t.insertName === name) ?? null;
-}
 function parseJsonish(raw) {
   const cleaned = raw.replace(/<[^>]*>/g, "").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").trim();
   const normalized = cleaned.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');
@@ -14000,9 +13998,12 @@ function parseJsonish(raw) {
     return null;
   }
 }
-function renderTemplateHtml(name, data, def) {
-  if (!def || typeof def.htmlContent !== "string")
-    return renderErrorSpan(name, "Unknown inline template");
+function renderTemplateHtml(name, data, def, allDefs, config) {
+  if (!def || typeof def.htmlContent !== "string") {
+    const enabledPacks = config.inlinePacks.filter((p) => p && p.enabled !== false).length;
+    const detail = `(${enabledPacks} pack${enabledPacks === 1 ? "" : "s"}, ${allDefs.length} template${allDefs.length === 1 ? "" : "s"} loaded)`;
+    return renderErrorSpan(name, "Unknown inline template", detail);
+  }
   try {
     return compileInline(name, def.htmlContent)(data);
   } catch {
@@ -14042,6 +14043,9 @@ function locateOffset(nodes, globalOffset) {
 }
 function processTagElements(root, config, preset, artifacts) {
   const tagNodes = Array.from(root.querySelectorAll(INLINE_TAG));
+  if (tagNodes.length === 0)
+    return;
+  const allDefs = collectInlineDefs(config, preset);
   for (const el of tagNodes) {
     const name = (el.getAttribute("name") || el.getAttribute("template") || "").trim();
     if (!name)
@@ -14049,8 +14053,8 @@ function processTagElements(root, config, preset, artifacts) {
     const attrData = el.getAttribute("data");
     const dataRaw = attrData !== null && attrData !== "" ? attrData : el.textContent ?? "{}";
     const data = parseJsonish(dataRaw);
-    const def = findInlineDef(name, config, preset);
-    const rendered = data === null ? renderErrorSpan(name, "Invalid inline template data") : renderTemplateHtml(name, data, def);
+    const def = allDefs.find((t) => t.insertName === name) ?? null;
+    const rendered = data === null ? renderErrorSpan(name, "Invalid inline template data") : renderTemplateHtml(name, data, def, allDefs, config);
     const container = buildContainer(name, rendered);
     el.replaceWith(container);
     artifacts.push(container);
@@ -14074,8 +14078,9 @@ function processLegacyMarkers(root, config, preset, artifacts) {
       return;
     const name = (match[1] || "").trim();
     const data = parseJsonish(match[2] || "{}");
-    const def = findInlineDef(name, config, preset);
-    const rendered = data === null ? renderErrorSpan(name, "Invalid inline template data") : renderTemplateHtml(name, data, def);
+    const allDefs = collectInlineDefs(config, preset);
+    const def = allDefs.find((t) => t.insertName === name) ?? null;
+    const rendered = data === null ? renderErrorSpan(name, "Invalid inline template data") : renderTemplateHtml(name, data, def, allDefs, config);
     const range = document.createRange();
     try {
       range.setStart(startLoc.node, startLoc.offset);
@@ -14156,7 +14161,8 @@ function createInlineTemplateProcessor(deps) {
     const flush = () => {
       scheduled = false;
       for (const id of pending) {
-        if (artifactsByMessage.has(id))
+        const prior = artifactsByMessage.get(id);
+        if (prior && prior.length > 0 && prior.some((el) => el.isConnected))
           continue;
         processMessage(id);
       }
@@ -14200,6 +14206,10 @@ function createInlineTemplateProcessor(deps) {
           const id = host?.getAttribute("data-message-id");
           if (id)
             pending.add(id);
+        } else if (m.type === "attributes" && m.target instanceof Element && m.attributeName === "data-message-id") {
+          const id = m.target.getAttribute("data-message-id");
+          if (id)
+            pending.add(id);
         }
       }
       if (pending.size > 0)
@@ -14208,7 +14218,9 @@ function createInlineTemplateProcessor(deps) {
     observer.observe(document.body, {
       childList: true,
       subtree: true,
-      characterData: true
+      characterData: true,
+      attributes: true,
+      attributeFilter: ["data-message-id"]
     });
     return () => observer.disconnect();
   };
