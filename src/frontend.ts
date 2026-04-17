@@ -161,10 +161,12 @@ const PANEL_CSS = `
   .sst-lumi-llm-status.sst-generating { color: var(--lumiverse-accent, #7c6aef); }
   .sst-lumi-llm-status.sst-error { color: #ff6b6b; }
   .sst-disabled { opacity: 0.5; pointer-events: none; }
-  .sst-app-side-panel { position: fixed; top: 0; bottom: 0; width: 340px; z-index: 50; pointer-events: auto; }
+  .sst-app-side-panel { position: fixed; top: 0; bottom: 0; width: 340px; z-index: 50; pointer-events: none; }
   .sst-app-side-panel.sst-app-side-right { right: 48px; }
   .sst-app-side-panel.sst-app-side-left { left: 0; }
-  .sst-side-tracker-root { width: 100%; height: 100%; position: relative; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; padding: 8px; display: flex; flex-direction: column; }
+  .sst-side-tracker-root { width: 100%; height: 100%; position: relative; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; padding: 8px; display: flex; flex-direction: column; pointer-events: none; }
+  .sst-side-tracker-root > #silly-sim-tracker-container { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; width: 100%; }
+  .sst-side-tracker-root .sim-tracker-tab, .sst-side-tracker-root .sim-tracker-card { pointer-events: auto; }
   .sst-message-tracker-host { width: 100%; }
   .sst-theme-tactical #silly-sim-tracker-container { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lumiverse-accent) 15%, transparent); }
 `;
@@ -1000,6 +1002,31 @@ export function setup(ctx: SpindleFrontendContext) {
     }
   };
 
+  const bindSidePanelTabs = (rootEl: Element | null): void => {
+    if (!rootEl) return;
+    const wrapper = rootEl.querySelector<HTMLElement>(".sst-side-tracker-root");
+    if (!wrapper) return;
+    const flagged = wrapper as HTMLElement & { __sstTabsBound?: boolean };
+    if (flagged.__sstTabsBound) return;
+    flagged.__sstTabsBound = true;
+    wrapper.addEventListener("click", (event) => {
+      const target = event.target as Element | null;
+      const tab = target?.closest?.(".sim-tracker-tab") as HTMLElement | null;
+      if (!tab || !wrapper.contains(tab)) return;
+      const charId = tab.getAttribute("data-character");
+      if (charId === null) return;
+      const wasActive = tab.classList.contains("active");
+      wrapper.querySelectorAll<HTMLElement>(".sim-tracker-tab.active").forEach((el) => el.classList.remove("active"));
+      wrapper.querySelectorAll<HTMLElement>(".sim-tracker-card.active").forEach((el) => el.classList.remove("active"));
+      if (!wasActive) {
+        tab.classList.add("active");
+        const escaped = typeof (window as any).CSS?.escape === "function" ? (window as any).CSS.escape(charId) : charId.replace(/"/g, '\\"');
+        const card = wrapper.querySelector<HTMLElement>(`.sim-tracker-card[data-character="${escaped}"]`);
+        if (card) card.classList.add("active");
+      }
+    });
+  };
+
   const renderTrackerInSidebar = (
     data: TrackerData,
     preset: TemplatePreset,
@@ -1021,6 +1048,7 @@ export function setup(ctx: SpindleFrontendContext) {
         } else {
           sideAppMount.mount.root.innerHTML = `<div class="sst-side-tracker-root sst-side-${side}">${markup.html}</div>`;
         }
+        bindSidePanelTabs(sideAppMount.mount.root);
         return;
       }
 
@@ -1035,6 +1063,7 @@ export function setup(ctx: SpindleFrontendContext) {
 
         mount.root.innerHTML = `<div class="sst-side-tracker-root sst-side-${side}">${markup.html}</div>`;
         sideAppMount = { mount, side };
+        bindSidePanelTabs(mount.root);
         return;
       } catch {
         // mountApp failed — fall through to legacy
@@ -1048,6 +1077,7 @@ export function setup(ctx: SpindleFrontendContext) {
     const sideClass = mode === "side_left" ? "sst-side-left" : "sst-side-right";
     const wrapped = `<div class="sst-side-tracker-root ${sideClass}">${markup.html}</div>`;
     sideTrackerMount = ctx.dom.inject(sidebarRoot, wrapped, "beforeend");
+    bindSidePanelTabs(sidebarRoot);
   };
 
   const renderTrackerIntoMessage = (
