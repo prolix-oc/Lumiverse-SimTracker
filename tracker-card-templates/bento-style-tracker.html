@@ -133,16 +133,14 @@
 
     /* BODY */
     .bento-body-wrapper {
-        display: grid;
-        grid-template-rows: 0fr;
-        transition: grid-template-rows 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-        will-change: grid-template-rows;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        will-change: max-height;
     }
-    .bento-card input.toggle:checked ~ .bento-body-wrapper { grid-template-rows: 1fr; }
+    .bento-card input.toggle:checked ~ .bento-body-wrapper { max-height: 2000px; }
 
     .bento-inner {
-        overflow: hidden;
-        min-height: 0;
         padding: 0 24px 24px 24px;
         opacity: 0;
         transform: translate3d(0, -10px, 0);
