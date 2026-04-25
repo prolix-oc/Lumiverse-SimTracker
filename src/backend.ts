@@ -1147,6 +1147,7 @@ const promptMap: Record<string, string> = {
   "dating-card-template": getTemplatePresetById("dating-card-template").sysPrompt || "",
   "tactical-hud-sidebar-tabs": getTemplatePresetById("tactical-hud-sidebar-tabs").sysPrompt || "",
   "rpg-sidebar-preset": getTemplatePresetById("rpg-sidebar-preset").sysPrompt || "",
+  "pulse-thread-tracker": getTemplatePresetById("pulse-thread-tracker").sysPrompt || "",
 };
 
 /**
