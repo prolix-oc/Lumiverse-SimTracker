@@ -10288,14 +10288,9 @@ var pulse_thread_tracker_default = {
     }
 
     .pt-bio-column {
-        display: flex;
-        flex-direction: column;
+        display: grid;
         gap: 12px;
-    }
-
-    .pt-bio-column &gt; .pt-bio-zone {
-        flex: 1 1 0;
-        min-height: 0;
+        grid-template-rows: 1fr 1fr;
     }
 
     .pt-bio-zone {
