@@ -500,6 +500,22 @@ function buildConceptionDirective(names: string[]): string {
   return `CONCEPTION DIRECTIVE: ${subject} ${verb} conceived. Update the next tracker to mark ${names.length === 1 ? "her" : "them"} as "conceived": true (and set "conception_date" to today's date). Do NOT set "preg": true yet; that transition happens later.`;
 }
 
+const CERVIX_STATE_BY_ID: Record<number, string> = {
+  0: "",
+  1: "soft",
+  2: "firm",
+  3: "open",
+  4: "dilated",
+  5: "sealed",
+};
+
+function cervixStateLabel(stats: CharacterStats): string {
+  const id = Number(stats.cervix_state_id || stats.cervixStateId || 0);
+  if (CERVIX_STATE_BY_ID[id]) return CERVIX_STATE_BY_ID[id];
+  const legacy = typeof stats.cervix_state === "string" ? stats.cervix_state.toLowerCase() : "";
+  return legacy;
+}
+
 function parseTrackerPayload(raw: string): Record<string, unknown> | null {
   const cleaned = raw.trim().replace(/([\s:[,{])\+(\d+(?:\.\d+)?)([\s,}\]\n\r]|$)/g, "$1$2$3");
   if (!cleaned) return null;

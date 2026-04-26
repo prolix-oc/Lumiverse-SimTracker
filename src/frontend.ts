@@ -64,11 +64,21 @@ const FERTILITY_STAGE_BY_ID: Record<number, string> = {
   3: "ovulation",
   4: "luteal",
   5: "pregnancy",
+  6: "rut",
 };
 
 const FERTILITY_STAGE_ID_BY_NAME = Object.fromEntries(
   Object.entries(FERTILITY_STAGE_BY_ID).map(([id, name]) => [name, Number(id)]),
 ) as Record<string, number>;
+
+const CERVIX_STATE_BY_ID: Record<number, string> = {
+  0: "",
+  1: "soft",
+  2: "firm",
+  3: "open",
+  4: "dilated",
+  5: "sealed",
+};
 
 function cycleStage(stats: unknown): string {
   if (!stats || typeof stats !== "object" || Array.isArray(stats)) return "";
@@ -90,6 +100,21 @@ function cycleStageLabel(stats: unknown): string {
   const stage = cycleStage(stats);
   if (!stage) return "Unknown";
   return stage.charAt(0).toUpperCase() + stage.slice(1);
+}
+
+function cervixState(stats: unknown): string {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return "";
+  const record = stats as Record<string, unknown>;
+  const id = Number(record.cervix_state_id || record.cervixStateId || 0);
+  if (CERVIX_STATE_BY_ID[id]) return CERVIX_STATE_BY_ID[id];
+  const legacy = typeof record.cervix_state === "string" ? record.cervix_state.toLowerCase() : "";
+  return legacy;
+}
+
+function cervixStateLabel(stats: unknown): string {
+  const state = cervixState(stats);
+  if (!state) return "Unknown";
+  return state.charAt(0).toUpperCase() + state.slice(1);
 }
 
 function fertilityRiskLabel(stats: unknown): string {
@@ -657,6 +682,8 @@ function registerTemplateHelpers(): void {
   Handlebars.registerHelper("cycleStage", cycleStage);
   Handlebars.registerHelper("cycleStageId", cycleStageId);
   Handlebars.registerHelper("cycleStageLabel", cycleStageLabel);
+  Handlebars.registerHelper("cervixState", cervixState);
+  Handlebars.registerHelper("cervixStateLabel", cervixStateLabel);
   Handlebars.registerHelper("fertilityRiskLabel", fertilityRiskLabel);
   Handlebars.registerHelper("fertilityRiskClass", fertilityRiskClass);
   Handlebars.registerHelper("hasFertilityTracking", hasFemaleBiology);

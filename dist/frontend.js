@@ -9667,7 +9667,7 @@ var pulse_thread_tracker_default = {
                                 &lt;div class=&quot;pt-womb-meter&quot;&gt;&lt;div class=&quot;pt-womb-meter-fill&quot; style=&quot;width: {{clampPercent stats.womb_receptivity_pct}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
                                 &lt;div class=&quot;pt-bio-row&quot;&gt;
                                     &lt;span class=&quot;pt-bio-key&quot;&gt;Cervix&lt;/span&gt;
-                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{#if stats.cervix_state}}{{stats.cervix_state}}{{else}}Unknown{{/if}}&lt;/span&gt;
+                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{cervixStateLabel stats}}&lt;/span&gt;
                                 &lt;/div&gt;
                                 &lt;div class=&quot;pt-bio-row&quot;&gt;
                                     &lt;span class=&quot;pt-bio-key&quot;&gt;This Cycle&lt;/span&gt;
@@ -9811,7 +9811,7 @@ var pulse_thread_tracker_default = {
                         &lt;svg class=&quot;icon-12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;currentColor&quot;&gt;&lt;circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;10&quot;/&gt;&lt;/svg&gt;
                         Period
                     &lt;/div&gt;
-                {{else if (eqi stats.cycle_stage &quot;rut&quot;)}}
+                {{else if (eq (cycleStage stats) &quot;rut&quot;)}}
                     &lt;div class=&quot;pt-pill pill-rut&quot;&gt;
                         &lt;svg class=&quot;icon-12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;currentColor&quot;&gt;&lt;circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;10&quot;/&gt;&lt;/svg&gt;
                         Rut
@@ -9856,15 +9856,15 @@ TEMPLATE VARIABLES (tabbed mode):
   - {{darkerBgColor}}: Darker variant
   - {{stats}}: Flattened stats object containing:
     - {{stats.ap}}, {{stats.dp}}, {{stats.tp}}, {{stats.cp}}
-    - {{stats.apChange}}, {{stats.dpChange}}, {{stats.tpChange}}, {{stats.cpChange}}
-    - {{stats.sex}}: &#039;female&#039;, &#039;male&#039;, &#039;futanari&#039;, or &#039;other&#039;
-    - {{stats.cycle_stage_id}}, {{stats.cycle_stage}}, {{stats.cycle_day}}, {{stats.womb_fullness_pct}}, {{stats.days_preg}}
+    - {{stats.sex}}: &#039;female&#039;, &#039;male&#039;, &#039;futanari&#039;, &#039;intersex&#039;, &#039;hermaphrodite&#039;, &#039;both&#039;, or &#039;other&#039;
+    - {{stats.cycle_stage_id}}, {{stats.cycle_day}}, {{stats.womb_fullness_pct}}, {{stats.days_preg}}
+    - {{stats.cervix_state_id}}, {{stats.breeding_count}}, {{stats.conceived}}, {{stats.preg}}
     - {{stats.refractory_minutes}}, {{stats.refractory_total}}, {{stats.semen_ml}}, {{stats.semen_capacity_ml}}, {{stats.male_fertility_pct}}
     - {{stats.last_react}}, {{stats.internal_thought}}
     - {{stats.days_since_first_meeting}}, {{stats.inactive}}
 --&gt;
 `,
-  sysPrompt: '## NARRATIVE CHARACTER TRACKER (Pulse Thread)\n\n**Objective:** Emit one JSON/YAML tracker per turn. Include `worldData` with `current_date` (YYYY-MM-DD) and `current_time` (24h), plus a `characters` array containing every tracked character.\n\n---\n\n### CRITICAL RULES\n\n1. **Array wrapping is mandatory.** Never emit a flat top-level map like `{ "CharacterName": { ... } }`. Always use `{ "characters": [ { ... }, { ... } ] }`, even for one character.\n2. **`name` must be at the character object level.** You may nest stats under `"stats": { ... }`; the tracker flattens them. `name` must not be inside `stats`.\n3. **No omitted fields.** Every character object must include every field below on every turn. Use `0`, `false`, or `""` for unknown/inapplicable values. Preserve prior values when known.\n4. **Output order:** Narrative → Tracker tag → `sim` codeblock. Never omit the codeblock.\n5. **Never track the user.** Do not include `{{user}}`, the player, or any self-insert persona in the `characters` array. The tracker is for narrative characters and NPCs only.\n6. **Multi-character cap:** Track up to 4 active characters. Mark inactive ones `"inactive": true`.\n\n---\n\n### CANONICAL SCHEMA\n\n```json\n{\n  "worldData": {\n    "current_date": "2025-04-25",\n    "current_time": "22:15"\n  },\n  "characters": [\n    {\n      "name": "Ukinami Yuzuha",\n      "ap": 128,\n      "dp": 105,\n      "tp": 85,\n      "cp": 0,\n      "apChange": 12,\n      "dpChange": 15,\n      "tpChange": 9,\n      "cpChange": 0,\n      "sex": "female",\n      "cycle_stage_id": 2,\n      "cycle_stage": "follicular",\n      "cycle_day": 10,\n      "womb_fullness_pct": 0,\n      "womb_receptivity_pct": 0,\n      "cervix_state": "",\n      "breeding_count": 0,\n      "conceived": false,\n      "preg": false,\n      "days_preg": 0,\n      "conception_date": "",\n      "refractory_minutes": 0,\n      "refractory_total": 0,\n      "semen_ml": 0,\n      "semen_capacity_ml": 0,\n      "male_fertility_pct": 0,\n      "last_react": 1,\n      "internal_thought": "I said yes. I\'m spending the night...",\n      "days_since_first_meeting": 0,\n      "inactive": false,\n      "inactiveReason": 0,\n      "bg": "#ff7aa2"\n    }\n  ]\n}\n```\n\n---\n\n### STAT METERS (HARD CAPS)\n\nTrack message-to-message changes in `apChange`, `dpChange`, `tpChange`, `cpChange` (+/- integer, 0 for none).\n\n| Field | Range | Brackets |\n|---|---|---|\n| **ap** Affection | 0-200 | 0-30 Strangers / 31-60 Acquaintances / 61-90 Friends / 91-120 Romantic / 121-150 Steady / 151-180 Committed / 181-200 Devoted |\n| **dp** Desire | 0-150 | 0-25 Cold / 26-50 Warm / 51-75 Interested / 76-100 Aroused / 101-125 Needy / 126-150 Desperate |\n| **tp** Trust | 0-150 | Falls when lied to, cheated, or promises broken. |\n| **cp** Contempt | 0-150 | Rises when harmed. CP rise can lower AP/DP/TP. |\n\n---\n\n### BIOLOGICAL TRACKING\n\n**`sex` gate:** `"female"`, `"male"`, `"futanari"`, or `"other"` (lowercase). Preserve from prior state unless the narrative explicitly changes biology.\n\n**General rule for all biology:** Preserve prior values. Advance only when narrative time passes. Use `0`/`""`/`false` when genuinely inapplicable.\n\n#### Female / Futanari — Fertility & Womb\nFor `sex: "female"` or `"futanari"`, always include and update these fields:\n\n- `cycle_day`: 1-28 (or established species length). Advance with narrative time.\n- `cycle_stage_id` → `cycle_stage` mapping:\n  - `1` = `"menstruation"` (days 1-5)\n  - `2` = `"follicular"` (days 6-13)\n  - `3` = `"ovulation"` (days 14-16, peak fertility)\n  - `4` = `"luteal"` (days 17-28)\n  - `5` = `"pregnancy"`\n- `womb_fullness_pct`: 0-100. Estimate from narrative; preserve unless events change it.\n- `womb_receptivity_pct`: 0-100. High during ovulation/rut, low during menstruation or low arousal.\n- `cervix_state`: `"soft"`, `"firm"`, `"open"`, `"dilated"`, `"sealed"`. Soft/open during fertile/high-arousal windows.\n- `breeding_count`: Times filled this cycle. Increment after internal ejaculation; preserve between turns.\n\nIf pregnant: `preg: true`, `cycle_stage_id: 5`, `cycle_stage: "pregnancy"`, track `days_preg`, preserve `conception_date` (YYYY-MM-DD) when known.\n\nIf not pregnant: `preg: false`, `days_preg: 0`.\n\nIf unprotected vaginal sex occurs during ovulation or rut, evaluate conception risk narratively. Update `preg`, `cycle_stage`, `days_preg`, and `conception_date` when conception is confirmed or narratively certain.\n\n`conceived` is an intermediate state between fertilisation and confirmed pregnancy. Set `conceived: true` when a character has ovulated with high womb fullness and fertilisation has occurred, but pregnancy has not yet been medically or narratively confirmed. Transition to `preg: true` (and `cycle_stage: "pregnancy"`) on a later turn when the narrative confirms it. `conceived` and `preg` may both be false simultaneously.\n\n#### Male / Futanari — Refractory & Semen\nFor `sex: "male"` or `"futanari"`, populate these fields. Female/other characters still include them with neutral values (`0`) unless explicitly male.\n\n- `refractory_minutes`: Minutes remaining until ready (0 = ready).\n- `refractory_total`: Total minutes of this refractory period.\n- `semen_ml`: Current volume (0 to `semen_capacity_ml`). Adjust after ejaculation, rest, or arousal.\n- `semen_capacity_ml`: Maximum volume. Preserve unless biology changes.\n- `male_fertility_pct`: 0-100. Update for sperm count, magical fertility, infertility, rut, recovery, etc.\n\nConvert all time to minutes. Decrement `refractory_minutes` toward 0 as narrative time passes.\n\n#### Futanari / Dual-Biology\nOutput **both** female cycle fields and male reproductive fields. The tracker renders a mixed panel.\n\n---\n\n### THEMING\n\nProvide `"bg"` as a hex color per character. Example: `"#ff7aa2"`.\n',
+  sysPrompt: '## NARRATIVE CHARACTER TRACKER (Pulse Thread)\n\n**Objective:** Emit one JSON/YAML tracker per turn. Include `worldData` with `current_date` (YYYY-MM-DD) and `current_time` (24h), plus a `characters` array containing every tracked character.\n\n---\n\n### CRITICAL RULES\n\n1. **Array wrapping is mandatory.** Never emit a flat top-level map like `{ "CharacterName": { ... } }`. Always use `{ "characters": [ { ... }, { ... } ] }`, even for one character.\n2. **`name` must be at the character object level.** You may nest stats under `"stats": { ... }`; the tracker flattens them. `name` must not be inside `stats`.\n3. **No omitted fields.** Every character object must include every field below on every turn. Use `0`, `false`, or `""` for unknown/inapplicable values. Preserve prior values when known.\n4. **Output order:** Narrative → Tracker tag → `sim` codeblock. Never omit the codeblock.\n5. **Never track the user.** Do not include `{{user}}`, the player, or any self-insert persona in the `characters` array. The tracker is for narrative characters and NPCs only.\n6. **Multi-character cap:** Track up to 4 active characters. Mark inactive ones `"inactive": true`.\n\n---\n\n### CANONICAL SCHEMA\n\n```json\n{\n  "worldData": {\n    "current_date": "2025-04-25",\n    "current_time": "22:15"\n  },\n  "characters": [\n    {\n      "name": "Ukinami Yuzuha",\n      "ap": 128,\n      "dp": 105,\n      "tp": 85,\n      "cp": 0,\n      "sex": "female",\n      "cycle_stage_id": 2,\n      "cycle_day": 10,\n      "womb_fullness_pct": 0,\n      "womb_receptivity_pct": 0,\n      "cervix_state_id": 0,\n      "breeding_count": 0,\n      "conceived": false,\n      "preg": false,\n      "days_preg": 0,\n      "conception_date": "",\n      "refractory_minutes": 0,\n      "refractory_total": 0,\n      "semen_ml": 0,\n      "semen_capacity_ml": 0,\n      "male_fertility_pct": 0,\n      "last_react": 1,\n      "internal_thought": "I said yes. I\'m spending the night...",\n      "days_since_first_meeting": 0,\n      "inactive": false,\n      "inactiveReason": 0,\n      "bg": "#ff7aa2"\n    }\n  ]\n}\n```\n\n---\n\n### STAT METERS (HARD CAPS)\n\nStat-change indicators (`apChange`, `dpChange`, `tpChange`, `cpChange`) are **auto-derived** by the extension. Do not emit them. The tracker compares each turn\'s values against the previous tracker and computes the delta automatically.\n\n| Field | Range | Brackets |\n|---|---|---|\n| **ap** Affection | 0-200 | 0-30 Strangers / 31-60 Acquaintances / 61-90 Friends / 91-120 Romantic / 121-150 Steady / 151-180 Committed / 181-200 Devoted |\n| **dp** Desire | 0-150 | 0-25 Cold / 26-50 Warm / 51-75 Interested / 76-100 Aroused / 101-125 Needy / 126-150 Desperate |\n| **tp** Trust | 0-150 | Falls when lied to, cheated, or promises broken. |\n| **cp** Contempt | 0-150 | Rises when harmed. CP rise can lower AP/DP/TP. |\n\n---\n\n### BIOLOGICAL TRACKING\n\n**`sex` gate:** `"female"`, `"male"`, `"futanari"`, or `"other"` (lowercase). Preserve from prior state unless the narrative explicitly changes biology.\n\n**General rule for all biology:** Preserve prior values. Advance only when narrative time passes. Use `0`/`""`/`false` when genuinely inapplicable.\n\n**Gender applicability is strict:**\n- **Female-only fields** (`cycle_stage_id`, `cycle_day`, `womb_fullness_pct`, `womb_receptivity_pct`, `cervix_state_id`, `breeding_count`) apply only to `female`, `futanari`, `intersex`, `hermaphrodite`, and `both`. Set to `0`/`""`/`false` for male characters.\n- **Male-only fields** (`refractory_minutes`, `refractory_total`, `semen_ml`, `semen_capacity_ml`, `male_fertility_pct`) apply only to `male`, `futanari`, `intersex`, `hermaphrodite`, and `both`. Set to `0` for female characters.\n- **Futanari / dual-biology** characters receive **both** sets of fields. The tracker renders a mixed panel.\n- **Pure female** (`sex: "female"`): emit female fields; male fields must all be `0`.\n- **Pure male** (`sex: "male"`): emit male fields; female fields must all be `0`/`""`.\n\n#### Female / Futanari — Fertility & Womb\n\n- `cycle_day`: 1-28 (or established species length). Advance with narrative time.\n- `cycle_stage_id` enum:\n  - `1` = `"menstruation"` (days 1-5)\n  - `2` = `"follicular"` (days 6-13)\n  - `3` = `"ovulation"` (days 14-16, peak fertility)\n  - `4` = `"luteal"` (days 17-28)\n  - `5` = `"pregnancy"`\n- `womb_fullness_pct`: 0-100. Estimate from narrative; preserve unless events change it.\n- `womb_receptivity_pct`: 0-100. High during ovulation/rut, low during menstruation or low arousal.\n- `cervix_state_id` enum: `0` = `""` (unknown), `1` = `"soft"`, `2` = `"firm"`, `3` = `"open"`, `4` = `"dilated"`, `5` = `"sealed"`. Soft/open during fertile/high-arousal windows.\n- `breeding_count`: Times filled this cycle. Increment after internal ejaculation; preserve between turns.\n\nIf pregnant: `preg: true`, `cycle_stage_id: 5`, track `days_preg`, preserve `conception_date` (YYYY-MM-DD) when known.\n\nIf not pregnant: `preg: false`, `days_preg: 0`.\n\nIf unprotected vaginal sex occurs during ovulation or rut, evaluate conception risk narratively. Update `preg`, `days_preg`, and `conception_date` when conception is confirmed or narratively certain.\n\n`conceived` is an intermediate state between fertilisation and confirmed pregnancy. Set `conceived: true` when a character has ovulated with high womb fullness and fertilisation has occurred, but pregnancy has not yet been medically or narratively confirmed. Transition to `preg: true` (and `cycle_stage_id: 5`) on a later turn when the narrative confirms it. `conceived` and `preg` may both be false simultaneously.\n\n#### Male / Futanari — Refractory & Semen\n\n- `refractory_minutes`: Minutes remaining until ready (0 = ready).\n- `refractory_total`: Total minutes of this refractory period.\n- `semen_ml`: Current volume (0 to `semen_capacity_ml`). Adjust after ejaculation, rest, or arousal.\n- `semen_capacity_ml`: Maximum volume. Preserve unless biology changes.\n- `male_fertility_pct`: 0-100. Update for sperm count, magical fertility, infertility, rut, recovery, etc.\n\nConvert all time to minutes. Decrement `refractory_minutes` toward 0 as narrative time passes.\n\n---\n\n### THEMING\n\nProvide `"bg"` as a hex color per character. Example: `"#ff7aa2"`.\n',
   customFields: [
     {
       key: "ap",
@@ -9883,22 +9883,6 @@ TEMPLATE VARIABLES (tabbed mode):
       description: "[number] Contempt Points (0-150)"
     },
     {
-      key: "apChange",
-      description: "[number] Change in AP since last message (+/- integer, 0 for none)"
-    },
-    {
-      key: "dpChange",
-      description: "[number] Change in DP since last message (+/- integer, 0 for none)"
-    },
-    {
-      key: "tpChange",
-      description: "[number] Change in TP since last message (+/- integer, 0 for none)"
-    },
-    {
-      key: "cpChange",
-      description: "[number] Change in CP since last message (+/- integer, 0 for none)"
-    },
-    {
       key: "relationshipStatus",
       description: "[string] Relationship status text"
     },
@@ -9908,23 +9892,19 @@ TEMPLATE VARIABLES (tabbed mode):
     },
     {
       key: "sex",
-      description: "[string] Character sex, lowercase: 'female', 'male', 'futanari', or 'other' — primary gate for biological modules; preserve from prior state unless explicitly changed"
+      description: "[string] Character sex, lowercase: 'female', 'male', 'futanari', 'intersex', 'hermaphrodite', 'both', or 'other' — primary gate for biological modules; preserve from prior state unless explicitly changed"
     },
     {
       key: "cycle_stage_id",
-      description: "[number] Canonical fertility stage enum: 1=menstruation, 2=follicular, 3=ovulation, 4=luteal, 5=pregnancy; preserve and advance for fertile characters each turn"
-    },
-    {
-      key: "cycle_stage",
-      description: "[string] Readable fertility/biological stage label matching cycle_stage_id: 'pregnancy', 'ovulation', 'menstruation', 'follicular', 'luteal', 'rut', or empty"
+      description: "[number] Canonical fertility stage enum: 1=menstruation, 2=follicular, 3=ovulation, 4=luteal, 5=pregnancy; preserve and advance for female/futa/intersex/herm/both characters each turn; use 0 for pure male"
     },
     {
       key: "cycle_day",
-      description: "[number] Current cycle day, usually 1-28, used for fertility ring positioning; preserve and advance when narrative time passes"
+      description: "[number] Current cycle day, usually 1-28, used for fertility ring positioning; preserve and advance when narrative time passes; use 0 for pure male"
     },
     {
       key: "womb_fullness_pct",
-      description: "[number] Required for all characters. Current womb fullness percentage (0-100); use 0 when not applicable"
+      description: "[number] Current womb fullness percentage (0-100); use 0 for pure male characters"
     },
     {
       key: "conceived",
@@ -9932,7 +9912,7 @@ TEMPLATE VARIABLES (tabbed mode):
     },
     {
       key: "preg",
-      description: "[boolean] Pregnancy status (true/false); true also implies cycle_stage 'pregnancy'"
+      description: "[boolean] Pregnancy status (true/false); true also implies cycle_stage_id 5"
     },
     {
       key: "days_preg",
@@ -9944,35 +9924,35 @@ TEMPLATE VARIABLES (tabbed mode):
     },
     {
       key: "refractory_minutes",
-      description: "[number] Required for all characters. Minutes remaining in refractory period (0 = ready/not applicable)"
+      description: "[number] Minutes remaining in refractory period (0 = ready/not applicable); use 0 for pure female characters"
     },
     {
       key: "refractory_total",
-      description: "[number] Required for all characters. Total minutes of current refractory period (0 when not applicable)"
+      description: "[number] Total minutes of current refractory period (0 when not applicable); use 0 for pure female characters"
     },
     {
       key: "semen_ml",
-      description: "[number] Required for all characters. Current semen volume available in milliliters; use 0 when not applicable"
+      description: "[number] Current semen volume available in milliliters; use 0 for pure female characters"
     },
     {
       key: "semen_capacity_ml",
-      description: "[number] Required for all characters. Maximum semen capacity in milliliters; use 0 when not applicable"
+      description: "[number] Maximum semen capacity in milliliters; use 0 for pure female characters"
     },
     {
       key: "male_fertility_pct",
-      description: "[number] Required for all characters. Current sperm count/fertility level (0-100); use 0 when not applicable"
+      description: "[number] Current sperm count/fertility level (0-100); use 0 for pure female characters"
     },
     {
       key: "womb_receptivity_pct",
-      description: "[number] Required for all characters. Current womb receptivity/primed state (0-100); use 0 when not applicable"
+      description: "[number] Current womb receptivity/primed state (0-100); use 0 for pure male characters"
     },
     {
-      key: "cervix_state",
-      description: "[string] Required for all characters. Cervix firmness/openness state such as 'soft', 'firm', 'open', 'dilated', 'sealed'; use empty when not applicable"
+      key: "cervix_state_id",
+      description: "[number] Cervix state enum: 0=unknown/empty, 1=soft, 2=firm, 3=open, 4=dilated, 5=sealed; use 0 for pure male characters"
     },
     {
       key: "breeding_count",
-      description: "[number] Required for all characters. Times filled this cycle (0 or higher); use 0 when not applicable"
+      description: "[number] Times filled this cycle (0 or higher); use 0 for pure male characters"
     },
     {
       key: "bg",
@@ -16485,9 +16465,18 @@ var FERTILITY_STAGE_BY_ID = {
   2: "follicular",
   3: "ovulation",
   4: "luteal",
-  5: "pregnancy"
+  5: "pregnancy",
+  6: "rut"
 };
 var FERTILITY_STAGE_ID_BY_NAME = Object.fromEntries(Object.entries(FERTILITY_STAGE_BY_ID).map(([id, name]) => [name, Number(id)]));
+var CERVIX_STATE_BY_ID = {
+  0: "",
+  1: "soft",
+  2: "firm",
+  3: "open",
+  4: "dilated",
+  5: "sealed"
+};
 function cycleStage(stats) {
   if (!stats || typeof stats !== "object" || Array.isArray(stats))
     return "";
@@ -16511,6 +16500,22 @@ function cycleStageLabel(stats) {
   if (!stage)
     return "Unknown";
   return stage.charAt(0).toUpperCase() + stage.slice(1);
+}
+function cervixState(stats) {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats))
+    return "";
+  const record = stats;
+  const id = Number(record.cervix_state_id || record.cervixStateId || 0);
+  if (CERVIX_STATE_BY_ID[id])
+    return CERVIX_STATE_BY_ID[id];
+  const legacy = typeof record.cervix_state === "string" ? record.cervix_state.toLowerCase() : "";
+  return legacy;
+}
+function cervixStateLabel(stats) {
+  const state = cervixState(stats);
+  if (!state)
+    return "Unknown";
+  return state.charAt(0).toUpperCase() + state.slice(1);
 }
 function fertilityRiskLabel(stats) {
   if (!stats || typeof stats !== "object" || Array.isArray(stats))
@@ -17043,6 +17048,8 @@ function registerTemplateHelpers() {
   import_handlebars2.default.registerHelper("cycleStage", cycleStage);
   import_handlebars2.default.registerHelper("cycleStageId", cycleStageId);
   import_handlebars2.default.registerHelper("cycleStageLabel", cycleStageLabel);
+  import_handlebars2.default.registerHelper("cervixState", cervixState);
+  import_handlebars2.default.registerHelper("cervixStateLabel", cervixStateLabel);
   import_handlebars2.default.registerHelper("fertilityRiskLabel", fertilityRiskLabel);
   import_handlebars2.default.registerHelper("fertilityRiskClass", fertilityRiskClass);
   import_handlebars2.default.registerHelper("hasFertilityTracking", hasFemaleBiology);
