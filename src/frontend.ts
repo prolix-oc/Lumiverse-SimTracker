@@ -1154,6 +1154,7 @@ export function setup(ctx: SpindleFrontendContext) {
         removeFromMessage: config.hideSimBlocks,
       },
       (payload) => {
+        handleChatSwitch(payload.chatId || null);
         if (typeof payload.content !== "string" || !payload.content.trim()) return;
         handleTrackerPayload(
           payload.content,
@@ -1602,14 +1603,26 @@ export function setup(ctx: SpindleFrontendContext) {
     const nested = obj.message as Record<string, unknown> | undefined;
     return typeof nested?.chatId === "string" ? nested.chatId : typeof nested?.chat_id === "string" ? nested.chat_id : null;
   };
-  const maybeRequestTrackerRehydrate = (chatId: string | null) => {
-    if (!chatId || rehydratedChatIds.has(chatId)) return;
-    rehydratedChatIds.add(chatId);
-    ctx.sendToBackend({ type: "get_latest_tracker", chatId });
+
+  let currentChatId: string | null = null;
+  const handleChatSwitch = (chatId: string | null) => {
+    if (!chatId || chatId === currentChatId) return;
+    currentChatId = chatId;
+    resetChatState();
+    renderEmpty("When a message includes a tracker tag, cards will appear here.");
+    if (!rehydratedChatIds.has(chatId)) {
+      rehydratedChatIds.add(chatId);
+      ctx.sendToBackend({ type: "get_latest_tracker", chatId });
+    }
+    // Wait two frames for Lumiverse to finish painting the new chat's messages before scanning.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      renderTrackersFromDOM();
+      inlineProcessor.processAll();
+    }));
   };
 
   const onEvent = (payload: unknown) => {
-    maybeRequestTrackerRehydrate(extractChatId(payload));
+    handleChatSwitch(extractChatId(payload));
     const context = readMessageContext(payload);
     if (!context) return;
     if (context.isUser === true) return;
@@ -1618,6 +1631,7 @@ export function setup(ctx: SpindleFrontendContext) {
   };
 
   const onSwipe = (payload: unknown) => {
+    handleChatSwitch(extractChatId(payload));
     const context = readMessageContext(payload);
     if (!context) return;
     if (context.isUser === true) return;
@@ -1644,6 +1658,7 @@ export function setup(ctx: SpindleFrontendContext) {
   };
 
   const onMessageRendered = (payload: unknown) => {
+    handleChatSwitch(extractChatId(payload));
     const context = readMessageContext(payload);
     if (!context || context.isUser === true) return;
     runInlinePass(context.messageId);
@@ -1679,25 +1694,7 @@ export function setup(ctx: SpindleFrontendContext) {
   const messageEditedUnsub = ctx.events.on("MESSAGE_EDITED", onEvent);
   const messageSwipedUnsub = ctx.events.on("MESSAGE_SWIPED", onSwipe);
   const messageRenderedUnsub = ctx.events.on("CHARACTER_MESSAGE_RENDERED", onMessageRendered);
-  const chatChangedUnsub = ctx.events.on("CHAT_CHANGED", (payload: unknown) => {
-    resetChatState();
-    renderEmpty("When a message includes a tracker tag, cards will appear here.");
-    const obj = (payload && typeof payload === "object") ? payload as Record<string, unknown> : {};
-    const chatId = typeof obj.chatId === "string"
-      ? obj.chatId
-      : typeof obj.chat_id === "string"
-        ? obj.chat_id
-        : null;
-    if (chatId) {
-      rehydratedChatIds.add(chatId);
-      ctx.sendToBackend({ type: "get_latest_tracker", chatId });
-    }
-    // Wait two frames for Lumiverse to finish painting the new chat's messages before scanning.
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      renderTrackersFromDOM();
-      inlineProcessor.processAll();
-    }));
-  });
+
   const stopInlineObserver = inlineProcessor.observeDocument();
 
   const permissionUnsub = ctx.events.on("PERMISSION_CHANGED", (detail: unknown) => {
@@ -1851,7 +1848,6 @@ export function setup(ctx: SpindleFrontendContext) {
     messageEditedUnsub();
     messageSwipedUnsub();
     messageRenderedUnsub();
-    chatChangedUnsub();
     stopInlineObserver();
     permissionUnsub();
     if (removeHideStyle) removeHideStyle();

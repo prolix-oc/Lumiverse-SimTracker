@@ -17657,6 +17657,7 @@ function setup(ctx) {
       attrs: { type: config.codeBlockIdentifier },
       removeFromMessage: config.hideSimBlocks
     }, (payload) => {
+      handleChatSwitch(payload.chatId || null);
       if (typeof payload.content !== "string" || !payload.content.trim())
         return;
       handleTrackerPayload(payload.content, typeof payload.fullMatch === "string" ? payload.fullMatch : payload.content, payload.messageId || null);
@@ -18075,14 +18076,24 @@ function setup(ctx) {
     const nested = obj.message;
     return typeof nested?.chatId === "string" ? nested.chatId : typeof nested?.chat_id === "string" ? nested.chat_id : null;
   };
-  const maybeRequestTrackerRehydrate = (chatId) => {
-    if (!chatId || rehydratedChatIds.has(chatId))
+  let currentChatId = null;
+  const handleChatSwitch = (chatId) => {
+    if (!chatId || chatId === currentChatId)
       return;
-    rehydratedChatIds.add(chatId);
-    ctx.sendToBackend({ type: "get_latest_tracker", chatId });
+    currentChatId = chatId;
+    resetChatState();
+    renderEmpty("When a message includes a tracker tag, cards will appear here.");
+    if (!rehydratedChatIds.has(chatId)) {
+      rehydratedChatIds.add(chatId);
+      ctx.sendToBackend({ type: "get_latest_tracker", chatId });
+    }
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      renderTrackersFromDOM();
+      inlineProcessor.processAll();
+    }));
   };
   const onEvent = (payload) => {
-    maybeRequestTrackerRehydrate(extractChatId(payload));
+    handleChatSwitch(extractChatId(payload));
     const context = readMessageContext(payload);
     if (!context)
       return;
@@ -18093,6 +18104,7 @@ function setup(ctx) {
     runInlinePass(context.messageId);
   };
   const onSwipe = (payload) => {
+    handleChatSwitch(extractChatId(payload));
     const context = readMessageContext(payload);
     if (!context)
       return;
@@ -18115,6 +18127,7 @@ function setup(ctx) {
     runInlinePass(context.messageId);
   };
   const onMessageRendered = (payload) => {
+    handleChatSwitch(extractChatId(payload));
     const context = readMessageContext(payload);
     if (!context || context.isUser === true)
       return;
@@ -18151,20 +18164,6 @@ function setup(ctx) {
   const messageEditedUnsub = ctx.events.on("MESSAGE_EDITED", onEvent);
   const messageSwipedUnsub = ctx.events.on("MESSAGE_SWIPED", onSwipe);
   const messageRenderedUnsub = ctx.events.on("CHARACTER_MESSAGE_RENDERED", onMessageRendered);
-  const chatChangedUnsub = ctx.events.on("CHAT_CHANGED", (payload) => {
-    resetChatState();
-    renderEmpty("When a message includes a tracker tag, cards will appear here.");
-    const obj = payload && typeof payload === "object" ? payload : {};
-    const chatId = typeof obj.chatId === "string" ? obj.chatId : typeof obj.chat_id === "string" ? obj.chat_id : null;
-    if (chatId) {
-      rehydratedChatIds.add(chatId);
-      ctx.sendToBackend({ type: "get_latest_tracker", chatId });
-    }
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      renderTrackersFromDOM();
-      inlineProcessor.processAll();
-    }));
-  });
   const stopInlineObserver = inlineProcessor.observeDocument();
   const permissionUnsub = ctx.events.on("PERMISSION_CHANGED", (detail) => {
     if (!detail || typeof detail !== "object")
@@ -18301,7 +18300,6 @@ function setup(ctx) {
     messageEditedUnsub();
     messageSwipedUnsub();
     messageRenderedUnsub();
-    chatChangedUnsub();
     stopInlineObserver();
     permissionUnsub();
     if (removeHideStyle)
