@@ -247,12 +247,12 @@ Handlebars.registerHelper("analFillHeight", function (value) {
 
 Handlebars.registerHelper("semenFillTop", function (value) {
   const pct = Math.max(0, Math.min(100, Number(value) || 0));
-  return 129 - (pct / 100) * 46;
+  return 130 - (pct / 100) * 44;
 });
 
 Handlebars.registerHelper("semenFillHeight", function (value) {
   const pct = Math.max(0, Math.min(100, Number(value) || 0));
-  return (pct / 100) * 46;
+  return (pct / 100) * 44;
 });
 
 Handlebars.registerHelper("divide", function (a, b) {

@@ -10609,7 +10609,7 @@ var pulse_thread_tracker_default = {
     .pt-penis-container {
         position: relative;
         width: 110px;
-        height: 150px;
+        height: 140px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -10626,16 +10626,16 @@ var pulse_thread_tracker_default = {
     .pt-penis-shaft {
         fill: none;
         stroke: rgba(255,255,255,0.85);
-        stroke-width: 3.5;
+        stroke-width: 5.5;
         stroke-linecap: round;
         stroke-linejoin: round;
-        filter: drop-shadow(0 0 3px rgba(255,255,255,0.25));
+        filter: drop-shadow(0 0 4px rgba(255,255,255,0.25));
     }
 
     .pt-penis-glans {
         fill: rgba(255,255,255,0.08);
         stroke: rgba(255,255,255,0.85);
-        stroke-width: 3;
+        stroke-width: 4.5;
         stroke-linecap: round;
         stroke-linejoin: round;
     }
@@ -10643,7 +10643,7 @@ var pulse_thread_tracker_default = {
     .pt-testicle {
         fill: rgba(255,255,255,0.06);
         stroke: rgba(255,255,255,0.75);
-        stroke-width: 3;
+        stroke-width: 3.5;
         stroke-linecap: round;
     }
 
@@ -10678,7 +10678,7 @@ var pulse_thread_tracker_default = {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 8px;
+        gap: 3px;
     }
 
     .pt-male-visuals.pt-futa-accent .pt-penis-shaft,
@@ -11312,11 +11312,11 @@ var pulse_thread_tracker_default = {
                     &lt;div class=&quot;pt-bio-zone&quot;&gt;
                         &lt;div class=&quot;pt-male-visuals {{#if (eq stats.sex &quot;futanari&quot;)}}pt-futa-accent{{/if}}&quot;&gt;
                             &lt;div class=&quot;pt-penis-container&quot;&gt;
-                                &lt;svg class=&quot;pt-penis-svg&quot; viewBox=&quot;0 0 100 150&quot; aria-hidden=&quot;true&quot; focusable=&quot;false&quot;&gt;
+                                &lt;svg class=&quot;pt-penis-svg&quot; viewBox=&quot;0 0 100 140&quot; aria-hidden=&quot;true&quot; focusable=&quot;false&quot;&gt;
                                     &lt;defs&gt;
                                         &lt;clipPath id=&quot;pt-penis-clip-{{@index}}&quot;&gt;
-                                            &lt;ellipse cx=&quot;28&quot; cy=&quot;106&quot; rx=&quot;19&quot; ry=&quot;23&quot; /&gt;
-                                            &lt;ellipse cx=&quot;72&quot; cy=&quot;106&quot; rx=&quot;19&quot; ry=&quot;23&quot; /&gt;
+                                            &lt;ellipse cx=&quot;28&quot; cy=&quot;108&quot; rx=&quot;18&quot; ry=&quot;22&quot; /&gt;
+                                            &lt;ellipse cx=&quot;72&quot; cy=&quot;108&quot; rx=&quot;18&quot; ry=&quot;22&quot; /&gt;
                                         &lt;/clipPath&gt;
                                         &lt;linearGradient id=&quot;pt-penis-depth-{{@index}}&quot; x1=&quot;0.5&quot; y1=&quot;0&quot; x2=&quot;0.5&quot; y2=&quot;1&quot;&gt;
                                             &lt;stop offset=&quot;0%&quot; stop-color=&quot;#7a5a4a&quot; stop-opacity=&quot;0.5&quot; /&gt;
@@ -11324,15 +11324,15 @@ var pulse_thread_tracker_default = {
                                         &lt;/linearGradient&gt;
                                     &lt;/defs&gt;
                                     &lt;!-- Shaft --&gt;
-                                    &lt;path class=&quot;pt-penis-shaft&quot; d=&quot;M42 70 C40 50 38 32 40 20 C40 12 44 6 50 6 C56 6 60 12 60 20 C62 32 60 50 58 70&quot; /&gt;
+                                    &lt;path class=&quot;pt-penis-shaft&quot; d=&quot;M38 78 C36 58 34 38 36 18 C36 8 42 2 50 2 C58 2 64 8 64 18 C66 38 64 58 62 78&quot; /&gt;
                                     &lt;!-- Glans --&gt;
-                                    &lt;path class=&quot;pt-penis-glans&quot; d=&quot;M40 20 C40 10 44 4 50 4 C56 4 60 10 60 20 C60 26 56 29 50 29 C44 29 40 26 40 20 Z&quot; /&gt;
+                                    &lt;path class=&quot;pt-penis-glans&quot; d=&quot;M36 18 C36 6 42 0 50 0 C58 0 64 6 64 18 C64 28 58 34 50 34 C42 34 36 28 36 18 Z&quot; /&gt;
                                     &lt;!-- Testicle inner depth --&gt;
-                                    &lt;ellipse cx=&quot;28&quot; cy=&quot;106&quot; rx=&quot;17&quot; ry=&quot;21&quot; fill=&quot;url(#pt-penis-depth-{{@index}})&quot; /&gt;
-                                    &lt;ellipse cx=&quot;72&quot; cy=&quot;106&quot; rx=&quot;17&quot; ry=&quot;21&quot; fill=&quot;url(#pt-penis-depth-{{@index}})&quot; /&gt;
+                                    &lt;ellipse cx=&quot;28&quot; cy=&quot;108&quot; rx=&quot;16&quot; ry=&quot;20&quot; fill=&quot;url(#pt-penis-depth-{{@index}})&quot; /&gt;
+                                    &lt;ellipse cx=&quot;72&quot; cy=&quot;108&quot; rx=&quot;16&quot; ry=&quot;20&quot; fill=&quot;url(#pt-penis-depth-{{@index}})&quot; /&gt;
                                     &lt;!-- Testicle outlines --&gt;
-                                    &lt;ellipse class=&quot;pt-testicle&quot; cx=&quot;28&quot; cy=&quot;106&quot; rx=&quot;19&quot; ry=&quot;23&quot; /&gt;
-                                    &lt;ellipse class=&quot;pt-testicle&quot; cx=&quot;72&quot; cy=&quot;106&quot; rx=&quot;19&quot; ry=&quot;23&quot; /&gt;
+                                    &lt;ellipse class=&quot;pt-testicle&quot; cx=&quot;28&quot; cy=&quot;108&quot; rx=&quot;18&quot; ry=&quot;22&quot; /&gt;
+                                    &lt;ellipse class=&quot;pt-testicle&quot; cx=&quot;72&quot; cy=&quot;108&quot; rx=&quot;18&quot; ry=&quot;22&quot; /&gt;
                                     &lt;!-- Semen fill --&gt;
                                     &lt;g clip-path=&quot;url(#pt-penis-clip-{{@index}})&quot;&gt;
                                         &lt;rect class=&quot;pt-semen-fill&quot; x=&quot;0&quot; y=&quot;{{semenFillTop (semenPercent stats)}}&quot; width=&quot;100&quot; height=&quot;{{semenFillHeight (semenPercent stats)}}&quot; /&gt;

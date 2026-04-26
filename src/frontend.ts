@@ -248,13 +248,13 @@ function analFillHeight(value: unknown): number {
 
 function semenFillTop(value: unknown): number {
   const pct = clampPercent(value);
-  // Testicle fill spans y≈83 to y≈129 → height 46
-  return 129 - (pct / 100) * 46;
+  // Testicle fill spans y≈86 to y≈130 → height 44
+  return 130 - (pct / 100) * 44;
 }
 
 function semenFillHeight(value: unknown): number {
   const pct = clampPercent(value);
-  return (pct / 100) * 46;
+  return (pct / 100) * 44;
 }
 
 function byId<T extends Element>(id: string): T | null {
