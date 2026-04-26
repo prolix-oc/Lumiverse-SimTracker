@@ -11135,9 +11135,9 @@ var pulse_thread_tracker_default = {
                                         &lt;path d=&quot;M50 24 C62 24 72 34 72 46 C72 57 66 66 58 74 C54 78 52 83 50 88 C48 83 46 78 42 74 C34 66 28 57 28 46 C28 34 38 24 50 24 Z&quot; /&gt;
                                     &lt;/clipPath&gt;
                                 &lt;/defs&gt;
-                                &lt;path class=&quot;pt-womb-outline&quot; d=&quot;M24 30 C17 26 12 29 10 36 M76 30 C83 26 88 29 90 36 M24 30 C30 39 36 43 42 43 M76 30 C70 39 64 43 58 43 M42 43 C38 38 32 37 28 42 C24 47 27 55 34 58 M58 43 C62 38 68 37 72 42 C76 47 73 55 66 58 M50 24 C62 24 72 34 72 46 C72 57 66 66 58 74 C54 78 52 83 50 88 C48 83 46 78 42 74 C34 66 28 57 28 46 C28 34 38 24 50 24 Z&quot; /&gt;
-                                &lt;circle class=&quot;pt-womb-ovary&quot; cx=&quot;24&quot; cy=&quot;30&quot; r=&quot;6&quot; /&gt;
-                                &lt;circle class=&quot;pt-womb-ovary&quot; cx=&quot;76&quot; cy=&quot;30&quot; r=&quot;6&quot; /&gt;
+                                &lt;path class=&quot;pt-womb-outline&quot; d=&quot;M36 30 C28 22 18 24 14 28 M64 30 C72 22 82 24 86 28 M36 30 C34 36 38 40 42 43 M64 30 C66 36 62 40 58 43 M42 43 C38 38 32 37 28 42 C24 47 27 55 34 58 M58 43 C62 38 68 37 72 42 C76 47 73 55 66 58 M50 24 C62 24 72 34 72 46 C72 57 66 66 58 74 C54 78 52 83 50 88 C48 83 46 78 42 74 C34 66 28 57 28 46 C28 34 38 24 50 24 Z&quot; /&gt;
+                                &lt;circle class=&quot;pt-womb-ovary&quot; cx=&quot;14&quot; cy=&quot;30&quot; r=&quot;5&quot; /&gt;
+                                &lt;circle class=&quot;pt-womb-ovary&quot; cx=&quot;86&quot; cy=&quot;30&quot; r=&quot;5&quot; /&gt;
                                 &lt;path class=&quot;pt-womb-inner&quot; d=&quot;M50 24 C62 24 72 34 72 46 C72 57 66 66 58 74 C54 78 52 83 50 88 C48 83 46 78 42 74 C34 66 28 57 28 46 C28 34 38 24 50 24 Z&quot; /&gt;
                                 &lt;g clip-path=&quot;url(#pt-womb-clip-{{@index}})&quot;&gt;
                                     &lt;rect class=&quot;pt-womb-liquid&quot; x=&quot;0&quot; y=&quot;{{wombFillTop stats.womb_fullness_pct}}&quot; width=&quot;100&quot; height=&quot;{{wombFillHeight stats.womb_fullness_pct}}&quot; /&gt;
