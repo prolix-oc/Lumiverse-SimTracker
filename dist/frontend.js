@@ -16340,7 +16340,8 @@ function readMessageContext(payload) {
 }
 function resolveTrackerMountMode(preset) {
   const fromPreset = typeof preset.templatePosition === "string" ? preset.templatePosition : "";
-  const fromHtml = typeof preset.htmlTemplate === "string" ? preset.htmlTemplate.match(/<!--\s*POSITION:\s*([A-Za-z_ -]+)\s*-->/i)?.[1] || "" : "";
+  const htmlTemplate = decodeTemplateHtml(preset.htmlTemplate);
+  const fromHtml = htmlTemplate ? htmlTemplate.match(/<!--\s*POSITION:\s*([A-Za-z_ -]+)\s*-->/i)?.[1] || "" : "";
   const raw = (fromPreset || fromHtml || "BOTTOM").trim().toUpperCase();
   if (raw === "TOP")
     return "message_top";
@@ -16469,11 +16470,18 @@ function adjustHslColor(hex, hueShift, saturationAdjust, lightnessAdjust) {
   const rgb = hslToRgb(h, s, l);
   return `#${rgb.r.toString(16).padStart(2, "0")}${rgb.g.toString(16).padStart(2, "0")}${rgb.b.toString(16).padStart(2, "0")}`;
 }
+function decodeTemplateHtml(htmlTemplate) {
+  const raw = htmlTemplate || "";
+  if (!/&lt;(?:!--|style|div|script|section|article|span)\b/i.test(raw))
+    return raw;
+  return raw.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#039;/g, "'");
+}
 function extractTemplateLogic(htmlTemplate) {
-  if (!htmlTemplate)
+  const decoded = decodeTemplateHtml(htmlTemplate);
+  if (!decoded)
     return null;
   const scriptRegex = /<script\s+type=["']text\/x-handlebars-template-logic["'][^>]*>([\s\S]*?)<\/script>/i;
-  const match = htmlTemplate.match(scriptRegex);
+  const match = decoded.match(scriptRegex);
   if (!match?.[1])
     return null;
   return match[1].trim();
@@ -16610,7 +16618,7 @@ function registerTemplateHelpers() {
   import_handlebars2.default.registerHelper("adjustHSL", (hexColor, hueShift, saturationAdjust, lightnessAdjust) => adjustHslColor(String(hexColor || "#000000"), Number(hueShift) || 0, Number(saturationAdjust) || 0, Number(lightnessAdjust) || 0));
 }
 function extractCardTemplate(htmlTemplate) {
-  const raw = htmlTemplate || "";
+  const raw = decodeTemplateHtml(htmlTemplate);
   const start = raw.indexOf("<!-- CARD_TEMPLATE_START -->");
   const end = raw.indexOf("<!-- CARD_TEMPLATE_END -->");
   if (start !== -1 && end !== -1 && end > start) {
