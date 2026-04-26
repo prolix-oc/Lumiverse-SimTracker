@@ -164,7 +164,10 @@ const PANEL_CSS = `
   .sst-app-side-panel { position: fixed; top: 0; bottom: 0; width: 340px; z-index: 50; pointer-events: none; }
   .sst-app-side-panel.sst-app-side-right { right: 48px; }
   .sst-app-side-panel.sst-app-side-left { left: 0; }
-  .sst-side-tracker-root { width: 100%; height: 100%; position: relative; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; padding: 8px; display: flex; flex-direction: column; pointer-events: none; }
+  .sst-side-tracker-root { width: 100%; height: 100%; position: relative; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; padding: 8px; display: flex; flex-direction: column; pointer-events: none; scrollbar-width: none; -ms-overflow-style: none; }
+  .sst-side-tracker-root::-webkit-scrollbar { width: 0; height: 0; display: none; }
+  .sst-side-tracker-root::-webkit-scrollbar-track { background: transparent; }
+  .sst-side-tracker-root::-webkit-scrollbar-thumb { background: transparent; }
   .sst-side-tracker-root > #silly-sim-tracker-container { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; width: 100%; }
   .sst-side-tracker-root .sim-tracker-tab, .sst-side-tracker-root .sim-tracker-card { pointer-events: auto; }
   .sst-message-tracker-host { width: 100%; }

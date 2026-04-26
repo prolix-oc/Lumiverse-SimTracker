@@ -93,6 +93,8 @@
     width: 320px;
     max-height: 90vh;
     overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     position: absolute !important;
     right: 0 !important;
@@ -298,24 +300,15 @@
     display: block;
   }
 
-  /* Scrollbar styling */
+  /* Scrollbar styling - hidden for sidebar tabs */
   .sim-tracker-card::-webkit-scrollbar {
-    width: 6px;
+    width: 0;
+    height: 0;
+    display: none;
+    background: transparent;
   }
-
-  .sim-tracker-card::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 3px;
-  }
-
-  .sim-tracker-card::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
-  }
-
-  .sim-tracker-card::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-  }
+  .sim-tracker-card::-webkit-scrollbar-track { background: transparent; }
+  .sim-tracker-card::-webkit-scrollbar-thumb { background: transparent; }
 </style>
 
 <div class="sim-tracker-container">

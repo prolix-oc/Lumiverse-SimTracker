@@ -8291,6 +8291,8 @@ var tactical_hud_sidebar_tabs_default = {
     max-height: 85vh;
     overflow-y: auto;
     overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     position: absolute !important;
     right: 0 !important;
     top: 50%;
@@ -8802,21 +8804,19 @@ var tactical_hud_sidebar_tabs_default = {
     flex-wrap: wrap;
   }
 
-  /* \u2500\u2500\u2500 SCROLLBAR \u2500\u2500\u2500 */
+  /* \u2500\u2500\u2500 SCROLLBAR (hidden) \u2500\u2500\u2500 */
   .sim-tracker-card::-webkit-scrollbar {
-    width: 4px;
+    width: 0;
+    height: 0;
+    display: none;
   }
 
   .sim-tracker-card::-webkit-scrollbar-track {
-    background: var(--hud-bg);
+    background: transparent;
   }
 
   .sim-tracker-card::-webkit-scrollbar-thumb {
-    background: var(--hud-border);
-  }
-
-  .sim-tracker-card::-webkit-scrollbar-thumb:hover {
-    background: var(--hud-neutral);
+    background: transparent;
   }
 
   /* \u2500\u2500\u2500 ANIMATIONS \u2500\u2500\u2500 */
@@ -9329,31 +9329,31 @@ var rpg_sidebar_preset_default = {
     .sim-tracker-container {
         --sst-font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         --sst-bg-deep: #050505;
-        
+
         /* Glass System */
         --sst-glass-panel: rgba(22, 22, 28, 0.92);
         --sst-glass-sidebar: rgba(10, 10, 15, 0.85);
         --sst-glass-border: rgba(255, 255, 255, 0.08);
         --sst-blur-amt: 50px;
-        
+
         /* Colors */
         --sst-txt-main: #e0e0e0;
         --sst-txt-muted: #888;
         --sst-txt-accent: #fff;
-        
+
         /* RPG Colors */
         --sst-hp-col: #ff3b30;
-        --sst-mp-col: #00d2ff; /* Mana */
-        --sst-stam-col: #32d74b; /* Stamina/Ready */
-        --sst-cd-col: #ff453a; /* Cooldown */
-        
+        --sst-mp-col: #00d2ff;
+        --sst-stam-col: #32d74b;
+        --sst-cd-col: #ff453a;
+
         /* Buffs/Debuffs */
         --sst-buff-pos: #32d74b;
         --sst-buff-neg: #bf5af2;
-        
+
         /* Attributes */
         --sst-attr-bg: rgba(255,255,255,0.03);
-        
+
         /* Gradients for Matrix */
         --sst-grad-aff: linear-gradient(90deg, #ff9a9e 0%, #fbc2eb 100%);
         --sst-grad-des: linear-gradient(90deg, #8ec5fc 0%, #e0c3fc 100%);
@@ -9363,44 +9363,64 @@ var rpg_sidebar_preset_default = {
 
     .sim-tracker-container, .sim-tracker-container * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* =========================================
+       2. LAYOUT (contained within side panel)
+       ========================================= */
     .sim-tracker-container {
-        position: fixed; top: 0; right: 0; bottom: 0;
-        width: 100%; height: 100%;
-        pointer-events: none;
-        z-index: 1000;
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr;
+        width: 100%;
+        height: 100%;
+        position: relative;
+        pointer-events: none !important;
         font-family: var(--sst-font-stack);
         color: var(--sst-txt-main);
     }
 
-    .sim-tracker-container svg { display: block; width: 100%; height: 100%; }
+    .sim-tracker-tabs,
+    .sim-tracker-cards-wrapper {
+        grid-column: 1;
+        grid-row: 1;
+        position: relative;
+        height: 100%;
+        width: 100%;
+        pointer-events: none !important;
+    }
+
+    .sim-tracker-container svg { display: block; }
 
     /* =========================================
-       2. TABS (Fixed Right)
+       3. TABS (docked right, inside panel)
        ========================================= */
     .sim-tracker-tabs {
-        position: fixed; top: 0; right: 0; bottom: 0;
-        width: 80px;
-        background: var(--sst-glass-sidebar);
-        backdrop-filter: blur(var(--sst-blur-amt));
-        border-left: 1px solid var(--sst-glass-border);
-        z-index: 200; /* High z-index to stay on top */
-        display: flex; flex-direction: column; align-items: center;
-        padding-top: 40px; gap: 20px;
-        box-shadow: -5px 0 30px rgba(0,0,0,0.5);
-        pointer-events: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        justify-content: flex-start;
+        align-items: flex-end;
+        padding: 24px 8px 24px 0;
     }
 
     .sim-tracker-tab {
-        width: 50px; height: 50px; 
+        width: 52px; height: 52px;
         position: relative;
-        border-radius: 14px; background: rgba(255,255,255,0.05);
-        border: 1px solid transparent; cursor: pointer;
+        border-radius: 14px;
+        background: var(--sst-glass-sidebar);
+        backdrop-filter: blur(var(--sst-blur-amt));
+        border: 1px solid var(--sst-glass-border);
+        cursor: pointer;
         display: flex; align-items: center; justify-content: center;
-        font-size: 1.5rem; transition: all 0.3s ease; color: #666;
+        font-size: 1.1rem; font-weight: 700;
+        color: #aaa;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+        pointer-events: auto !important;
+        box-shadow: -5px 0 20px rgba(0,0,0,0.45);
     }
 
-    .sim-tracker-tab:hover { background: rgba(255,255,255,0.15); transform: scale(1.05); }
-    
+    .sim-tracker-tab:hover { background: rgba(255,255,255,0.12); transform: scale(1.05); color: #fff; }
+
     .sim-tracker-tab.active {
         background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.4);
         color: #fff; box-shadow: 0 0 15px rgba(0,0,0,0.5);
@@ -9411,62 +9431,86 @@ var rpg_sidebar_preset_default = {
     .sig-ok { background: var(--sst-stam-col); }
 
     /* =========================================
-       3. CARDS (Slide Logic)
+       4. CARDS (slide in, contained in panel)
        ========================================= */
-    .sim-tracker-card {
-        position: fixed; top: 0; bottom: 0; right: 80px; /* Flush with tabs */
-        width: 420px;
-        max-width: calc(100vw - 80px);
-        background: var(--sst-glass-panel);
-        border-left: 1px solid var(--sst-glass-border);
-        backdrop-filter: blur(40px);
-        display: flex; flex-direction: column; gap: 16px;
-        padding: 30px 24px; overflow-y: auto;
-        
-        /* Animation States */
-        transform: translateX(100%); opacity: 0; visibility: hidden;
-        transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease, visibility 0.4s;
-        z-index: 5;
-        pointer-events: auto;
+    .sim-tracker-cards-wrapper {
+        display: flex;
+        align-items: stretch;
+        justify-content: flex-end;
     }
 
+    .sim-tracker-card {
+        position: absolute !important;
+        right: 0 !important;
+        top: 0; bottom: 0;
+        width: 320px;
+        max-width: 100%;
+        background: var(--sst-glass-panel);
+        border-left: 1px solid var(--sst-glass-border);
+        border-radius: 14px 0 0 14px;
+        backdrop-filter: blur(40px);
+        display: flex; flex-direction: column; gap: 16px;
+        padding: 24px 18px;
+        overflow-y: auto;
+        overflow-x: hidden;
+
+        /* Animation States */
+        transform: translateX(105%);
+        opacity: 0;
+        visibility: hidden;
+        transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease, visibility 0.4s;
+        pointer-events: auto !important;
+
+        /* Hide scrollbars (Firefox / IE) */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    /* Hide scrollbars (WebKit) */
+    .sim-tracker-card::-webkit-scrollbar { width: 0; height: 0; display: none; }
+    .sim-tracker-card::-webkit-scrollbar-track { background: transparent; }
+    .sim-tracker-card::-webkit-scrollbar-thumb { background: transparent; }
+
     .sim-tracker-card.active {
-        transform: translateX(0); opacity: 1; visibility: visible;
-        z-index: 30;
+        transform: translateX(0);
+        opacity: 1;
+        visibility: visible;
     }
 
     .sim-tracker-card.sliding-out {
-        transform: translateX(50%); opacity: 0; visibility: hidden;
+        transform: translateX(50%);
+        opacity: 0;
+        visibility: hidden;
     }
 
-
     /* =========================================
-       4. WIDGETS & MODULES
+       5. WIDGETS & MODULES
        ========================================= */
     .widget {
         background: rgba(255,255,255,0.02);
         border: 1px solid var(--sst-glass-border);
-        border-radius: 16px; padding: 16px;
+        border-radius: 16px; padding: 14px;
         display: flex; flex-direction: column; gap: 12px;
         flex-shrink: 0;
     }
-    .w-header { 
-        font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1.5px; 
+    .w-header {
+        font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1.5px;
         color: var(--sst-txt-muted); font-weight: 700; display: flex; justify-content: space-between;
     }
 
     /* --- HEADER & ATTRIBUTES --- */
-    .header-row { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; }
+    .header-row { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
     .av-lg {
-        width: 64px; height: 64px; border-radius: 50%; background: #222;
+        width: 56px; height: 56px; border-radius: 50%; background: #222;
         border: 2px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center;
-        font-size: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        font-size: 1.7rem; box-shadow: 0 4px 20px rgba(0,0,0,0.5); flex-shrink: 0;
     }
-    .char-name h1 { font-size: 1.5rem; font-weight: 800; color: #fff; line-height: 1; }
-    .char-name .class-lvl { font-size: 0.8rem; color: var(--sst-txt-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .char-name { min-width: 0; }
+    .char-name h1 { font-size: 1.3rem; font-weight: 800; color: #fff; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .char-name .class-lvl { font-size: 0.75rem; color: var(--sst-txt-muted); text-transform: uppercase; letter-spacing: 1px; }
 
     /* D&D Attributes Grid */
-    .attr-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+    .attr-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
     .attr-box {
         background: var(--sst-attr-bg); border-radius: 8px; padding: 6px 2px;
         display: flex; flex-direction: column; align-items: center;
@@ -9481,45 +9525,47 @@ var rpg_sidebar_preset_default = {
     .vitals-row { display: flex; gap: 10px; align-items: flex-end; }
     .hp-numeric { font-size: 0.9rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
     .hp-numeric span { color: var(--sst-txt-muted); font-size: 0.75rem; }
-    
+
     .bar-track { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; position: relative; }
     .bar-fill { height: 100%; background: var(--sst-hp-col); width: var(--pct); box-shadow: 0 0 10px var(--sst-hp-col); transition: width 0.3s ease; }
 
     /* Target & Stance */
-    .combat-card { 
-        background: rgba(0,0,0,0.3); border-radius: 12px; padding: 10px; 
+    .combat-card {
+        background: rgba(0,0,0,0.3); border-radius: 12px; padding: 10px;
         display: flex; justify-content: space-between; align-items: center;
-        border-left: 3px solid #ff453a; /* Enemy Red */
+        border-left: 3px solid #ff453a;
+        gap: 8px;
     }
+    .target-info { min-width: 0; }
     .target-info span { font-size: 0.65rem; text-transform: uppercase; color: #888; display: block; }
-    .target-info b { font-size: 0.9rem; color: #fff; }
-    .stance-badge { 
-        font-size: 0.6rem; padding: 4px 8px; border-radius: 6px; 
+    .target-info b { font-size: 0.9rem; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+    .stance-badge {
+        font-size: 0.6rem; padding: 4px 8px; border-radius: 6px;
         background: rgba(255,255,255,0.1); text-transform: uppercase; font-weight: 700;
-        border: 1px solid rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0;
     }
     /* Buffs Row */
-    .buff-row { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+    .buff-row { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
     .buff-pill {
-        display: flex; align-items: center; gap: 6px; padding: 4px 8px; 
+        display: flex; align-items: center; gap: 6px; padding: 4px 8px;
         background: rgba(255,255,255,0.05); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);
         font-size: 0.7rem; cursor: help; position: relative;
     }
     .buff-pill.pos { color: var(--sst-buff-pos); border-color: rgba(50,215,75,0.2); }
     .buff-pill.neg { color: var(--sst-buff-neg); border-color: rgba(191,90,242,0.2); }
-    
+
     /* --- ABILITIES / SPELLS --- */
     .spell-list { display: flex; flex-direction: column; gap: 8px; }
-    .spell-row { 
-        display: flex; align-items: center; gap: 10px; padding: 8px; 
-        background: rgba(255,255,255,0.02); border-radius: 8px; 
+    .spell-row {
+        display: flex; align-items: center; gap: 10px; padding: 8px;
+        background: rgba(255,255,255,0.02); border-radius: 8px;
     }
-    .spell-icon { width: 32px; height: 32px; background: #222; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
-    .spell-details { flex-grow: 1; }
-    .spell-name { font-size: 0.85rem; font-weight: 600; color: #ddd; }
+    .spell-icon { width: 32px; height: 32px; background: #222; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+    .spell-details { flex-grow: 1; min-width: 0; }
+    .spell-name { font-size: 0.85rem; font-weight: 600; color: #ddd; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .spell-cost { font-size: 0.65rem; color: var(--sst-mp-col); }
-    
-    .spell-status { font-size: 0.65rem; font-weight: 700; padding: 4px 8px; border-radius: 4px; text-transform: uppercase; }
+
+    .spell-status { font-size: 0.65rem; font-weight: 700; padding: 4px 8px; border-radius: 4px; text-transform: uppercase; flex-shrink: 0; }
     .st-rdy { color: var(--sst-stam-col); background: rgba(50,215,75,0.1); }
     .st-cd { color: var(--sst-cd-col); background: rgba(255,69,58,0.1); }
     .st-oom { color: var(--sst-mp-col); background: rgba(10,132,255,0.1); }
@@ -9527,6 +9573,7 @@ var rpg_sidebar_preset_default = {
     /* --- RELATIONSHIP MATRIX (4 Stats) --- */
     .rel-grid { display: flex; flex-direction: column; gap: 12px; }
     .stat-line { display: grid; grid-template-columns: 20px 1fr 30px; align-items: center; gap: 10px; }
+    .stat-icon { width: 20px; height: 20px; }
     .stat-track { height: 6px; background: rgba(255,255,255,0.08); border-radius: 4px; position: relative; overflow: hidden; }
     .stat-fill { position: absolute; top:0; left:0; width: 100%; height: 100%; clip-path: inset(0 calc(100% - var(--v)) 0 0); transition: clip-path 0.5s ease; }
     .gf-1 { background: var(--sst-grad-aff); } .gf-2 { background: var(--sst-grad-des); }
@@ -9557,9 +9604,10 @@ var rpg_sidebar_preset_default = {
     </div>
 
     <!-- CARDS -->
+    <div class="sim-tracker-cards-wrapper">
     {{#each characters}}
     <div class="sim-tracker-card" data-character="{{@index}}">
-        
+
         <!-- 1. IDENTITY & ATTRIBUTES -->
         <div class="header-row">
             <div class="av-lg">{{initials name}}</div>
@@ -9606,7 +9654,7 @@ var rpg_sidebar_preset_default = {
         <!-- 2. COMBAT STATUS -->
         <div class="widget">
             <div class="w-header"><span>Combat Status</span></div>
-            
+
             <!-- Health (Numeric) -->
             <div>
                 <div class="hp-numeric">{{stats.hp.current}} / {{stats.hp.max}} <span>HP</span></div>
@@ -9655,28 +9703,25 @@ var rpg_sidebar_preset_default = {
             <div class="rel-grid">
                 <!-- Affection -->
                 <div class="stat-line">
-                    <svg class="icon" viewBox="0 0 24 24" fill="#ff9a9e"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    <svg class="stat-icon" viewBox="0 0 24 24" fill="#ff9a9e"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                     <div class="stat-track"><div class="stat-fill gf-1" style="--v: {{stats.relationships.affection}}%"></div></div>
                     <div style="font-size:0.7rem">{{stats.relationships.affection}}%</div>
                 </div>
                 <!-- Desire -->
                 <div class="stat-line">
-                     <svg class="icon" viewBox="0 0 24 24" fill="url(#g1-{{@index}})">
-                        <defs><linearGradient id="g1-{{@index}}" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#f093fb"/><stop offset="1" stop-color="#f5576c"/></linearGradient></defs>
-                        <path fill="url(#g1-{{@index}})" d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/>
-                    </svg>
+                    <svg class="stat-icon" viewBox="0 0 24 24" fill="#f5576c"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg>
                     <div class="stat-track"><div class="stat-fill gf-2" style="--v: {{stats.relationships.desire}}%"></div></div>
                     <div style="font-size:0.7rem">{{stats.relationships.desire}}%</div>
                 </div>
                 <!-- Trust -->
                 <div class="stat-line">
-                    <svg class="icon" viewBox="0 0 24 24" fill="#89f7fe"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+                    <svg class="stat-icon" viewBox="0 0 24 24" fill="#89f7fe"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
                     <div class="stat-track"><div class="stat-fill gf-3" style="--v: {{stats.relationships.trust}}%"></div></div>
                     <div style="font-size:0.7rem">{{stats.relationships.trust}}%</div>
                 </div>
                 <!-- Contempt -->
                 <div class="stat-line">
-                    <svg class="icon" viewBox="0 0 24 24" fill="#888"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 11H7v-2h10v2z"/></svg>
+                    <svg class="stat-icon" viewBox="0 0 24 24" fill="#888"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 11H7v-2h10v2z"/></svg>
                     <div class="stat-track"><div class="stat-fill gf-4" style="--v: {{stats.relationships.contempt}}%"></div></div>
                     <div style="font-size:0.7rem">{{stats.relationships.contempt}}%</div>
                 </div>
@@ -9690,12 +9735,12 @@ var rpg_sidebar_preset_default = {
                 {{#each stats.inventory}}
                 <div class="inv-slot filled" title="{{name}}">{{icon}}<span class="inv-qty">x{{qty}}</span></div>
                 {{/each}}
-                <!-- Fillers if needed, can add logic for empty slots -->
             </div>
         </div>
 
     </div>
     {{/each}}
+    </div>
 
 </div>
 <!-- CARD_TEMPLATE_END -->
