@@ -170,6 +170,18 @@ function hasFemaleBiology(stats: unknown): boolean {
   );
 }
 
+function hasAnalTracking(stats: unknown): boolean {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return false;
+  const record = stats as Record<string, unknown>;
+  const sex = sexValue(record);
+  return (
+    ["male", "futanari", "futa", "both", "intersex", "hermaphrodite"].includes(sex) ||
+    Number(record.anal_fullness_pct) > 0 ||
+    Number(record.anal_tightness_pct) > 0 ||
+    Number(record.prostate_stimulation_pct) > 0
+  );
+}
+
 function isConceived(stats: unknown): boolean {
   if (!stats || typeof stats !== "object" || Array.isArray(stats)) return false;
   const record = stats as Record<string, unknown>;
@@ -219,6 +231,17 @@ function wombFillTop(value: unknown): number {
 }
 
 function wombFillHeight(value: unknown): number {
+  const pct = clampPercent(value);
+  return (pct / 100) * 64;
+}
+
+function analFillTop(value: unknown): number {
+  const pct = clampPercent(value);
+  // Inner cavity spans y≈24 (top) to y≈88 (bottom) → height 64
+  return 88 - (pct / 100) * 64;
+}
+
+function analFillHeight(value: unknown): number {
   const pct = clampPercent(value);
   return (pct / 100) * 64;
 }
@@ -698,6 +721,9 @@ function registerTemplateHelpers(): void {
   Handlebars.registerHelper("semenPercent", semenPercent);
   Handlebars.registerHelper("wombFillTop", wombFillTop);
   Handlebars.registerHelper("wombFillHeight", wombFillHeight);
+  Handlebars.registerHelper("hasAnalTracking", hasAnalTracking);
+  Handlebars.registerHelper("analFillTop", analFillTop);
+  Handlebars.registerHelper("analFillHeight", analFillHeight);
   // Variadic `or` / `and` — last argument is the Handlebars options
   // object, so we peel it off before folding. Values use JS truthiness
   // so `0`, `""`, `null`, `undefined`, and `false` are all falsy.

@@ -10010,6 +10010,7 @@ var pulse_thread_tracker_default = {
   templateName: "Pulse Thread Tracker",
   templateAuthor: "Lumiverse Assistant",
   templatePosition: "BOTTOM",
+  tabsType: "toggle",
   htmlTemplate: `&lt;!-- TEMPLATE NAME: Pulse Thread Tracker --&gt;
 &lt;!-- AUTHOR: Lumiverse Assistant --&gt;
 &lt;!-- POSITION: BOTTOM --&gt;
@@ -10522,6 +10523,91 @@ var pulse_thread_tracker_default = {
     .pt-metric-fill { background: linear-gradient(90deg, #fff8d6, #ffd86b); }
     .pt-fertility-fill { background: linear-gradient(90deg, #70a1ff, #ffd700); }
 
+    /* --- MALE: Anal &amp; Prostate Vessel --- */
+    .pt-anal-vessel {
+        width: 120px;
+        height: 140px;
+        padding: 8px;
+        border-radius: 24px 24px 28px 28px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03));
+        border: 1px solid rgba(255,255,255,0.09);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 14px 26px rgba(0,0,0,0.24);
+    }
+
+    .pt-anal-svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+        overflow: visible;
+    }
+
+    .pt-anal-outline {
+        fill: none;
+        stroke: color-mix(in srgb, #e67e22 70%, white 30%);
+        stroke-width: 4;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        opacity: 0.95;
+        filter: drop-shadow(0 0 4px color-mix(in srgb, #e67e22 35%, transparent));
+    }
+
+    .pt-anal-inner {
+        fill: rgba(255,255,255,0.05);
+        stroke: rgba(255,255,255,0.08);
+        stroke-width: 1.5;
+    }
+
+    .pt-anal-sphincter {
+        fill: none;
+        stroke: color-mix(in srgb, #e67e22 60%, rgba(255,255,255,0.2) 40%);
+        stroke-width: 2.5;
+        stroke-linecap: round;
+    }
+
+    .pt-prostate {
+        fill: color-mix(in srgb, #e67e22 35%, rgba(255,255,255,0.1));
+        stroke: color-mix(in srgb, #e67e22 55%, rgba(255,255,255,0.15));
+        stroke-width: 1;
+    }
+
+    .pt-prostate.glow {
+        animation: prostatePulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes prostatePulse {
+        0%, 100% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 2px rgba(230,126,34,0.4)); }
+        50% { transform: scale(1.15); opacity: 0.85; filter: drop-shadow(0 0 6px rgba(230,126,34,0.7)); }
+    }
+
+    .pt-anal-liquid {
+        fill: rgba(255,255,255,0.95);
+        filter: drop-shadow(0 -2px 6px rgba(255,255,255,0.18));
+        transition: y 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .pt-anal-surface {
+        stroke: rgba(255,255,255,0.72);
+        stroke-width: 2;
+        stroke-linecap: round;
+        opacity: 0.88;
+    }
+
+    .pt-anal-meter {
+        height: 7px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .pt-anal-meter-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: inherit;
+        transition: width 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+        background: linear-gradient(90deg, #f1c40f, #e67e22);
+    }
+
     /* --- MALE: Semen / Refractory Vial --- */
     .pt-vial {
         width: 82px;
@@ -10778,7 +10864,7 @@ var pulse_thread_tracker_default = {
     @media (max-width: 420px) {
         .pulse-tabbed-root { border-radius: 22px; }
         .pt-bio-zone { grid-template-columns: 1fr; }
-        .pt-fertility-ring, .pt-vial, .pt-womb-vessel, .pt-male-visuals { justify-self: center; }
+        .pt-fertility-ring, .pt-vial, .pt-womb-vessel, .pt-anal-vessel, .pt-male-visuals { justify-self: center; }
         .pt-bio-zone.pt-bio-compact { grid-template-columns: auto 1fr; }
     }
 
@@ -11259,6 +11345,55 @@ var pulse_thread_tracker_default = {
                     &lt;/div&gt;
                 &lt;/div&gt;
                 {{/if}}
+
+                {{#if (hasAnalTracking stats)}}
+                &lt;div class=&quot;pt-bio-zone&quot;&gt;
+                    &lt;div class=&quot;pt-anal-vessel&quot;&gt;
+                        &lt;svg class=&quot;pt-anal-svg&quot; viewBox=&quot;0 0 100 100&quot; aria-hidden=&quot;true&quot; focusable=&quot;false&quot;&gt;
+                            &lt;defs&gt;
+                                &lt;clipPath id=&quot;pt-anal-clip-{{@index}}&quot;&gt;
+                                    &lt;path d=&quot;M44 18 C40 24 38 34 38 44 C38 54 36 64 34 74 C32 82 40 88 50 88 C60 88 68 82 66 74 C64 64 62 54 62 44 C62 34 60 24 56 18 C56 14 44 14 44 18 Z&quot; /&gt;
+                                &lt;/clipPath&gt;
+                                &lt;linearGradient id=&quot;pt-anal-depth-{{@index}}&quot; x1=&quot;0.5&quot; y1=&quot;0&quot; x2=&quot;0.5&quot; y2=&quot;1&quot;&gt;
+                                    &lt;stop offset=&quot;0%&quot; stop-color=&quot;#7a4a2a&quot; stop-opacity=&quot;0.85&quot; /&gt;
+                                    &lt;stop offset=&quot;100%&quot; stop-color=&quot;#3a2010&quot; stop-opacity=&quot;0.95&quot; /&gt;
+                                &lt;/linearGradient&gt;
+                            &lt;/defs&gt;
+                            &lt;path class=&quot;pt-anal-outline&quot; d=&quot;M44 18 C40 24 38 34 38 44 C38 54 36 64 34 74 C32 82 40 88 50 88 C60 88 68 82 66 74 C64 64 62 54 62 44 C62 34 60 24 56 18 C56 14 44 14 44 18 Z&quot; /&gt;
+                            &lt;ellipse class=&quot;pt-anal-sphincter&quot; cx=&quot;50&quot; cy=&quot;16&quot; rx=&quot;7&quot; ry=&quot;2.5&quot; /&gt;
+                            &lt;path class=&quot;pt-prostate {{#if (gt stats.prostate_stimulation_pct 50)}}glow{{/if}}&quot; d=&quot;M46 38 C42 40 42 46 46 48 C50 46 50 40 46 38 Z&quot; /&gt;
+                            &lt;path class=&quot;pt-anal-inner&quot; style=&quot;fill:url(#pt-anal-depth-{{@index}})&quot; d=&quot;M44 18 C40 24 38 34 38 44 C38 54 36 64 34 74 C32 82 40 88 50 88 C60 88 68 82 66 74 C64 64 62 54 62 44 C62 34 60 24 56 18 C56 14 44 14 44 18 Z&quot; /&gt;
+                            &lt;g clip-path=&quot;url(#pt-anal-clip-{{@index}})&quot;&gt;
+                                &lt;rect class=&quot;pt-anal-liquid&quot; x=&quot;0&quot; y=&quot;{{analFillTop stats.anal_fullness_pct}}&quot; width=&quot;100&quot; height=&quot;{{analFillHeight stats.anal_fullness_pct}}&quot; /&gt;
+                                &lt;path class=&quot;pt-anal-surface&quot; d=&quot;M33 {{analFillTop stats.anal_fullness_pct}} C40 {{add (analFillTop stats.anal_fullness_pct) 3}} 60 {{add (analFillTop stats.anal_fullness_pct) 3}} 67 {{analFillTop stats.anal_fullness_pct}}&quot; /&gt;
+                            &lt;/g&gt;
+                        &lt;/svg&gt;
+                    &lt;/div&gt;
+                    &lt;div class=&quot;pt-bio-panel&quot;&gt;
+                        &lt;div class=&quot;pt-bio-title-row&quot;&gt;
+                            &lt;h4&gt;Anal&lt;/h4&gt;
+                            &lt;span class=&quot;pt-risk-badge risk-preg&quot;&gt;{{clampPercent stats.anal_fullness_pct}}%&lt;/span&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;pt-bio-grid&quot;&gt;
+                            &lt;div class=&quot;pt-bio-row&quot;&gt;
+                                &lt;span class=&quot;pt-bio-key&quot;&gt;Fullness&lt;/span&gt;
+                                &lt;span class=&quot;pt-bio-value&quot;&gt;{{clampPercent stats.anal_fullness_pct}}%&lt;/span&gt;
+                            &lt;/div&gt;
+                            &lt;div class=&quot;pt-anal-meter&quot;&gt;&lt;div class=&quot;pt-anal-meter-fill&quot; style=&quot;width: {{clampPercent stats.anal_fullness_pct}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+                            &lt;div class=&quot;pt-bio-row&quot;&gt;
+                                &lt;span class=&quot;pt-bio-key&quot;&gt;Tightness&lt;/span&gt;
+                                &lt;span class=&quot;pt-bio-value&quot;&gt;{{clampPercent stats.anal_tightness_pct}}%&lt;/span&gt;
+                            &lt;/div&gt;
+                            &lt;div class=&quot;pt-anal-meter&quot;&gt;&lt;div class=&quot;pt-anal-meter-fill&quot; style=&quot;width: {{clampPercent stats.anal_tightness_pct}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+                            &lt;div class=&quot;pt-bio-row&quot;&gt;
+                                &lt;span class=&quot;pt-bio-key&quot;&gt;Prostate&lt;/span&gt;
+                                &lt;span class=&quot;pt-bio-value&quot;&gt;{{clampPercent stats.prostate_stimulation_pct}}%&lt;/span&gt;
+                            &lt;/div&gt;
+                            &lt;div class=&quot;pt-anal-meter&quot;&gt;&lt;div class=&quot;pt-anal-meter-fill&quot; style=&quot;width: {{clampPercent stats.prostate_stimulation_pct}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+                {{/if}}
             &lt;/div&gt;
             {{/if}}
 
@@ -11399,7 +11534,7 @@ TEMPLATE VARIABLES (tabbed mode):
     - {{stats.days_since_first_meeting}}, {{stats.inactive}}
 --&gt;
 `,
-  sysPrompt: '## NARRATIVE CHARACTER TRACKER (Pulse Thread)\n\n**Objective:** Emit one JSON/YAML tracker per turn. Include `worldData` with `current_date` (YYYY-MM-DD) and `current_time` (24h), plus a `characters` array containing every tracked character.\n\n---\n\n### CRITICAL RULES\n\n1. **Array wrapping is mandatory.** Never emit a flat top-level map like `{ "CharacterName": { ... } }`. Always use `{ "characters": [ { ... }, { ... } ] }`, even for one character.\n2. **`name` must be at the character object level.** You may nest stats under `"stats": { ... }`; the tracker flattens them. `name` must not be inside `stats`.\n3. **No omitted fields.** Every character object must include every field below on every turn. Use `0`, `false`, or `""` for unknown/inapplicable values. Preserve prior values when known.\n4. **Output order:** Narrative \u2192 Tracker tag \u2192 `sim` codeblock. Never omit the codeblock.\n5. **Never track the user.** Do not include `{{user}}`, the player, or any self-insert persona in the `characters` array. The tracker is for narrative characters and NPCs only.\n6. **Multi-character support:** Track every active character present in the current scene. Mark inactive ones `"inactive": true`.\n\n---\n\n### CANONICAL SCHEMA\n\n```json\n{\n  "worldData": {\n    "current_date": "YYYY-MM-DD",\n    "current_time": "HH:MM"\n  },\n  "characters": [\n    {\n      "name": "<CharacterName>",\n      "ap": 0,\n      "dp": 0,\n      "tp": 0,\n      "cp": 0,\n      "sex": "female | male | futanari | other",\n      "cycle_stage_id": 0,\n      "cycle_day": 0,\n      "womb_fullness_pct": 0,\n      "womb_receptivity_pct": 0,\n      "cervix_state_id": 0,\n      "breeding_count": 0,\n      "conceived": false,\n      "preg": false,\n      "days_preg": 0,\n      "conception_date": "",\n      "refractory_minutes": 0,\n      "refractory_total": 0,\n      "semen_ml": 0,\n      "semen_capacity_ml": 0,\n      "male_fertility_pct": 0,\n      "last_react": 0,\n      "internal_thought": "",\n      "days_since_first_meeting": 0,\n      "inactive": false,\n      "inactiveReason": 0,\n      "bg": "#000000"\n    }\n  ]\n}\n```\n\nThe `characters` array contains one entry per tracked character. Every entry must conform to the shape above. Use the literal defaults shown when a value is unknown or inapplicable.\n\n---\n\n### STAT METERS (HARD CAPS)\n\nStat-change indicators (`apChange`, `dpChange`, `tpChange`, `cpChange`) are **auto-derived** by the extension. Do not emit them. The tracker compares each turn\'s values against the previous tracker and computes the delta automatically.\n\n| Field | Range | Brackets |\n|---|---|---|\n| **ap** Affection | 0-200 | 0-30 Strangers / 31-60 Acquaintances / 61-90 Friends / 91-120 Romantic / 121-150 Steady / 151-180 Committed / 181-200 Devoted |\n| **dp** Desire | 0-150 | 0-25 Cold / 26-50 Warm / 51-75 Interested / 76-100 Aroused / 101-125 Needy / 126-150 Desperate |\n| **tp** Trust | 0-150 | Falls when lied to, cheated, or promises broken. |\n| **cp** Contempt | 0-150 | Rises when harmed. CP rise can lower AP/DP/TP. |\n\n---\n\n### BIOLOGICAL TRACKING\n\n**`sex` gate:** `"female"`, `"male"`, `"futanari"`, or `"other"` (lowercase). Preserve from prior state unless the narrative explicitly changes biology.\n\n**General rule for all biology:** Preserve prior values. Advance only when narrative time passes. Use `0`/`""`/`false` when genuinely inapplicable.\n\n**Gender applicability is strict:**\n- **Female-only fields** (`cycle_stage_id`, `cycle_day`, `womb_fullness_pct`, `womb_receptivity_pct`, `cervix_state_id`, `breeding_count`) apply only to `female`, `futanari`, `intersex`, `hermaphrodite`, and `both`. Set to `0`/`""`/`false` for male characters.\n- **Male-only fields** (`refractory_minutes`, `refractory_total`, `semen_ml`, `semen_capacity_ml`, `male_fertility_pct`) apply only to `male`, `futanari`, `intersex`, `hermaphrodite`, and `both`. Set to `0` for female characters.\n- **Futanari / dual-biology** characters receive **both** sets of fields. The tracker renders a mixed panel.\n- **Pure female** (`sex: "female"`): emit female fields; male fields must all be `0`.\n- **Pure male** (`sex: "male"`): emit male fields; female fields must all be `0`/`""`.\n\n#### Female / Futanari \u2014 Fertility & Womb\n\n- `cycle_day`: 1-28 (or established species length). Advance with narrative time.\n- `cycle_stage_id` enum:\n  - `1` = `"menstruation"` (days 1-5)\n  - `2` = `"follicular"` (days 6-13)\n  - `3` = `"ovulation"` (days 14-16, peak fertility)\n  - `4` = `"luteal"` (days 17-28)\n  - `5` = `"pregnancy"`\n- `womb_fullness_pct`: 0-100. Estimate from narrative; preserve unless events change it.\n- `womb_receptivity_pct`: 0-100. High during ovulation/rut, low during menstruation or low arousal.\n- `cervix_state_id` enum: `0` = `""` (unknown), `1` = `"soft"`, `2` = `"firm"`, `3` = `"open"`, `4` = `"dilated"`, `5` = `"sealed"`. Soft/open during fertile/high-arousal windows.\n- `breeding_count`: Times filled this cycle. Increment after internal ejaculation; preserve between turns.\n\nIf pregnant: `preg: true`, `cycle_stage_id: 5`, track `days_preg`, preserve `conception_date` (YYYY-MM-DD) when known.\n\nIf not pregnant: `preg: false`, `days_preg: 0`.\n\nIf unprotected vaginal sex occurs during ovulation or rut, evaluate conception risk narratively. Update `preg`, `days_preg`, and `conception_date` when conception is confirmed or narratively certain.\n\n`conceived` is an intermediate state between fertilisation and confirmed pregnancy. Set `conceived: true` when a character has ovulated with high womb fullness and fertilisation has occurred, but pregnancy has not yet been medically or narratively confirmed. Transition to `preg: true` (and `cycle_stage_id: 5`) on a later turn when the narrative confirms it. `conceived` and `preg` may both be false simultaneously.\n\n#### Male / Futanari \u2014 Refractory & Semen\n\n- `refractory_minutes`: Minutes remaining until ready (0 = ready).\n- `refractory_total`: Total minutes of this refractory period.\n- `semen_ml`: Current volume (0 to `semen_capacity_ml`). Adjust after ejaculation, rest, or arousal.\n- `semen_capacity_ml`: Maximum volume. Preserve unless biology changes.\n- `male_fertility_pct`: 0-100. Update for sperm count, magical fertility, infertility, rut, recovery, etc.\n\nConvert all time to minutes. Decrement `refractory_minutes` toward 0 as narrative time passes.\n\n---\n\n### THEMING\n\nProvide `"bg"` as a hex color per character. Example: `"#ff7aa2"`.\n',
+  sysPrompt: '## NARRATIVE CHARACTER TRACKER (Pulse Thread)\n\n**Objective:** Emit one JSON/YAML tracker per turn. Include `worldData` with `current_date` (YYYY-MM-DD) and `current_time` (24h), plus a `characters` array containing every tracked character.\n\n---\n\n### CRITICAL RULES\n\n1. **Array wrapping is mandatory.** Never emit a flat top-level map like `{ "CharacterName": { ... } }`. Always use `{ "characters": [ { ... }, { ... } ] }`, even for one character.\n2. **`name` must be at the character object level.** You may nest stats under `"stats": { ... }`; the tracker flattens them. `name` must not be inside `stats`.\n3. **No omitted fields.** Every character object must include every field below on every turn. Use `0`, `false`, or `""` for unknown/inapplicable values. Preserve prior values when known.\n4. **Output order:** Narrative \u2192 Tracker tag \u2192 `sim` codeblock. Never omit the codeblock.\n5. **Never track the user.** Do not include `{{user}}`, the player, or any self-insert persona in the `characters` array. The tracker is for narrative characters and NPCs only.\n6. **Multi-character support:** Track every active character present in the current scene. Mark inactive ones `"inactive": true`.\n\n---\n\n### CANONICAL SCHEMA\n\n```json\n{\n  "worldData": {\n    "current_date": "YYYY-MM-DD",\n    "current_time": "HH:MM"\n  },\n  "characters": [\n    {\n      "name": "<CharacterName>",\n      "ap": 0,\n      "dp": 0,\n      "tp": 0,\n      "cp": 0,\n      "sex": "female | male | futanari | other",\n      "cycle_stage_id": 0,\n      "cycle_day": 0,\n      "womb_fullness_pct": 0,\n      "womb_receptivity_pct": 0,\n      "cervix_state_id": 0,\n      "breeding_count": 0,\n      "conceived": false,\n      "preg": false,\n      "days_preg": 0,\n      "conception_date": "",\n      "refractory_minutes": 0,\n      "refractory_total": 0,\n      "semen_ml": 0,\n      "semen_capacity_ml": 0,\n      "male_fertility_pct": 0,\n      "anal_fullness_pct": 0,\n      "anal_tightness_pct": 0,\n      "prostate_stimulation_pct": 0,\n      "last_react": 0,\n      "internal_thought": "",\n      "days_since_first_meeting": 0,\n      "inactive": false,\n      "inactiveReason": 0,\n      "bg": "#000000"\n    }\n  ]\n}\n```\n\nThe `characters` array contains one entry per tracked character. Every entry must conform to the shape above. Use the literal defaults shown when a value is unknown or inapplicable.\n\n---\n\n### STAT METERS (HARD CAPS)\n\nStat-change indicators (`apChange`, `dpChange`, `tpChange`, `cpChange`) are **auto-derived** by the extension. Do not emit them. The tracker compares each turn\'s values against the previous tracker and computes the delta automatically.\n\n| Field | Range | Brackets |\n|---|---|---|\n| **ap** Affection | 0-200 | 0-30 Strangers / 31-60 Acquaintances / 61-90 Friends / 91-120 Romantic / 121-150 Steady / 151-180 Committed / 181-200 Devoted |\n| **dp** Desire | 0-150 | 0-25 Cold / 26-50 Warm / 51-75 Interested / 76-100 Aroused / 101-125 Needy / 126-150 Desperate |\n| **tp** Trust | 0-150 | Falls when lied to, cheated, or promises broken. |\n| **cp** Contempt | 0-150 | Rises when harmed. CP rise can lower AP/DP/TP. |\n\n---\n\n### BIOLOGICAL TRACKING\n\n**`sex` gate:** `"female"`, `"male"`, `"futanari"`, or `"other"` (lowercase). Preserve from prior state unless the narrative explicitly changes biology.\n\n**General rule for all biology:** Preserve prior values. Advance only when narrative time passes. Use `0`/`""`/`false` when genuinely inapplicable.\n\n**Gender applicability is strict:**\n- **Female-only fields** (`cycle_stage_id`, `cycle_day`, `womb_fullness_pct`, `womb_receptivity_pct`, `cervix_state_id`, `breeding_count`) apply only to `female`, `futanari`, `intersex`, `hermaphrodite`, and `both`. Set to `0`/`""`/`false` for male characters.\n- **Male-only fields** (`refractory_minutes`, `refractory_total`, `semen_ml`, `semen_capacity_ml`, `male_fertility_pct`, `anal_fullness_pct`, `anal_tightness_pct`, `prostate_stimulation_pct`) apply only to `male`, `futanari`, `intersex`, `hermaphrodite`, and `both`. Set to `0` for female characters.\n- **Futanari / dual-biology** characters receive **both** sets of fields. The tracker renders a mixed panel.\n- **Pure female** (`sex: "female"`): emit female fields; male fields must all be `0`.\n- **Pure male** (`sex: "male"`): emit male fields; female fields must all be `0`/`""`.\n\n#### Female / Futanari \u2014 Fertility & Womb\n\n- `cycle_day`: 1-28 (or established species length). Advance with narrative time.\n- `cycle_stage_id` enum:\n  - `1` = `"menstruation"` (days 1-5)\n  - `2` = `"follicular"` (days 6-13)\n  - `3` = `"ovulation"` (days 14-16, peak fertility)\n  - `4` = `"luteal"` (days 17-28)\n  - `5` = `"pregnancy"`\n- `womb_fullness_pct`: 0-100. Estimate from narrative; preserve unless events change it.\n- `womb_receptivity_pct`: 0-100. High during ovulation/rut, low during menstruation or low arousal.\n- `cervix_state_id` enum: `0` = `""` (unknown), `1` = `"soft"`, `2` = `"firm"`, `3` = `"open"`, `4` = `"dilated"`, `5` = `"sealed"`. Soft/open during fertile/high-arousal windows.\n- `breeding_count`: Times filled this cycle. Increment after internal ejaculation; preserve between turns.\n\nIf pregnant: `preg: true`, `cycle_stage_id: 5`, track `days_preg`, preserve `conception_date` (YYYY-MM-DD) when known.\n\nIf not pregnant: `preg: false`, `days_preg: 0`.\n\nIf unprotected vaginal sex occurs during ovulation or rut, evaluate conception risk narratively. Update `preg`, `days_preg`, and `conception_date` when conception is confirmed or narratively certain.\n\n`conceived` is an intermediate state between fertilisation and confirmed pregnancy. Set `conceived: true` when a character has ovulated with high womb fullness and fertilisation has occurred, but pregnancy has not yet been medically or narratively confirmed. Transition to `preg: true` (and `cycle_stage_id: 5`) on a later turn when the narrative confirms it. `conceived` and `preg` may both be false simultaneously.\n\n#### Male / Futanari \u2014 Refractory & Semen\n\n- `refractory_minutes`: Minutes remaining until ready (0 = ready).\n- `refractory_total`: Total minutes of this refractory period.\n- `semen_ml`: Current volume (0 to `semen_capacity_ml`). Adjust after ejaculation, rest, or arousal.\n- `semen_capacity_ml`: Maximum volume. Preserve unless biology changes.\n- `male_fertility_pct`: 0-100. Update for sperm count, magical fertility, infertility, rut, recovery, etc.\n\nConvert all time to minutes. Decrement `refractory_minutes` toward 0 as narrative time passes.\n\n#### Male / Futanari \u2014 Anal & Prostate\n\nFor characters engaging in penetrative anal sex (typically male or futanari bottoms):\n\n- `anal_fullness_pct`: 0-100. Estimate rectal cum fullness from narrative events. Increases after internal ejaculation; may decrease over time or through expulsion. Preserve unless events change it.\n- `anal_tightness_pct`: 0-100. Reflects sphincter tone and stretching.\n  - `100-80` = Very tight / virginal.\n  - `79-50` = Moderately tight.\n  - `49-20` = Loose / well-used.\n  - `19-0` = Gaped / fully dilated.\n  - Adjust based on narrative activity, rest, and prior stretching.\n- `prostate_stimulation_pct`: 0-100. Rises with direct prostate contact, penetration angle, or sustained pressure. Falls during rest or after orgasm. High values strongly amplify arousal and can trigger hands-free orgasm narratively.\n\nThese fields are strictly male/futanari/intersex/herm/both. Set to `0` for pure female characters.\n\n---\n\n### THEMING\n\nProvide `"bg"` as a hex color per character. Example: `"#ff7aa2"`.\n',
   customFields: [
     {
       key: "ap",
@@ -11476,6 +11611,18 @@ TEMPLATE VARIABLES (tabbed mode):
     {
       key: "male_fertility_pct",
       description: "[number] Current sperm count/fertility level (0-100); use 0 for pure female characters"
+    },
+    {
+      key: "anal_fullness_pct",
+      description: "[number] Current anal canal/rectum cum fullness percentage (0-100); use 0 for pure female characters or when not applicable"
+    },
+    {
+      key: "anal_tightness_pct",
+      description: "[number] Anal sphincter tightness (0-100, where 100 = very tight/virginal, 0 = fully stretched/gaped); use 0 for pure female characters or when not applicable"
+    },
+    {
+      key: "prostate_stimulation_pct",
+      description: "[number] Current prostate stimulation/arousal level (0-100); use 0 for pure female characters or when not applicable"
     },
     {
       key: "womb_receptivity_pct",
