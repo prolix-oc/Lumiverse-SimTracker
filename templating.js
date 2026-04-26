@@ -54,11 +54,47 @@ const FERTILITY_STAGE_BY_ID = {
   5: "pregnancy",
 };
 
+const FERTILITY_STAGE_ID_BY_NAME = Object.fromEntries(
+  Object.entries(FERTILITY_STAGE_BY_ID).map(([id, name]) => [name, Number(id)])
+);
+
 function cycleStageValue(stats) {
   if (!stats || typeof stats !== "object" || Array.isArray(stats)) return "";
   const stageId = Number(stats.cycle_stage_id || stats.cycleStageId || 0);
   if (FERTILITY_STAGE_BY_ID[stageId]) return FERTILITY_STAGE_BY_ID[stageId];
   return typeof stats.cycle_stage === "string" ? stats.cycle_stage.toLowerCase() : "";
+}
+
+function cycleStageIdValue(stats) {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return 0;
+  const stageId = Number(stats.cycle_stage_id || stats.cycleStageId || 0);
+  if (FERTILITY_STAGE_BY_ID[stageId]) return stageId;
+  return FERTILITY_STAGE_ID_BY_NAME[cycleStageValue(stats)] || 0;
+}
+
+function cycleStageLabelValue(stats) {
+  const stage = cycleStageValue(stats);
+  if (!stage) return "Unknown";
+  return stage.charAt(0).toUpperCase() + stage.slice(1);
+}
+
+function fertilityRiskLabelValue(stats) {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return "Unknown";
+  const stage = cycleStageValue(stats);
+  if (stats.preg === true || stage === "pregnancy") return "Pregnant";
+  if (stage === "ovulation") return "High";
+  if (stage === "luteal") return "Medium";
+  if (stage === "menstruation" || stage === "follicular") return "Low";
+  return "Unknown";
+}
+
+function fertilityRiskClassValue(stats) {
+  const risk = fertilityRiskLabelValue(stats).toLowerCase();
+  if (risk === "high") return "risk-high";
+  if (risk === "medium") return "risk-med";
+  if (risk === "pregnant") return "risk-preg";
+  if (risk === "low") return "risk-low";
+  return "risk-unknown";
 }
 
 function sexValue(stats) {
@@ -68,6 +104,22 @@ function sexValue(stats) {
 
 Handlebars.registerHelper("cycleStage", function (stats) {
   return cycleStageValue(stats);
+});
+
+Handlebars.registerHelper("cycleStageId", function (stats) {
+  return cycleStageIdValue(stats);
+});
+
+Handlebars.registerHelper("cycleStageLabel", function (stats) {
+  return cycleStageLabelValue(stats);
+});
+
+Handlebars.registerHelper("fertilityRiskLabel", function (stats) {
+  return fertilityRiskLabelValue(stats);
+});
+
+Handlebars.registerHelper("fertilityRiskClass", function (stats) {
+  return fertilityRiskClassValue(stats);
 });
 
 Handlebars.registerHelper("hasFertilityTracking", function (stats) {

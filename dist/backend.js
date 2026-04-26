@@ -10264,14 +10264,35 @@ var pulse_thread_tracker_default = {
        BIO ZONES (Fertility / Refractory)
        ========================================= */
     .pt-bio-zone {
-        display: flex;
+        display: grid;
+        grid-template-columns: auto 1fr;
         align-items: center;
         gap: 14px;
         padding: 12px;
-        background: rgba(0, 0, 0, 0.18);
+        background: linear-gradient(135deg, rgba(0, 0, 0, 0.22), rgba(255, 255, 255, 0.035));
         border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.06);
         margin-bottom: 14px;
+    }
+
+    .pt-bio-zone.pt-bio-compact {
+        grid-template-columns: 38px 1fr;
+        padding: 10px 12px;
+    }
+
+    .pt-bio-ready-dot {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--pt-accent);
+        background: rgba(201, 166, 255, 0.08);
+        border: 1px solid rgba(201, 166, 255, 0.22);
+        box-shadow: 0 0 16px rgba(201, 166, 255, 0.08);
+        font-size: 0.9rem;
+        font-weight: 900;
     }
 
     /* --- FEMALE: Fertility Ring --- */
@@ -10411,14 +10432,22 @@ var pulse_thread_tracker_default = {
     .ref-cool { color: var(--pt-des) !important; }
 
     /* Bio Text */
-    .pt-bio-text {
+    .pt-bio-panel {
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: 3px;
+        gap: 8px;
+        min-width: 0;
     }
 
-    .pt-bio-text h4 {
+    .pt-bio-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .pt-bio-title-row h4 {
         margin: 0;
         font-size: 0.72rem;
         font-weight: 700;
@@ -10426,11 +10455,67 @@ var pulse_thread_tracker_default = {
         letter-spacing: 0.8px;
     }
 
-    .pt-bio-text p {
+    .pt-bio-note {
         margin: 0;
         font-size: 0.72rem;
         color: var(--pt-txt-dim);
         line-height: 1.45;
+    }
+
+    .pt-bio-grid {
+        display: grid;
+        gap: 5px;
+    }
+
+    .pt-bio-row {
+        display: grid;
+        grid-template-columns: minmax(72px, auto) 1fr;
+        align-items: center;
+        gap: 8px;
+        min-height: 20px;
+    }
+
+    .pt-bio-key {
+        color: var(--pt-txt-dim);
+        font-size: 0.58rem;
+        font-weight: 800;
+        letter-spacing: 0.7px;
+        text-transform: uppercase;
+    }
+
+    .pt-bio-value {
+        color: var(--pt-txt);
+        font-size: 0.72rem;
+        font-weight: 650;
+        min-width: 0;
+    }
+
+    .pt-bio-value-muted { color: var(--pt-txt-dim); }
+
+    .pt-cycle-legend {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px 8px;
+        padding-top: 2px;
+    }
+
+    .pt-legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        min-width: 0;
+        font-size: 0.56rem;
+        color: var(--pt-txt-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.45px;
+        font-weight: 700;
+    }
+
+    .pt-legend-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
     }
 
     .pt-risk-badge {
@@ -10451,6 +10536,13 @@ var pulse_thread_tracker_default = {
     .risk-med { background: rgba(165, 94, 234, 0.15); color: var(--cy-lut); border: 1px solid rgba(165, 94, 234, 0.2); }
     .risk-high { background: rgba(255, 215, 0, 0.15); color: var(--cy-ovu); border: 1px solid rgba(255, 215, 0, 0.3); animation: riskGlow 2s ease-in-out infinite; }
     .risk-preg { background: rgba(246, 211, 101, 0.15); color: var(--cy-preg); border: 1px solid rgba(246, 211, 101, 0.2); }
+    .risk-unknown { background: rgba(136, 153, 170, 0.12); color: var(--pt-txt-dim); border: 1px solid rgba(136, 153, 170, 0.18); }
+
+    @media (max-width: 420px) {
+        .pt-bio-zone { grid-template-columns: 1fr; }
+        .pt-fertility-ring, .pt-refractory-gauge { justify-self: center; }
+        .pt-bio-zone.pt-bio-compact { grid-template-columns: auto 1fr; }
+    }
 
     @keyframes riskGlow {
         0%, 100% { box-shadow: 0 0 0 transparent; }
@@ -10782,40 +10874,60 @@ var pulse_thread_tracker_default = {
                 &lt;div class=&quot;pt-fertility-ring&quot;&gt;
                     &lt;div class=&quot;pt-fertility-marker {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}ovulation-glow{{/if}}&quot;
                          style=&quot;color: {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}var(--cy-ovu){{else if (eq (cycleStage stats) &quot;menstruation&quot;)}}var(--cy-men){{else if (eq (cycleStage stats) &quot;follicular&quot;)}}var(--cy-fol){{else if (eq (cycleStage stats) &quot;luteal&quot;)}}var(--cy-lut){{else}}var(--cy-preg){{/if}};&quot;&gt;&lt;/div&gt;
-                    &lt;div class=&quot;pt-fertility-label&quot;&gt;{{#if stats.cycle_day}}Day {{stats.cycle_day}}{{else}}Cycle{{/if}}&lt;/div&gt;
-                &lt;/div&gt;
-                &lt;div class=&quot;pt-bio-text&quot;&gt;
-                    &lt;h4&gt;Fertility Cycle&lt;/h4&gt;
-                    &lt;p&gt;
+                    &lt;div class=&quot;pt-fertility-label&quot;&gt;
                         {{#if (or stats.preg (eq (cycleStage stats) &quot;pregnancy&quot;))}}
-                            Pregnant \u2014 Day {{stats.days_preg}}
-                        {{else if (eq (cycleStage stats) &quot;menstruation&quot;)}}
-                            Menstruation phase. Pregnancy risk: minimal.
-                        {{else if (eq (cycleStage stats) &quot;follicular&quot;)}}
-                            Follicular phase. Egg maturing; risk rising gradually.
-                        {{else if (eq (cycleStage stats) &quot;ovulation&quot;)}}
-                            &lt;span class=&quot;risk-high-text&quot;&gt;PEAK FERTILITY&lt;/span&gt;. Ovulation window active. Highest conception risk.
-                        {{else if (eq (cycleStage stats) &quot;luteal&quot;)}}
-                            Luteal phase post-ovulation. Risk declining but viable until next cycle.
+                            Preg {{#if stats.days_preg}}{{stats.days_preg}}d{{/if}}
+                        {{else if stats.cycle_day}}
+                            Day {{stats.cycle_day}}
                         {{else}}
-                            Cycle stage unclear.
+                            Cycle
                         {{/if}}
-                    &lt;/p&gt;
-                    {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}
-                        &lt;span class=&quot;pt-risk-badge risk-high&quot;&gt;\uD83D\uDD25 High Risk&lt;/span&gt;
-                    {{else if (eq (cycleStage stats) &quot;luteal&quot;)}}
-                        &lt;span class=&quot;pt-risk-badge risk-med&quot;&gt;~ Medium Risk&lt;/span&gt;
-                    {{else if (or stats.preg (eq (cycleStage stats) &quot;pregnancy&quot;))}}
-                        &lt;span class=&quot;pt-risk-badge risk-preg&quot;&gt;\uD83E\uDD30 Pregnant&lt;/span&gt;
-                    {{else}}
-                        &lt;span class=&quot;pt-risk-badge risk-low&quot;&gt;\u2713 Low Risk&lt;/span&gt;
-                    {{/if}}
+                    &lt;/div&gt;
+                &lt;/div&gt;
+                &lt;div class=&quot;pt-bio-panel&quot;&gt;
+                    &lt;div class=&quot;pt-bio-title-row&quot;&gt;
+                        &lt;h4&gt;Biology&lt;/h4&gt;
+                        &lt;span class=&quot;pt-risk-badge {{fertilityRiskClass stats}}&quot;&gt;{{fertilityRiskLabel stats}}&lt;/span&gt;
+                    &lt;/div&gt;
+                    &lt;div class=&quot;pt-bio-grid&quot;&gt;
+                        &lt;div class=&quot;pt-bio-row&quot;&gt;
+                            &lt;span class=&quot;pt-bio-key&quot;&gt;Sex&lt;/span&gt;
+                            &lt;span class=&quot;pt-bio-value&quot;&gt;{{stats.sex}}&lt;/span&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;pt-bio-row&quot;&gt;
+                            &lt;span class=&quot;pt-bio-key&quot;&gt;Cycle&lt;/span&gt;
+                            &lt;span class=&quot;pt-bio-value&quot;&gt;
+                                {{#if (cycleStageId stats)}}Stage {{cycleStageId stats}}: {{cycleStageLabel stats}}{{else}}Unknown{{/if}}
+                            &lt;/span&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;pt-bio-row&quot;&gt;
+                            &lt;span class=&quot;pt-bio-key&quot;&gt;Risk&lt;/span&gt;
+                            &lt;span class=&quot;pt-bio-value {{#if (eq (fertilityRiskLabel stats) &quot;Unknown&quot;)}}pt-bio-value-muted{{/if}}&quot;&gt;{{fertilityRiskLabel stats}}&lt;/span&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;pt-bio-row&quot;&gt;
+                            &lt;span class=&quot;pt-bio-key&quot;&gt;Pregnancy&lt;/span&gt;
+                            &lt;span class=&quot;pt-bio-value&quot;&gt;
+                                {{#if (or stats.preg (eq (cycleStage stats) &quot;pregnancy&quot;))}}
+                                    Pregnant {{#if stats.days_preg}}({{stats.days_preg}}d){{/if}}
+                                {{else}}
+                                    No
+                                {{/if}}
+                            &lt;/span&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                    &lt;div class=&quot;pt-cycle-legend&quot; aria-label=&quot;Fertility cycle legend&quot;&gt;
+                        &lt;span class=&quot;pt-legend-item&quot;&gt;&lt;span class=&quot;pt-legend-dot&quot; style=&quot;background: var(--cy-men);&quot;&gt;&lt;/span&gt;Menstrual&lt;/span&gt;
+                        &lt;span class=&quot;pt-legend-item&quot;&gt;&lt;span class=&quot;pt-legend-dot&quot; style=&quot;background: var(--cy-fol);&quot;&gt;&lt;/span&gt;Follicular&lt;/span&gt;
+                        &lt;span class=&quot;pt-legend-item&quot;&gt;&lt;span class=&quot;pt-legend-dot&quot; style=&quot;background: var(--cy-ovu);&quot;&gt;&lt;/span&gt;Ovulation&lt;/span&gt;
+                        &lt;span class=&quot;pt-legend-item&quot;&gt;&lt;span class=&quot;pt-legend-dot&quot; style=&quot;background: var(--cy-lut);&quot;&gt;&lt;/span&gt;Luteal&lt;/span&gt;
+                    &lt;/div&gt;
                 &lt;/div&gt;
             &lt;/div&gt;
             {{/if}}
 
             {{#if (hasRefractoryTracking stats)}}
-            &lt;div class=&quot;pt-bio-zone&quot;&gt;
+            &lt;div class=&quot;pt-bio-zone {{#unless (gt stats.refractory_minutes 0)}}pt-bio-compact{{/unless}}&quot;&gt;
+                {{#if (gt stats.refractory_minutes 0)}}
                 &lt;div class=&quot;pt-refractory-gauge&quot;&gt;
                     &lt;div class=&quot;pt-refractory-arc&quot;&gt;&lt;/div&gt;
                     &lt;div class=&quot;pt-refractory-center&quot;&gt;
@@ -10832,22 +10944,36 @@ var pulse_thread_tracker_default = {
                     &lt;/div&gt;
                     &lt;div class=&quot;pt-refractory-label&quot;&gt;Cooldown&lt;/div&gt;
                 &lt;/div&gt;
-                &lt;div class=&quot;pt-bio-text&quot;&gt;
-                    &lt;h4&gt;Refractory Status&lt;/h4&gt;
-                    &lt;p&gt;
-                        {{#if (gt stats.refractory_minutes 60)}}
-                            Resting phase. Estimated recovery in ~{{divideRoundUp stats.refractory_minutes 60}} hours.
-                        {{else if (gt stats.refractory_minutes 0)}}
-                            Cooling down. Ready again in ~{{stats.refractory_minutes}} minutes.
+                {{else}}
+                &lt;div class=&quot;pt-bio-ready-dot&quot;&gt;OK&lt;/div&gt;
+                {{/if}}
+                &lt;div class=&quot;pt-bio-panel&quot;&gt;
+                    &lt;div class=&quot;pt-bio-title-row&quot;&gt;
+                        &lt;h4&gt;Refractory&lt;/h4&gt;
+                        {{#if (gt stats.refractory_minutes 0)}}
+                            &lt;span class=&quot;pt-risk-badge risk-med&quot;&gt;Recovery&lt;/span&gt;
                         {{else}}
-                            Fully recovered and responsive.
+                            &lt;span class=&quot;pt-risk-badge risk-low&quot;&gt;Ready&lt;/span&gt;
                         {{/if}}
-                    &lt;/p&gt;
-                    {{#if (gt stats.refractory_minutes 0)}}
-                        &lt;span class=&quot;pt-risk-badge risk-med&quot;&gt;\u23F3 Recovery&lt;/span&gt;
-                    {{else}}
-                        &lt;span class=&quot;pt-risk-badge risk-low&quot;&gt;\u2713 Ready&lt;/span&gt;
-                    {{/if}}
+                    &lt;/div&gt;
+                    &lt;div class=&quot;pt-bio-grid&quot;&gt;
+                        &lt;div class=&quot;pt-bio-row&quot;&gt;
+                            &lt;span class=&quot;pt-bio-key&quot;&gt;Status&lt;/span&gt;
+                            &lt;span class=&quot;pt-bio-value&quot;&gt;{{#if (gt stats.refractory_minutes 0)}}Cooling down{{else}}Ready{{/if}}&lt;/span&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;pt-bio-row&quot;&gt;
+                            &lt;span class=&quot;pt-bio-key&quot;&gt;Remaining&lt;/span&gt;
+                            &lt;span class=&quot;pt-bio-value&quot;&gt;
+                                {{#if (gt stats.refractory_minutes 60)}}
+                                    ~{{divideRoundUp stats.refractory_minutes 60}} hours
+                                {{else if (gt stats.refractory_minutes 0)}}
+                                    ~{{stats.refractory_minutes}} minutes
+                                {{else}}
+                                    0 minutes
+                                {{/if}}
+                            &lt;/span&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
                 &lt;/div&gt;
             &lt;/div&gt;
             {{/if}}
