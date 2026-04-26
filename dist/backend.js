@@ -10010,7 +10010,6 @@ var pulse_thread_tracker_default = {
   templateName: "Pulse Thread Tracker",
   templateAuthor: "Lumiverse Assistant",
   templatePosition: "BOTTOM",
-  tabsType: "toggle",
   htmlTemplate: `&lt;!-- TEMPLATE NAME: Pulse Thread Tracker --&gt;
 &lt;!-- AUTHOR: Lumiverse Assistant --&gt;
 &lt;!-- POSITION: BOTTOM --&gt;
@@ -10387,11 +10386,9 @@ var pulse_thread_tracker_default = {
     .pt-womb-vessel {
         width: 120px;
         height: 140px;
-        padding: 8px;
-        border-radius: 24px 24px 28px 28px;
-        background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03));
-        border: 1px solid rgba(255,255,255,0.09);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 14px 26px rgba(0,0,0,0.24);
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .pt-womb-svg {
@@ -10399,6 +10396,7 @@ var pulse_thread_tracker_default = {
         height: 100%;
         display: block;
         overflow: visible;
+        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.35));
     }
 
     .pt-womb-outline {
@@ -10527,11 +10525,9 @@ var pulse_thread_tracker_default = {
     .pt-anal-vessel {
         width: 120px;
         height: 140px;
-        padding: 8px;
-        border-radius: 24px 24px 28px 28px;
-        background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03));
-        border: 1px solid rgba(255,255,255,0.09);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 14px 26px rgba(0,0,0,0.24);
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .pt-anal-svg {
@@ -10539,6 +10535,7 @@ var pulse_thread_tracker_default = {
         height: 100%;
         display: block;
         overflow: visible;
+        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.35));
     }
 
     .pt-anal-outline {
@@ -10608,54 +10605,62 @@ var pulse_thread_tracker_default = {
         background: linear-gradient(90deg, #f1c40f, #e67e22);
     }
 
-    /* --- MALE: Semen / Refractory Vial --- */
-    .pt-vial {
-        width: 82px;
-        min-height: 104px;
-        padding: 10px;
-        border-radius: 22px 22px 26px 26px;
-        background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03));
-        border: 1px solid rgba(255,255,255,0.09);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 14px 26px rgba(0,0,0,0.28);
+    /* --- MALE: Semen / Refractory Penis --- */
+    .pt-penis-container {
         position: relative;
-        overflow: hidden;
+        width: 110px;
+        height: 150px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    .pt-vial::before {
-        content: &#039;&#039;;
-        position: absolute;
-        left: 14px;
-        right: 14px;
-        top: 7px;
-        height: 8px;
-        border-radius: 999px;
-        background: rgba(255,255,255,0.16);
+    .pt-penis-svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+        overflow: visible;
+        filter: drop-shadow(0 4px 14px rgba(0,0,0,0.4));
     }
 
-    .pt-vial-chamber {
-        position: absolute;
-        left: 10px;
-        right: 10px;
-        bottom: 10px;
-        top: 22px;
-        border-radius: 16px 16px 20px 20px;
-        overflow: hidden;
-        background: rgba(0,0,0,0.28);
-        border: 1px solid rgba(255,255,255,0.08);
+    .pt-penis-shaft {
+        fill: none;
+        stroke: rgba(255,255,255,0.85);
+        stroke-width: 3.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        filter: drop-shadow(0 0 3px rgba(255,255,255,0.25));
     }
 
-    .pt-vial-fill {
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        height: 0%;
-        background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,248,248,0.96) 55%, rgba(228,228,228,0.94));
-        box-shadow: 0 -8px 18px rgba(255,255,255,0.18);
-        transition: height 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+    .pt-penis-glans {
+        fill: rgba(255,255,255,0.08);
+        stroke: rgba(255,255,255,0.85);
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
     }
 
-    .pt-vial-label {
+    .pt-testicle {
+        fill: rgba(255,255,255,0.06);
+        stroke: rgba(255,255,255,0.75);
+        stroke-width: 3;
+        stroke-linecap: round;
+    }
+
+    .pt-semen-fill {
+        fill: rgba(255,255,255,0.95);
+        filter: drop-shadow(0 -2px 6px rgba(255,255,255,0.18));
+        transition: y 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .pt-semen-surface {
+        stroke: rgba(255,255,255,0.72);
+        stroke-width: 2;
+        stroke-linecap: round;
+        opacity: 0.88;
+    }
+
+    .pt-semen-label {
         position: absolute;
         inset: 0;
         display: flex;
@@ -10666,6 +10671,7 @@ var pulse_thread_tracker_default = {
         font-size: 0.62rem;
         font-weight: 900;
         text-shadow: 0 1px 6px rgba(0,0,0,0.55);
+        pointer-events: none;
     }
 
     .pt-male-visuals {
@@ -10675,15 +10681,15 @@ var pulse_thread_tracker_default = {
         gap: 8px;
     }
 
-    .pt-male-visuals.pt-futa-accent .pt-vial {
-        background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,122,162,0.05));
-        border-color: rgba(255,122,162,0.18);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 14px 26px rgba(255,92,138,0.18);
+    .pt-male-visuals.pt-futa-accent .pt-penis-shaft,
+    .pt-male-visuals.pt-futa-accent .pt-penis-glans,
+    .pt-male-visuals.pt-futa-accent .pt-testicle {
+        stroke: rgba(255,122,162,0.85);
     }
 
-    .pt-male-visuals.pt-futa-accent .pt-vial-fill {
-        background: linear-gradient(180deg, rgba(255,244,250,0.98), rgba(255,196,221,0.96) 55%, rgba(255,160,190,0.94));
-        box-shadow: 0 -8px 18px rgba(255,122,162,0.22);
+    .pt-male-visuals.pt-futa-accent .pt-semen-fill {
+        fill: rgba(255,244,250,0.95);
+        filter: drop-shadow(0 -2px 6px rgba(255,122,162,0.22));
     }
 
     .pt-male-visuals.pt-futa-accent .pt-cooldown-fill {
@@ -10864,7 +10870,7 @@ var pulse_thread_tracker_default = {
     @media (max-width: 420px) {
         .pulse-tabbed-root { border-radius: 22px; }
         .pt-bio-zone { grid-template-columns: 1fr; }
-        .pt-fertility-ring, .pt-vial, .pt-womb-vessel, .pt-anal-vessel, .pt-male-visuals { justify-self: center; }
+        .pt-fertility-ring, .pt-penis-container, .pt-womb-vessel, .pt-anal-vessel, .pt-male-visuals { justify-self: center; }
         .pt-bio-zone.pt-bio-compact { grid-template-columns: auto 1fr; }
     }
 
@@ -11305,11 +11311,35 @@ var pulse_thread_tracker_default = {
                     {{#if (hasRefractoryTracking stats)}}
                     &lt;div class=&quot;pt-bio-zone&quot;&gt;
                         &lt;div class=&quot;pt-male-visuals {{#if (eq stats.sex &quot;futanari&quot;)}}pt-futa-accent{{/if}}&quot;&gt;
-                            &lt;div class=&quot;pt-vial&quot;&gt;
-                                &lt;div class=&quot;pt-vial-chamber&quot;&gt;
-                                    &lt;div class=&quot;pt-vial-fill&quot; style=&quot;height: {{semenPercent stats}}%&quot;&gt;&lt;/div&gt;
-                                    &lt;div class=&quot;pt-vial-label&quot;&gt;{{semenPercent stats}}%&lt;/div&gt;
-                                &lt;/div&gt;
+                            &lt;div class=&quot;pt-penis-container&quot;&gt;
+                                &lt;svg class=&quot;pt-penis-svg&quot; viewBox=&quot;0 0 100 150&quot; aria-hidden=&quot;true&quot; focusable=&quot;false&quot;&gt;
+                                    &lt;defs&gt;
+                                        &lt;clipPath id=&quot;pt-penis-clip-{{@index}}&quot;&gt;
+                                            &lt;ellipse cx=&quot;28&quot; cy=&quot;106&quot; rx=&quot;19&quot; ry=&quot;23&quot; /&gt;
+                                            &lt;ellipse cx=&quot;72&quot; cy=&quot;106&quot; rx=&quot;19&quot; ry=&quot;23&quot; /&gt;
+                                        &lt;/clipPath&gt;
+                                        &lt;linearGradient id=&quot;pt-penis-depth-{{@index}}&quot; x1=&quot;0.5&quot; y1=&quot;0&quot; x2=&quot;0.5&quot; y2=&quot;1&quot;&gt;
+                                            &lt;stop offset=&quot;0%&quot; stop-color=&quot;#7a5a4a&quot; stop-opacity=&quot;0.5&quot; /&gt;
+                                            &lt;stop offset=&quot;100%&quot; stop-color=&quot;#3a2015&quot; stop-opacity=&quot;0.7&quot; /&gt;
+                                        &lt;/linearGradient&gt;
+                                    &lt;/defs&gt;
+                                    &lt;!-- Shaft --&gt;
+                                    &lt;path class=&quot;pt-penis-shaft&quot; d=&quot;M42 70 C40 50 38 32 40 20 C40 12 44 6 50 6 C56 6 60 12 60 20 C62 32 60 50 58 70&quot; /&gt;
+                                    &lt;!-- Glans --&gt;
+                                    &lt;path class=&quot;pt-penis-glans&quot; d=&quot;M40 20 C40 10 44 4 50 4 C56 4 60 10 60 20 C60 26 56 29 50 29 C44 29 40 26 40 20 Z&quot; /&gt;
+                                    &lt;!-- Testicle inner depth --&gt;
+                                    &lt;ellipse cx=&quot;28&quot; cy=&quot;106&quot; rx=&quot;17&quot; ry=&quot;21&quot; fill=&quot;url(#pt-penis-depth-{{@index}})&quot; /&gt;
+                                    &lt;ellipse cx=&quot;72&quot; cy=&quot;106&quot; rx=&quot;17&quot; ry=&quot;21&quot; fill=&quot;url(#pt-penis-depth-{{@index}})&quot; /&gt;
+                                    &lt;!-- Testicle outlines --&gt;
+                                    &lt;ellipse class=&quot;pt-testicle&quot; cx=&quot;28&quot; cy=&quot;106&quot; rx=&quot;19&quot; ry=&quot;23&quot; /&gt;
+                                    &lt;ellipse class=&quot;pt-testicle&quot; cx=&quot;72&quot; cy=&quot;106&quot; rx=&quot;19&quot; ry=&quot;23&quot; /&gt;
+                                    &lt;!-- Semen fill --&gt;
+                                    &lt;g clip-path=&quot;url(#pt-penis-clip-{{@index}})&quot;&gt;
+                                        &lt;rect class=&quot;pt-semen-fill&quot; x=&quot;0&quot; y=&quot;{{semenFillTop (semenPercent stats)}}&quot; width=&quot;100&quot; height=&quot;{{semenFillHeight (semenPercent stats)}}&quot; /&gt;
+                                        &lt;path class=&quot;pt-semen-surface&quot; d=&quot;M20 {{semenFillTop (semenPercent stats)}} C35 {{add (semenFillTop (semenPercent stats)) 3}} 65 {{add (semenFillTop (semenPercent stats)) 3}} 80 {{semenFillTop (semenPercent stats)}}&quot; /&gt;
+                                    &lt;/g&gt;
+                                &lt;/svg&gt;
+                                &lt;div class=&quot;pt-semen-label&quot;&gt;{{semenPercent stats}}%&lt;/div&gt;
                             &lt;/div&gt;
                             &lt;div class=&quot;pt-cooldown-track&quot;&gt;
                                 &lt;div class=&quot;pt-cooldown-fill&quot; style=&quot;width: {{divide (multiply (subtract stats.refractory_total stats.refractory_minutes) 100) stats.refractory_total}}%&quot;&gt;&lt;/div&gt;

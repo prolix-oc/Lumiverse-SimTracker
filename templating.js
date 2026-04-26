@@ -245,6 +245,16 @@ Handlebars.registerHelper("analFillHeight", function (value) {
   return (pct / 100) * 64;
 });
 
+Handlebars.registerHelper("semenFillTop", function (value) {
+  const pct = Math.max(0, Math.min(100, Number(value) || 0));
+  return 129 - (pct / 100) * 46;
+});
+
+Handlebars.registerHelper("semenFillHeight", function (value) {
+  const pct = Math.max(0, Math.min(100, Number(value) || 0));
+  return (pct / 100) * 46;
+});
+
 Handlebars.registerHelper("divide", function (a, b) {
   if (typeof a !== "number" || typeof b !== "number" || b === 0) {
     return 0;
