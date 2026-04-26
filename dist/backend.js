@@ -11147,7 +11147,7 @@ var pulse_thread_tracker_default = {
                         &lt;/div&gt;
                         &lt;div class=&quot;pt-bio-panel&quot;&gt;
                             &lt;div class=&quot;pt-bio-title-row&quot;&gt;
-                                &lt;h4&gt;Womb Fullness&lt;/h4&gt;
+                                &lt;h4&gt;Womb&lt;/h4&gt;
                                 &lt;span class=&quot;pt-risk-badge risk-preg&quot;&gt;{{clampPercent stats.womb_fullness_pct}}%&lt;/span&gt;
                             &lt;/div&gt;
                             &lt;div class=&quot;pt-bio-grid&quot;&gt;
@@ -11156,6 +11156,19 @@ var pulse_thread_tracker_default = {
                                     &lt;span class=&quot;pt-bio-value&quot;&gt;{{clampPercent stats.womb_fullness_pct}}%&lt;/span&gt;
                                 &lt;/div&gt;
                                 &lt;div class=&quot;pt-womb-meter&quot;&gt;&lt;div class=&quot;pt-womb-meter-fill&quot; style=&quot;width: {{clampPercent stats.womb_fullness_pct}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+                                &lt;div class=&quot;pt-bio-row&quot;&gt;
+                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Receptive&lt;/span&gt;
+                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{clampPercent stats.womb_receptivity_pct}}%&lt;/span&gt;
+                                &lt;/div&gt;
+                                &lt;div class=&quot;pt-womb-meter&quot;&gt;&lt;div class=&quot;pt-womb-meter-fill&quot; style=&quot;width: {{clampPercent stats.womb_receptivity_pct}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+                                &lt;div class=&quot;pt-bio-row&quot;&gt;
+                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Cervix&lt;/span&gt;
+                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{#if stats.cervix_state}}{{stats.cervix_state}}{{else}}Unknown{{/if}}&lt;/span&gt;
+                                &lt;/div&gt;
+                                &lt;div class=&quot;pt-bio-row&quot;&gt;
+                                    &lt;span class=&quot;pt-bio-key&quot;&gt;This Cycle&lt;/span&gt;
+                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{#if stats.breeding_count}}{{stats.breeding_count}}\xD7{{else}}0{{/if}}&lt;/span&gt;
+                                &lt;/div&gt;
                             &lt;/div&gt;
                         &lt;/div&gt;
                     &lt;/div&gt;
@@ -11450,6 +11463,11 @@ Track \`cycle_day\` (1-28 by default unless the character/species has an establi
 
 Set \`womb_fullness_pct\` as a number from 0-100 estimating current womb fullness from the narrative state. Use \`0\` when empty/unknown and preserve the prior value unless events or time passage would change it.
 
+Additionally, ALWAYS track these womb state fields for female/futanari characters:
+- \`womb_receptivity_pct\`: How primed the womb is to receive seed (0-100). High during ovulation/rut, lower during menstruation or when not aroused. Update based on arousal, cycle phase, and narrative context.
+- \`cervix_state\`: Current firmness/openness of the cervix. Use one of: \`"soft"\`, \`"firm"\`, \`"open"\`, \`"dilated"\`, \`"sealed"\`. Soft/open during fertile/high-arousal windows. Sealed/firm acts as a barrier.
+- \`breeding_count\`: Times filled this cycle (0 or higher). Increment after each ejaculation inside, preserve between turns. Helps the LLM track whether semen is fresh or accumulated.
+
 If pregnant, set \`preg: true\`, \`cycle_stage_id: 5\`, \`cycle_stage: "pregnancy"\`, track \`days_preg\`, and preserve/set \`conception_date\` as \`YYYY-MM-DD\` when known. If not pregnant, set \`preg: false\` and \`days_preg: 0\`.
 
 If unprotected vaginal/reproductive sex occurs during \`ovulation\` or another fertile/rut stage, evaluate conception risk in narrative context and update \`preg\`, \`cycle_stage\`, \`days_preg\`, and \`conception_date\` if conception is confirmed or narratively certain. Early pregnancy signs may remain absent, but tracker state should still preserve conception timing when known.
@@ -11573,8 +11591,16 @@ Provide a \`"bg"\` hex color per character for theming. Example: \`"#ff7aa2"\`.
       description: "[number] Required for all characters. Current sperm count/fertility level (0-100); use 0 when not applicable"
     },
     {
-      key: "health",
-      description: "[number] Health Status enum (0=Unharmed, 1=Injured, 2=Critical)"
+      key: "womb_receptivity_pct",
+      description: "[number] Required for all characters. Current womb receptivity/primed state (0-100); use 0 when not applicable"
+    },
+    {
+      key: "cervix_state",
+      description: "[string] Required for all characters. Cervix firmness/openness state such as 'soft', 'firm', 'open', 'dilated', 'sealed'; use empty when not applicable"
+    },
+    {
+      key: "breeding_count",
+      description: "[number] Required for all characters. Times filled this cycle (0 or higher); use 0 when not applicable"
     },
     {
       key: "bg",
