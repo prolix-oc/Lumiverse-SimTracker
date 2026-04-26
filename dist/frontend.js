@@ -8493,25 +8493,15 @@ var pulse_thread_tracker_default = {
   htmlTemplate: `<!-- TEMPLATE NAME: Pulse Thread Tracker -->
 <!-- AUTHOR: Lumiverse Assistant -->
 <!-- POSITION: BOTTOM -->
+<!-- TABS_TYPE: toggle -->
+<!-- sim-tracker-tabs bottom-mounted tabbed variant -->
 
 <!-- CARD_TEMPLATE_START -->
 <style>
     /* =========================================
-       PULSE THREAD: CONTAINER & VARIABLES
+       PULSE THREAD TABBED: CONTAINER & VARS
        ========================================= */
-    #silly-sim-tracker-container {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 20px;
-        align-items: flex-start;
-        width: 100%;
-        max-width: 1000px;
-        margin: 0 auto;
-        padding: 24px 0;
-    }
-
-    .pulse-card {
+    .pulse-tabbed-root {
         --pt-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         --pt-bg-deep: rgba(12, 12, 22, 0.82);
         --pt-bg-glass: rgba(30, 28, 48, 0.65);
@@ -8524,20 +8514,17 @@ var pulse_thread_tracker_default = {
         --pt-accent: #c9a6ff;
         --pt-gold: #ffd700;
 
-        /* Stat Colors */
         --pt-aff: #ff7aa2;
         --pt-des: #ff5c8a;
         --pt-tru: #4deeea;
         --pt-con: #8899aa;
 
-        /* Cycle Colors */
         --cy-men: #ff4757;
         --cy-fol: #70a1ff;
         --cy-ovu: #ffd700;
         --cy-lut: #a55eea;
         --cy-preg: #f6d365;
 
-        /* Reaction Colors */
         --st-app: #2ecc71;
         --st-neu: #f1c40f;
         --st-dis: #e74c3c;
@@ -8547,100 +8534,150 @@ var pulse_thread_tracker_default = {
 
         font-family: var(--pt-font);
         color: var(--pt-txt);
-        flex: 1 1 360px;
-        max-width: 480px;
-        min-width: 320px;
+        width: 100%;
+        max-width: 520px;
+        margin: 0 auto;
         position: relative;
         border-radius: 28px;
         overflow: hidden;
         box-shadow: var(--pt-shadow);
-        transition: border-color 0.4s ease, box-shadow 0.4s ease;
         border: 1px solid var(--pt-border);
         background: var(--pt-bg-deep);
         backdrop-filter: blur(var(--pt-blur));
         -webkit-backdrop-filter: blur(var(--pt-blur));
     }
 
-    .pulse-card:hover {
-        border-color: rgba(201, 166, 255, 0.25);
-        box-shadow: 0 28px 70px -10px rgba(0, 0, 0, 0.8), 0 0 20px rgba(201, 166, 255, 0.05);
-    }
+    .pulse-tabbed-root * { box-sizing: border-box; }
 
-    .pulse-card.inactive { opacity: 0.5; filter: grayscale(0.4); }
-    .pulse-card * { box-sizing: border-box; }
-
-    /* Toggle Logic */
-    .pulse-card input[type="checkbox"].pt-toggle {
+    /* Hidden radio inputs for CSS-only tab switching */
+    .pt-char-radio {
         position: absolute;
         opacity: 0;
         pointer-events: none;
+        width: 0;
+        height: 0;
     }
 
     /* =========================================
-       COLLAPSED STATE: PULSE BAR
+       TAB BAR
        ========================================= */
-    .pulse-bar {
-        padding: 16px 22px;
+    .pt-tab-bar {
+        display: flex;
+        gap: 6px;
+        padding: 14px 18px 0 18px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    .pt-tab-bar::-webkit-scrollbar { display: none; }
+
+    .pt-tab {
         display: flex;
         align-items: center;
-        gap: 14px;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.06);
         cursor: pointer;
-        user-select: none;
-        position: relative;
-        overflow: hidden;
+        transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        opacity: 0.5;
+        white-space: nowrap;
+        flex-shrink: 0;
     }
 
-    /* Animated pulse glow behind the bar */
-    .pulse-bar::before {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 10%;
-        width: 80%;
-        height: 2px;
-        background: linear-gradient(90deg, transparent, var(--pt-accent), transparent);
-        opacity: 0.4;
-        animation: barPulse 3s ease-in-out infinite;
-    }
+    .pt-tab:hover { opacity: 0.8; background: rgba(255,255,255,0.07); }
 
-    @keyframes barPulse {
-        0%, 100% { opacity: 0.2; transform: scaleX(0.8); }
-        50% { opacity: 0.6; transform: scaleX(1); }
-    }
-
-    .pt-avatar {
-        width: 40px;
-        height: 40px;
+    .pt-tab-avatar {
+        width: 24px;
+        height: 24px;
         border-radius: 50%;
-        background: rgba(255, 255, 255, 0.06);
-        border: 2px solid rgba(255, 255, 255, 0.12);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.2rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        background: rgba(255,255,255,0.1);
+    }
+
+    .pt-tab-name {
+        font-size: 0.78rem;
+        font-weight: 600;
+    }
+
+    /* Active tab styling via radio:checked */
+    .pt-char-radio:nth-of-type(1):checked ~ .pt-tab-bar .pt-tab:nth-child(1),
+    .pt-char-radio:nth-of-type(2):checked ~ .pt-tab-bar .pt-tab:nth-child(2),
+    .pt-char-radio:nth-of-type(3):checked ~ .pt-tab-bar .pt-tab:nth-child(3),
+    .pt-char-radio:nth-of-type(4):checked ~ .pt-tab-bar .pt-tab:nth-child(4),
+    .pt-char-radio:nth-of-type(5):checked ~ .pt-tab-bar .pt-tab:nth-child(5),
+    .pt-char-radio:nth-of-type(6):checked ~ .pt-tab-bar .pt-tab:nth-child(6) {
+        opacity: 1;
+        background: rgba(255,255,255,0.10);
+        border-color: rgba(201, 166, 255, 0.35);
+        box-shadow: 0 0 12px rgba(201, 166, 255, 0.08);
+    }
+
+    /* =========================================
+       CARD VIEWPORT & PAGES
+       ========================================= */
+    .pt-viewport {
+        padding: 14px 18px 18px 18px;
+    }
+
+    .pt-page {
+        display: none;
+        animation: ptPageIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    @keyframes ptPageIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .pt-char-radio:nth-of-type(1):checked ~ .pt-viewport .pt-page[data-index="0"],
+    .pt-char-radio:nth-of-type(2):checked ~ .pt-viewport .pt-page[data-index="1"],
+    .pt-char-radio:nth-of-type(3):checked ~ .pt-viewport .pt-page[data-index="2"],
+    .pt-char-radio:nth-of-type(4):checked ~ .pt-viewport .pt-page[data-index="3"],
+    .pt-char-radio:nth-of-type(5):checked ~ .pt-viewport .pt-page[data-index="4"],
+    .pt-char-radio:nth-of-type(6):checked ~ .pt-viewport .pt-page[data-index="5"] {
+        display: block;
+    }
+
+    /* =========================================
+       PER-CHARACTER CARD CONTENT
+       ========================================= */
+    .pt-card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .pt-header-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
         font-weight: 700;
         text-transform: uppercase;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         flex-shrink: 0;
-        z-index: 1;
     }
 
-    .pt-bar-info {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        z-index: 1;
-    }
-
-    .pt-bar-info h3 {
+    .pt-header-info h3 {
         margin: 0;
         font-size: 0.95rem;
         font-weight: 700;
         letter-spacing: -0.3px;
     }
 
-    .pt-bar-info .pt-bar-meta {
+    .pt-header-meta {
         font-size: 0.65rem;
         color: var(--pt-txt-dim);
         text-transform: uppercase;
@@ -8648,27 +8685,19 @@ var pulse_thread_tracker_default = {
         font-weight: 600;
     }
 
-    .pt-bar-stats {
+    .pt-header-badges {
+        margin-left: auto;
         display: flex;
         align-items: center;
         gap: 6px;
-        z-index: 1;
     }
 
-    .pt-mini-dot {
+    .pt-badge-dot {
         width: 6px;
         height: 6px;
         border-radius: 50%;
-        background: rgba(255,255,255,0.15);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-    /* Mini dots colored by stat value */
-    .mini-aff { background: var(--pt-aff); box-shadow: 0 0 6px var(--pt-aff); }
-    .mini-des { background: var(--pt-des); box-shadow: 0 0 6px var(--pt-des); }
-    .mini-tru { background: var(--pt-tru); box-shadow: 0 0 6px var(--pt-tru); }
-
-    /* Biological mini indicator */
     .pt-bio-mini {
         width: 18px;
         height: 18px;
@@ -8677,78 +8706,30 @@ var pulse_thread_tracker_default = {
         align-items: center;
         justify-content: center;
         font-size: 0.7rem;
-        margin-left: 4px;
         flex-shrink: 0;
-        z-index: 1;
-    }
-
-    .pt-chevron {
-        opacity: 0.4;
-        transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-        flex-shrink: 0;
-        z-index: 1;
-    }
-
-    .pulse-card input.pt-toggle:checked + .pulse-bar .pt-chevron {
-        transform: rotate(180deg);
-        opacity: 1;
     }
 
     /* =========================================
-       EXPANDED BODY
-       ========================================= */
-    .pt-body {
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
-        will-change: max-height;
-    }
-
-    .pulse-card input.pt-toggle:checked ~ .pt-body {
-        max-height: 2400px;
-    }
-
-    .pt-body-inner {
-        padding: 0 22px 24px 22px;
-        opacity: 0;
-        transform: translate3d(0, -12px, 0);
-        transition: opacity 0.35s ease, transform 0.35s ease;
-    }
-
-    .pulse-card input.pt-toggle:checked ~ .pt-body .pt-body-inner {
-        opacity: 1;
-        transform: translate3d(0, 0, 0);
-        transition-delay: 0.12s;
-    }
-
-    /* Decorative thread line */
-    .pt-thread-line {
-        width: 100%;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(201, 166, 255, 0.2), transparent);
-        margin: 18px 0;
-    }
-
-    /* =========================================
-       MONologue BUBBLE
+       MONOLOGUE
        ========================================= */
     .pt-mono {
         position: relative;
         background: rgba(0, 0, 0, 0.25);
         border: 1px solid rgba(255, 255, 255, 0.06);
         border-radius: 16px;
-        padding: 28px 16px 14px 16px;
+        padding: 24px 14px 12px 14px;
         font-style: italic;
-        font-size: 0.88rem;
-        line-height: 1.55;
+        font-size: 0.85rem;
+        line-height: 1.5;
         color: #d4d0e0;
+        margin-bottom: 14px;
     }
 
     .pt-mono-tag {
         position: absolute;
-        top: 8px;
-        left: 14px;
-        font-size: 0.58rem;
+        top: 6px;
+        left: 12px;
+        font-size: 0.55rem;
         text-transform: uppercase;
         font-weight: 800;
         letter-spacing: 1px;
@@ -8760,25 +8741,223 @@ var pulse_thread_tracker_default = {
     }
 
     /* =========================================
-       MAIN STATS: ORBIT RING DESIGN
+       BIO ZONES (Fertility / Refractory)
+       ========================================= */
+    .pt-bio-zone {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px;
+        background: rgba(0, 0, 0, 0.18);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        margin-bottom: 14px;
+    }
+
+    /* --- FEMALE: Fertility Ring --- */
+    .pt-fertility-ring {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        position: relative;
+        flex-shrink: 0;
+        background: conic-gradient(
+            var(--cy-men) 0deg 64deg,
+            var(--cy-fol) 64deg 167deg,
+            var(--cy-ovu) 167deg 206deg,
+            var(--cy-lut) 206deg 309deg,
+            var(--cy-men) 309deg 360deg
+        );
+        padding: 4px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.4);
+    }
+
+    .pt-fertility-ring::before {
+        content: '';
+        position: absolute;
+        inset: 4px;
+        border-radius: 50%;
+        background: var(--pt-bg-deep);
+        z-index: 1;
+    }
+
+    .pt-fertility-marker {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 0 8px currentColor;
+        z-index: 2;
+        transform: translate(-50%, -50%) rotate(var(--marker-deg)) translateY(-28px);
+        transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .pt-fertility-marker.ovulation-glow {
+        animation: ovuPulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes ovuPulse {
+        0%, 100% { box-shadow: 0 0 8px var(--cy-ovu); }
+        50% { box-shadow: 0 0 18px 4px var(--cy-ovu); }
+    }
+
+    .pt-fertility-label {
+        position: absolute;
+        inset: 4px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.55rem;
+        font-weight: 700;
+        color: var(--pt-txt-dim);
+        z-index: 2;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* --- MALE: Refractory Gauge --- */
+    .pt-refractory-gauge {
+        width: 64px;
+        height: 64px;
+        position: relative;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .pt-refractory-arc {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        position: relative;
+        background: conic-gradient(
+            from 180deg,
+            var(--pt-des) 0deg var(--ref-angle),
+            rgba(255,255,255,0.06) var(--ref-angle) 180deg
+        );
+        transform: rotate(-90deg);
+        padding: 4px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.4);
+    }
+
+    .pt-refractory-arc::before {
+        content: '';
+        position: absolute;
+        inset: 4px;
+        border-radius: 50%;
+        background: var(--pt-bg-deep);
+    }
+
+    .pt-refractory-center {
+        position: absolute;
+        inset: 4px;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+    }
+
+    .pt-refractory-center .ref-icon { font-size: 1rem; line-height: 1; }
+    .pt-refractory-center .ref-time {
+        font-size: 0.52rem;
+        font-weight: 800;
+        color: var(--pt-txt-dim);
+        margin-top: 2px;
+    }
+
+    .pt-refractory-label {
+        position: absolute;
+        top: -4px;
+        right: -2px;
+        background: var(--pt-bg-deep);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 6px;
+        padding: 1px 4px;
+        font-size: 0.5rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--pt-des);
+    }
+
+    .ref-ready { color: var(--pt-accent) !important; }
+    .ref-cool { color: var(--pt-des) !important; }
+
+    /* Bio Text */
+    .pt-bio-text {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .pt-bio-text h4 {
+        margin: 0;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+    }
+
+    .pt-bio-text p {
+        margin: 0;
+        font-size: 0.72rem;
+        color: var(--pt-txt-dim);
+        line-height: 1.45;
+    }
+
+    .pt-risk-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 7px;
+        border-radius: 6px;
+        font-size: 0.6rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 2px;
+        align-self: flex-start;
+    }
+
+    .risk-low { background: rgba(112, 161, 255, 0.15); color: var(--cy-fol); border: 1px solid rgba(112, 161, 255, 0.2); }
+    .risk-med { background: rgba(165, 94, 234, 0.15); color: var(--cy-lut); border: 1px solid rgba(165, 94, 234, 0.2); }
+    .risk-high { background: rgba(255, 215, 0, 0.15); color: var(--cy-ovu); border: 1px solid rgba(255, 215, 0, 0.3); animation: riskGlow 2s ease-in-out infinite; }
+    .risk-preg { background: rgba(246, 211, 101, 0.15); color: var(--cy-preg); border: 1px solid rgba(246, 211, 101, 0.2); }
+
+    @keyframes riskGlow {
+        0%, 100% { box-shadow: 0 0 0 transparent; }
+        50% { box-shadow: 0 0 8px rgba(255, 215, 0, 0.15); }
+    }
+
+    /* =========================================
+       STATS GRID
        ========================================= */
     .pt-stats-grid {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 10px;
+        margin-bottom: 14px;
     }
 
     .pt-stat-row {
         display: grid;
-        grid-template-columns: 32px 1fr 40px;
+        grid-template-columns: 28px 1fr 36px;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         position: relative;
     }
 
     .pt-stat-icon {
-        width: 32px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -8788,15 +8967,14 @@ var pulse_thread_tracker_default = {
         position: relative;
     }
 
-    .pt-stat-icon svg { width: 16px; height: 16px; display: block; }
+    .pt-stat-icon svg { width: 14px; height: 14px; display: block; }
 
-    /* Orbit change indicator ring */
     .pt-orbit-ring {
         position: absolute;
-        top: -4px;
-        left: -4px;
-        width: 40px;
-        height: 40px;
+        top: -3px;
+        left: -3px;
+        width: 34px;
+        height: 34px;
         border-radius: 50%;
         border: 2px solid transparent;
         opacity: 0;
@@ -8846,7 +9024,7 @@ var pulse_thread_tracker_default = {
     .fill-con { background: linear-gradient(90deg, var(--pt-con), #aabbcc); }
 
     .pt-stat-val {
-        font-size: 0.72rem;
+        font-size: 0.7rem;
         font-weight: 700;
         text-align: right;
         position: relative;
@@ -8854,11 +9032,11 @@ var pulse_thread_tracker_default = {
 
     .pt-change-bubble {
         position: absolute;
-        top: -14px;
+        top: -12px;
         right: 0;
-        font-size: 0.58rem;
-        padding: 2px 5px;
-        border-radius: 6px;
+        font-size: 0.55rem;
+        padding: 2px 4px;
+        border-radius: 5px;
         white-space: nowrap;
         opacity: 0;
         animation: bubblePop 2s forwards;
@@ -8877,221 +9055,21 @@ var pulse_thread_tracker_default = {
     .ch-neg { background: rgba(231, 76, 60, 0.9); color: #fff; }
 
     /* =========================================
-       BIOLOGICAL STATUS: CYCLE & REFRACTORY
-       ========================================= */
-    .pt-bio-zone {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        padding: 14px;
-        background: rgba(0, 0, 0, 0.18);
-        border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    /* --- FEMALE: Fertility Ring --- */
-    .pt-fertility-ring {
-        width: 72px;
-        height: 72px;
-        border-radius: 50%;
-        position: relative;
-        flex-shrink: 0;
-        background: conic-gradient(
-            var(--cy-men) 0deg 64deg,
-            var(--cy-fol) 64deg 167deg,
-            var(--cy-ovu) 167deg 206deg,
-            var(--cy-lut) 206deg 309deg,
-            var(--cy-men) 309deg 360deg
-        );
-        padding: 5px;
-        box-shadow: 0 0 15px rgba(0,0,0,0.4);
-    }
-
-    .pt-fertility-ring::before {
-        content: '';
-        position: absolute;
-        inset: 5px;
-        border-radius: 50%;
-        background: var(--pt-bg-deep);
-        z-index: 1;
-    }
-
-    .pt-fertility-marker {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #fff;
-        box-shadow: 0 0 8px currentColor;
-        z-index: 2;
-        transform: translate(-50%, -50%) rotate(var(--marker-deg)) translateY(-31px);
-        transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-    }
-
-    .pt-fertility-marker.ovulation-glow {
-        animation: ovuPulse 1.5s ease-in-out infinite;
-    }
-
-    @keyframes ovuPulse {
-        0%, 100% { box-shadow: 0 0 8px var(--cy-ovu); }
-        50% { box-shadow: 0 0 18px 4px var(--cy-ovu); }
-    }
-
-    .pt-fertility-label {
-        position: absolute;
-        inset: 5px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.6rem;
-        font-weight: 700;
-        color: var(--pt-txt-dim);
-        z-index: 2;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    /* --- MALE: Refractory Gauge --- */
-    .pt-refractory-gauge {
-        width: 72px;
-        height: 72px;
-        position: relative;
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .pt-refractory-arc {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        position: relative;
-        background: conic-gradient(
-            from 180deg,
-            var(--pt-des) 0deg var(--ref-angle),
-            rgba(255,255,255,0.06) var(--ref-angle) 180deg
-        );
-        transform: rotate(-90deg);
-        padding: 5px;
-        box-shadow: 0 0 15px rgba(0,0,0,0.4);
-    }
-
-    .pt-refractory-arc::before {
-        content: '';
-        position: absolute;
-        inset: 5px;
-        border-radius: 50%;
-        background: var(--pt-bg-deep);
-    }
-
-    .pt-refractory-center {
-        position: absolute;
-        inset: 5px;
-        border-radius: 50%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 1;
-    }
-
-    .pt-refractory-center .ref-icon {
-        font-size: 1.1rem;
-        line-height: 1;
-    }
-
-    .pt-refractory-center .ref-time {
-        font-size: 0.56rem;
-        font-weight: 800;
-        color: var(--pt-txt-dim);
-        margin-top: 2px;
-    }
-
-    .pt-refractory-label {
-        position: absolute;
-        top: -6px;
-        right: -4px;
-        background: var(--pt-bg-deep);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 6px;
-        padding: 1px 5px;
-        font-size: 0.55rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: var(--pt-des);
-    }
-
-    .ref-ready { color: var(--pt-accent) !important; }
-    .ref-cool { color: var(--pt-des) !important; }
-
-    /* Bio Text */
-    .pt-bio-text {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .pt-bio-text h4 {
-        margin: 0;
-        font-size: 0.78rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-    }
-
-    .pt-bio-text p {
-        margin: 0;
-        font-size: 0.75rem;
-        color: var(--pt-txt-dim);
-        line-height: 1.45;
-    }
-
-    .pt-risk-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 3px 8px;
-        border-radius: 6px;
-        font-size: 0.65rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-top: 2px;
-        align-self: flex-start;
-    }
-
-    .risk-low { background: rgba(112, 161, 255, 0.15); color: var(--cy-fol); border: 1px solid rgba(112, 161, 255, 0.2); }
-    .risk-med { background: rgba(165, 94, 234, 0.15); color: var(--cy-lut); border: 1px solid rgba(165, 94, 234, 0.2); }
-    .risk-high { background: rgba(255, 215, 0, 0.15); color: var(--cy-ovu); border: 1px solid rgba(255, 215, 0, 0.3); animation: riskGlow 2s ease-in-out infinite; }
-    .risk-preg { background: rgba(246, 211, 101, 0.15); color: var(--cy-preg); border: 1px solid rgba(246, 211, 101, 0.2); }
-
-    @keyframes riskGlow {
-        0%, 100% { box-shadow: 0 0 0 transparent; }
-        50% { box-shadow: 0 0 8px rgba(255, 215, 0, 0.15); }
-    }
-
-    /* =========================================
        STATUS PILLS
        ========================================= */
     .pt-pill-row {
         display: flex;
-        gap: 8px;
+        gap: 6px;
         flex-wrap: wrap;
     }
 
     .pt-pill {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        padding: 6px 10px;
-        border-radius: 8px;
-        font-size: 0.7rem;
+        gap: 4px;
+        padding: 5px 8px;
+        border-radius: 6px;
+        font-size: 0.65rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
@@ -9102,75 +9080,76 @@ var pulse_thread_tracker_default = {
     .pill-ovu { background: rgba(0, 210, 255, 0.12); color: var(--cy-ovu); }
     .pill-men { background: rgba(255, 94, 98, 0.12); color: var(--cy-men); }
     .pill-rut { background: rgba(155, 89, 182, 0.12); color: var(--cy-rut); }
-
     .pill-react-app { background: var(--bg-approved); color: var(--st-app); }
     .pill-react-neu { background: var(--bg-neutral); color: var(--st-neu); }
     .pill-react-dis { background: var(--bg-disapproved); color: var(--st-dis); }
+    .pt-empty-pill { background: rgba(0,0,0,0.2); border: 1px dashed rgba(255,255,255,0.08); color: rgba(255,255,255,0.15); }
 
-    .pt-empty-pill {
-        background: rgba(0,0,0,0.2);
-        border: 1px dashed rgba(255,255,255,0.08);
-        color: rgba(255,255,255,0.15);
-    }
+    .pulse-tabbed-root svg { display: block; }
+    .icon-12 { width: 12px; height: 12px; }
 
-    /* SVG icons */
-    .pulse-card svg { display: block; }
-    .icon-14 { width: 14px; height: 14px; }
-
-    /* Risk color helpers */
     .risk-low-text { color: var(--cy-fol); }
     .risk-high-text { color: var(--cy-ovu); }
     .risk-med-text { color: var(--cy-lut); }
 </style>
 
-<div class="pulse-card {{#if stats.inactive}}inactive{{/if}}"
-     style="--marker-deg: {{multiply (subtract stats.cycle_day 1) 12.86}}deg;
-     --ref-angle: {{divide (multiply stats.refractory_minutes 180) stats.refractory_total}}deg;">
+<div class="pulse-tabbed-root sim-tracker-tabs">
+    <!-- Hidden radios -->
+    {{#each characters}}
+    <input type="radio" name="pt-char" id="pt-char-{{@index}}" class="pt-char-radio" {{#if @first}}checked{{/if}}>
+    {{/each}}
 
-    <input type="checkbox" id="pt-toggle-{{characterName}}" class="pt-toggle" checked>
+    <!-- Tab bar -->
+    <div class="pt-tab-bar">
+        {{#each characters}}
+        <label class="pt-tab" for="pt-char-{{@index}}" style="{{#if bgColor}}background: {{adjustColorBrightness bgColor 15}}; border-color: {{adjustColorBrightness bgColor 30}};{{/if}}">
+            <div class="pt-tab-avatar" style="{{#if bgColor}}background: linear-gradient(145deg, {{adjustColorBrightness bgColor 60}} 0%, {{adjustColorBrightness darkerBgColor 50}} 100%);{{/if}} color: #fff;">
+                {{initials characterName}}
+            </div>
+            <div class="pt-tab-name">{{characterName}}</div>
+        </label>
+        {{/each}}
+    </div>
 
-    <!-- COLLAPSED PULSE BAR -->
-    <label for="pt-toggle-{{characterName}}" class="pulse-bar">
-        <div class="pt-avatar" style="background: linear-gradient(145deg, {{adjustColorBrightness bgColor 50}} 0%, {{adjustColorBrightness darkerBgColor 40}} 100%); color: #fff;">
-            {{rawFirstLetter characterName}}
-        </div>
-        <div class="pt-bar-info">
-            <h3>{{characterName}}</h3>
-            <div class="pt-bar-meta">{{currentDate}} • Day {{stats.days_since_first_meeting}}</div>
-        </div>
-        <div class="pt-bar-stats">
-            <div class="pt-mini-dot {{#if (gt stats.ap 0)}}mini-aff{{/if}}"></div>
-            <div class="pt-mini-dot {{#if (gt stats.dp 0)}}mini-des{{/if}}"></div>
-            <div class="pt-mini-dot {{#if (gt stats.tp 0)}}mini-tru{{/if}}"></div>
-        </div>
+    <!-- Viewport -->
+    <div class="pt-viewport">
+        {{#each characters}}
+        <div class="pt-page" data-index="{{@index}}" style="{{#if bgColor}}--marker-deg: {{multiply (subtract stats.cycle_day 1) 12.86}}deg; --ref-angle: {{divide (multiply stats.refractory_minutes 180) stats.refractory_total}}deg;{{/if}}">
 
-        <!-- Biological mini indicator -->
-        {{#if (eq stats.sex "female")}}
-            {{#if (eq stats.cycle_stage "ovulation")}}
-                <div class="pt-bio-mini" style="background: var(--cy-ovu); box-shadow: 0 0 6px var(--cy-ovu);" title="Ovulating">⚡</div>
-            {{else if (eq stats.cycle_stage "menstruation")}}
-                <div class="pt-bio-mini" style="background: var(--cy-men);" title="Period">●</div>
-            {{else if (eq stats.cycle_stage "pregnancy")}}
-                <div class="pt-bio-mini" style="background: var(--cy-preg);" title="Pregnant">★</div>
-            {{else}}
-                <div class="pt-bio-mini" style="background: rgba(255,255,255,0.08);" title="Normal cycle">○</div>
-            {{/if}}
-        {{else if (eq stats.sex "male")}}
-            {{#if (gt stats.refractory_minutes 0)}}
-                <div class="pt-bio-mini" style="background: var(--pt-des);" title="Refractory">🔥</div>
-            {{else}}
-                <div class="pt-bio-mini" style="background: var(--pt-accent);" title="Ready">✦</div>
-            {{/if}}
-        {{/if}}
+            <!-- Header Row -->
+            <div class="pt-card-header">
+                <div class="pt-header-avatar" style="{{#if bgColor}}background: linear-gradient(145deg, {{adjustColorBrightness bgColor 50}} 0%, {{adjustColorBrightness darkerBgColor 40}} 100%);{{/if}} color: #fff;">
+                    {{rawFirstLetter characterName}}
+                </div>
+                <div class="pt-header-info">
+                    <h3>{{characterName}}</h3>
+                    <div class="pt-header-meta">{{currentDate}} • Day {{stats.days_since_first_meeting}}</div>
+                </div>
+                <div class="pt-header-badges">
+                    <div class="pt-badge-dot {{#if (gt stats.ap 0)}}" style="background: var(--pt-aff); box-shadow: 0 0 4px var(--pt-aff);"{{else}}" style="background: rgba(255,255,255,0.1);"{{/if}}></div>
+                    <div class="pt-badge-dot {{#if (gt stats.dp 0)}}" style="background: var(--pt-des); box-shadow: 0 0 4px var(--pt-des);"{{else}}" style="background: rgba(255,255,255,0.1);"{{/if}}></div>
+                    <div class="pt-badge-dot {{#if (gt stats.tp 0)}}" style="background: var(--pt-tru); box-shadow: 0 0 4px var(--pt-tru);"{{else}}" style="background: rgba(255,255,255,0.1);"{{/if}}></div>
 
-        <div class="pt-chevron">
-            <svg class="icon-14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-    </label>
-
-    <!-- EXPANDED BODY -->
-    <div class="pt-body">
-        <div class="pt-body-inner">
+                    <!-- Biological mini -->
+                    {{#if (eq stats.sex "female")}}
+                        {{#if (eq stats.cycle_stage "ovulation")}}
+                            <div class="pt-bio-mini" style="background: var(--cy-ovu); box-shadow: 0 0 6px var(--cy-ovu);" title="Ovulating">⚡</div>
+                        {{else if (eq stats.cycle_stage "menstruation")}}
+                            <div class="pt-bio-mini" style="background: var(--cy-men);" title="Period">●</div>
+                        {{else if (eq stats.cycle_stage "pregnancy")}}
+                            <div class="pt-bio-mini" style="background: var(--cy-preg);" title="Pregnant">★</div>
+                        {{else}}
+                            <div class="pt-bio-mini" style="background: rgba(255,255,255,0.08);" title="Normal cycle">○</div>
+                        {{/if}}
+                    {{else if (eq stats.sex "male")}}
+                        {{#if (gt stats.refractory_minutes 0)}}
+                            <div class="pt-bio-mini" style="background: var(--pt-des);" title="Refractory">🔥</div>
+                        {{else}}
+                            <div class="pt-bio-mini" style="background: var(--pt-accent);" title="Ready">✦</div>
+                        {{/if}}
+                    {{/if}}
+                </div>
+            </div>
 
             <!-- Monologue -->
             <div class="pt-mono">
@@ -9178,9 +9157,7 @@ var pulse_thread_tracker_default = {
                 <p>"{{stats.internal_thought}}"</p>
             </div>
 
-            <div class="pt-thread-line"></div>
-
-            <!-- Biological Status Section -->
+            <!-- Biological -->
             {{#if (eq stats.sex "female")}}
             <div class="pt-bio-zone">
                 <div class="pt-fertility-ring">
@@ -9256,278 +9233,240 @@ var pulse_thread_tracker_default = {
             </div>
             {{/if}}
 
-            <div class="pt-thread-line"></div>
-
-            <!-- Stats Grid -->
+            <!-- Stats -->
             <div class="pt-stats-grid">
-                <!-- Affection -->
                 <div class="pt-stat-row">
                     <div class="pt-stat-icon">
                         <svg viewBox="0 0 24 24" fill="var(--pt-aff)"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                        {{#if stats.apChange}}
-                            {{#unless (eq stats.apChange 0)}}
-                            <div class="pt-orbit-ring {{#if (gt stats.apChange 0)}}orbit-pos{{else}}orbit-neg{{/if}}"></div>
-                            {{/unless}}
-                        {{/if}}
+                        {{#if stats.apChange}}{{#unless (eq stats.apChange 0)}}
+                        <div class="pt-orbit-ring {{#if (gt stats.apChange 0)}}orbit-pos{{else}}orbit-neg{{/if}}"></div>
+                        {{/unless}}{{/if}}
                     </div>
-                    <div class="pt-track-bg">
-                        <div class="pt-track-fill fill-aff" style="width: {{divide stats.ap 2}}%"></div>
-                    </div>
+                    <div class="pt-track-bg"><div class="pt-track-fill fill-aff" style="width: {{divide stats.ap 2}}%"></div></div>
                     <div class="pt-stat-val">
                         {{stats.ap}}
                         {{#if stats.apChange}}{{#unless (eq stats.apChange 0)}}
-                        <span class="pt-change-bubble {{#if (gt stats.apChange 0)}}ch-pos{{else}}ch-neg{{/if}}">
-                            {{#if (gt stats.apChange 0)}}+{{/if}}{{stats.apChange}}
-                        </span>
+                        <span class="pt-change-bubble {{#if (gt stats.apChange 0)}}ch-pos{{else}}ch-neg{{/if}}">{{#if (gt stats.apChange 0)}}+{{/if}}{{stats.apChange}}</span>
                         {{/unless}}{{/if}}
                     </div>
                 </div>
 
-                <!-- Desire -->
                 <div class="pt-stat-row">
                     <div class="pt-stat-icon">
                         <svg viewBox="0 0 24 24" fill="var(--pt-des)"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg>
-                        {{#if stats.dpChange}}
-                            {{#unless (eq stats.dpChange 0)}}
-                            <div class="pt-orbit-ring {{#if (gt stats.dpChange 0)}}orbit-pos{{else}}orbit-neg{{/if}}"></div>
-                            {{/unless}}
-                        {{/if}}
+                        {{#if stats.dpChange}}{{#unless (eq stats.dpChange 0)}}
+                        <div class="pt-orbit-ring {{#if (gt stats.dpChange 0)}}orbit-pos{{else}}orbit-neg{{/if}}"></div>
+                        {{/unless}}{{/if}}
                     </div>
-                    <div class="pt-track-bg">
-                        <div class="pt-track-fill fill-des" style="width: {{divide stats.dp 1.5}}%"></div>
-                    </div>
+                    <div class="pt-track-bg"><div class="pt-track-fill fill-des" style="width: {{divide stats.dp 1.5}}%"></div></div>
                     <div class="pt-stat-val">
                         {{stats.dp}}
                         {{#if stats.dpChange}}{{#unless (eq stats.dpChange 0)}}
-                        <span class="pt-change-bubble {{#if (gt stats.dpChange 0)}}ch-pos{{else}}ch-neg{{/if}}">
-                            {{#if (gt stats.dpChange 0)}}+{{/if}}{{stats.dpChange}}
-                        </span>
+                        <span class="pt-change-bubble {{#if (gt stats.dpChange 0)}}ch-pos{{else}}ch-neg{{/if}}">{{#if (gt stats.dpChange 0)}}+{{/if}}{{stats.dpChange}}</span>
                         {{/unless}}{{/if}}
                     </div>
                 </div>
 
-                <!-- Trust -->
                 <div class="pt-stat-row">
                     <div class="pt-stat-icon">
                         <svg viewBox="0 0 24 24" fill="var(--pt-tru)"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
-                        {{#if stats.tpChange}}
-                            {{#unless (eq stats.tpChange 0)}}
-                            <div class="pt-orbit-ring {{#if (gt stats.tpChange 0)}}orbit-pos{{else}}orbit-neg{{/if}}"></div>
-                            {{/unless}}
-                        {{/if}}
+                        {{#if stats.tpChange}}{{#unless (eq stats.tpChange 0)}}
+                        <div class="pt-orbit-ring {{#if (gt stats.tpChange 0)}}orbit-pos{{else}}orbit-neg{{/if}}"></div>
+                        {{/unless}}{{/if}}
                     </div>
-                    <div class="pt-track-bg">
-                        <div class="pt-track-fill fill-tru" style="width: {{divide stats.tp 1.5}}%"></div>
-                    </div>
+                    <div class="pt-track-bg"><div class="pt-track-fill fill-tru" style="width: {{divide stats.tp 1.5}}%"></div></div>
                     <div class="pt-stat-val">
                         {{stats.tp}}
                         {{#if stats.tpChange}}{{#unless (eq stats.tpChange 0)}}
-                        <span class="pt-change-bubble {{#if (gt stats.tpChange 0)}}ch-pos{{else}}ch-neg{{/if}}">
-                            {{#if (gt stats.tpChange 0)}}+{{/if}}{{stats.tpChange}}
-                        </span>
+                        <span class="pt-change-bubble {{#if (gt stats.tpChange 0)}}ch-pos{{else}}ch-neg{{/if}}">{{#if (gt stats.tpChange 0)}}+{{/if}}{{stats.tpChange}}</span>
                         {{/unless}}{{/if}}
                     </div>
                 </div>
 
-                <!-- Contempt -->
                 <div class="pt-stat-row">
                     <div class="pt-stat-icon">
                         <svg viewBox="0 0 24 24" fill="var(--pt-con)"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 11H7v-2h10v2z"/></svg>
-                        {{#if stats.cpChange}}
-                            {{#unless (eq stats.cpChange 0)}}
-                            <div class="pt-orbit-ring {{#if (gt stats.cpChange 0)}}orbit-neg{{else}}orbit-pos{{/if}}"></div>
-                            {{/unless}}
-                        {{/if}}
+                        {{#if stats.cpChange}}{{#unless (eq stats.cpChange 0)}}
+                        <div class="pt-orbit-ring {{#if (gt stats.cpChange 0)}}orbit-neg{{else}}orbit-pos{{/if}}"></div>
+                        {{/unless}}{{/if}}
                     </div>
-                    <div class="pt-track-bg">
-                        <div class="pt-track-fill fill-con" style="width: {{divide stats.cp 1.5}}%"></div>
-                    </div>
+                    <div class="pt-track-bg"><div class="pt-track-fill fill-con" style="width: {{divide stats.cp 1.5}}%"></div></div>
                     <div class="pt-stat-val">
                         {{stats.cp}}
                         {{#if stats.cpChange}}{{#unless (eq stats.cpChange 0)}}
-                        <span class="pt-change-bubble {{#if (gt stats.cpChange 0)}}ch-neg{{else}}ch-pos{{/if}}">
-                            {{#if (gt stats.cpChange 0)}}+{{/if}}{{stats.cpChange}}
-                        </span>
+                        <span class="pt-change-bubble {{#if (gt stats.cpChange 0)}}ch-neg{{else}}ch-pos{{/if}}">{{#if (gt stats.cpChange 0)}}+{{/if}}{{stats.cpChange}}</span>
                         {{/unless}}{{/if}}
                     </div>
                 </div>
             </div>
 
-            <div class="pt-thread-line"></div>
-
-            <!-- Status Pills Row -->
+            <!-- Pills -->
             <div class="pt-pill-row">
-                <!-- Cycle / Pregnancy Pill -->
                 {{#if (eq stats.cycle_stage "pregnancy")}}
                     <div class="pt-pill pill-preg">
-                        <svg class="icon-14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                        <svg class="icon-12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
                         Pregnant {{#if stats.days_preg}}({{stats.days_preg}}d){{/if}}
                     </div>
                 {{else if (eq stats.cycle_stage "ovulation")}}
                     <div class="pt-pill pill-ovu">
-                        <svg class="icon-14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                        <svg class="icon-12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
                         Ovulating
                     </div>
                 {{else if (eq stats.cycle_stage "menstruation")}}
                     <div class="pt-pill pill-men">
-                        <svg class="icon-14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                        <svg class="icon-12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
                         Period
                     </div>
                 {{else if (eq stats.cycle_stage "rut")}}
                     <div class="pt-pill pill-rut">
-                        <svg class="icon-14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                        <svg class="icon-12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
                         Rut
                     </div>
                 {{else}}
                     <div class="pt-pill pt-empty-pill">--</div>
                 {{/if}}
 
-                <!-- Reaction Pill -->
                 {{#if (eq stats.last_react 1)}}
                     <div class="pt-pill pill-react-app" style="background: rgba(46, 204, 113, 0.12); color: var(--st-app);">
-                        <svg class="icon-14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17L4 12"/></svg>
+                        <svg class="icon-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17L4 12"/></svg>
                         Approved
                     </div>
                 {{else if (eq stats.last_react 2)}}
                     <div class="pt-pill pill-react-dis" style="background: rgba(231, 76, 60, 0.12); color: var(--st-dis);">
-                        <svg class="icon-14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                        <svg class="icon-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                         Disapproved
                     </div>
                 {{else}}
                     <div class="pt-pill pill-react-neu" style="background: rgba(241, 196, 15, 0.12); color: var(--st-neu);">
-                        <svg class="icon-14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/></svg>
+                        <svg class="icon-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/></svg>
                         Neutral
                     </div>
                 {{/if}}
             </div>
 
         </div>
+        {{/each}}
     </div>
 </div>
 <!-- CARD_TEMPLATE_END -->
 
 <!--
-TEMPLATE VARIABLES:
-- {{characterName}}: Character name
-- {{currentDate}}: Current date
-- {{bgColor}}: Card background color
-- {{darkerBgColor}}: Darker variant of bg
-- {{stats.inactive}}: Boolean
-- {{stats.days_since_first_meeting}}: Day counter
-- {{stats.ap}}, {{stats.dp}}, {{stats.tp}}, {{stats.cp}}: Core stats
-- {{stats.apChange}}, {{stats.dpChange}}, {{stats.tpChange}}, {{stats.cpChange}}: Stat deltas
-- {{stats.internal_thought}}: Monologue text
-- {{stats.last_react}}: 0=Neutral, 1=Like, 2=Dislike
-- {{stats.sex}}: 'female', 'male', or 'other'
-- {{stats.cycle_stage}}: 'pregnancy', 'ovulation', 'menstruation', 'rut', 'follicular', 'luteal'
-- {{stats.cycle_day}}: Day 1-28 of cycle
-- {{stats.days_preg}}: Days pregnant
-- {{stats.refractory_minutes}}: Minutes remaining
-- {{stats.refractory_total}}: Total minutes of current refractory period
+TEMPLATE VARIABLES (tabbed mode):
+- {{characters}}: Array of character objects — each object contains:
+  - {{characterName}}: Character name
+  - {{currentDate}}: Current date
+  - {{bgColor}}: Card background color
+  - {{darkerBgColor}}: Darker variant
+  - {{stats}}: Flattened stats object containing:
+    - {{stats.ap}}, {{stats.dp}}, {{stats.tp}}, {{stats.cp}}
+    - {{stats.apChange}}, {{stats.dpChange}}, {{stats.tpChange}}, {{stats.cpChange}}
+    - {{stats.sex}}: 'female', 'male', or 'other'
+    - {{stats.cycle_stage}}, {{stats.cycle_day}}, {{stats.days_preg}}
+    - {{stats.refractory_minutes}}, {{stats.refractory_total}}
+    - {{stats.last_react}}, {{stats.internal_thought}}
+    - {{stats.days_since_first_meeting}}, {{stats.inactive}}
 -->
 `,
-  sysPrompt: `## NARRATIVE CHARACTER TRACKER MODE
+  sysPrompt: `## NARRATIVE CHARACTER TRACKER MODE (Pulse Thread)
 
-**Objective**: Track multiple narrative characters and NPCs with detailed biological and emotional states. Analyze context for current date (YYYY-MM-DD) and time (24h format). Update trackers when events occur. Check for \`sim\` codeblocks containing JSON/YAML. Recalculate missing data.
+**Objective**: Track multiple narrative characters and NPCs in a single unified tracker tag. Output a JSON/YAML object with a \`characters\` array. Analyze context for current date (YYYY-MM-DD) and time (24h format).
 
-## Core Systems
+## CRITICAL OUTPUT FORMAT
 
-### Output Rules
+**DO NOT output flat top-level character maps** such as \`{ "CharacterName": { ... } }\`. This will break the tracker entirely.
 
-1. **Order**: Narrative → Tracker → Sim codeblock (NEVER omit sim codeblock)
-2. **Multi-Character**: Generate ONE card per active character, track separately
-3. **Performance**: Max 4 active characters, collapse inactive, preserve all states
+**ALWAYS wrap every tracked character inside the \`characters\` array**, even if there is only one character active:
 
-### Relationship Meters
+\`\`\`json
+{
+  "worldData": {
+    "current_date": "2025-04-25",
+    "current_time": "22:15"
+  },
+  "characters": [
+    {
+      "name": "Ukinami Yuzuha",
+      "ap": 128,
+      "dp": 105,
+      "tp": 85,
+      "cp": 0,
+      "apChange": 12,
+      "dpChange": 15,
+      "tpChange": 9,
+      "cpChange": 0,
+      "sex": "female",
+      "cycle_stage": "follicular",
+      "cycle_day": 10,
+      "preg": false,
+      "days_preg": 0,
+      "refractory_minutes": 0,
+      "refractory_total": 0,
+      "last_react": 1,
+      "internal_thought": "I said yes. I'm spending the night...",
+      "days_since_first_meeting": 0,
+      "inactive": false,
+      "inactiveReason": 0,
+      "bg": "#ff7aa2"
+    }
+  ]
+}
+\`\`\`
 
-**HARD CAPS**: All meters have ABSOLUTE MAXIMUM values that CANNOT be exceeded under any circumstances. Values must stay within their defined ranges.
+For multiple characters, append additional objects to the \`characters\` array. Each character object is independent.
 
-**Affection (AP)**: 0-200 (HARD CAP at 200) - Romantic feelings toward {{user}}. Higher = more affectionate behavior/speech.
+### Why the array matters
+The frontend normalizer looks for \`characters\` first. If you emit a flat object like \`{ "name": "...", "stats": { ... } }\` at the top level, the \`"stats"\` key is misidentified as a character named \`"stats"\`, destroying all names and breaking biological filtering.
+
+### Stat Flattening
+You may nest stats under \`"stats": { ... }\` per character, or keep them flat at the character object level. The tracker flattens nested \`stats\` automatically. However, \`name\` must be at the character object level so it is captured correctly.
+
+## Relationship Meters (HARD CAPS)
+
+**Affection (AP)**: 0-200
 - 0-30: Strangers | 31-60: Acquaintances | 61-90: Good Friends
 - 91-120: Romantic Interest | 121-150: Going Steady
 - 151-180: Committed Relationship | 181-200: Devoted Partner
 
-**Desire (DP)**: 0-150 (HARD CAP at 150) - Sexual attraction. Higher = more willing to engage sexually, more pliable at max.
+**Desire (DP)**: 0-150
 - 0-25: Not feeling the heat | 26-50: A smoldering flame builds
 - 51-75: Starting to feel warm | 76-100: Body's burning up!
 - 101-125: A desperate need presents | 126-150: Pliable in the lustful hunger
 
-**Trust (TP)**: 0-150 (HARD CAP at 150) - Trust in {{user}}. Higher = admits faults, believes you. Falls when lied to, cheated, promises broken.
+**Trust (TP)**: 0-150 — Falls when lied to, cheated, promises broken.
+**Contempt (CP)**: 0-150 — Rises when harmed. CP rise can lower other stats.
 
-**Contempt (CP)**: 0-150 (HARD CAP at 150) - Disdain toward {{user}}. Rises when harmed/hurt (minor = small rise, major = sharp rise). CP rise can lower other stats. Good faith/regret can lower CP.
+## Change Detection
+Track stat changes message-to-message via \`apChange\`, \`dpChange\`, \`tpChange\`, \`cpChange\` (positive/negative integer, or 0 for no change). These drive animated orbit indicators.
 
-### Biological Tracking
+## Biological Tracking
 
-**SEX DETERMINATION**: Each character MUST have a \`sex\` field set to either \`"female"\`, \`"male"\`, or \`"other"\`. This determines which biological modules render.
+### Sex Field
+Each character MUST have \`"sex": "female"\`, \`"male"\`, or \`"other"\`. This is the sole gate for biological modules.
 
-#### Female Characters — Fertility Cycle
-Track the menstrual cycle day (1-28) and current stage. The tracker automatically maps pregnancy risk:
+### Female — Fertility Cycle
+Track \`cycle_day\` (1-28) and \`cycle_stage\`. The tracker auto-maps pregnancy risk:
 - **Day 1-5**: \`menstruation\` — Low risk
 - **Day 6-13**: \`follicular\` — Low risk, rising
 - **Day 14-16**: \`ovulation\` — **HIGH risk** (peak fertility)
 - **Day 17-22**: \`luteal\` — Medium risk, declining
 - **Day 23-28**: Late luteal — Low risk
 
-If \`preg\` is true, set \`cycle_stage\` to \`"pregnancy"\` and track \`days_preg\`.
+If pregnant, set \`preg: true\`, \`cycle_stage: "pregnancy"\`, and track \`days_preg\`.
 
-**Pregnancy Risk Auto-Mapping**: The tracker does NOT require risk to be explicitly set. It infers risk from \`cycle_stage\`. You MUST report \`cycle_day\` (1-28 integer) so the position marker on the ring is accurate.
-
-#### Male Characters — Refractory Period
-After sexual climax, male characters enter a refractory period. Track this as:
+### Male — Refractory Period
+After sexual climax, track:
 - \`refractory_minutes\`: Minutes remaining until recovery (0 = ready)
 - \`refractory_total\`: Total minutes of this refractory period (for gauge fill)
 
-The LLM may provide refractory rest in minutes or hours. ALWAYS convert to minutes for the tracker. Example: "15 minutes rest" → \`refractory_minutes: 15\`, \`refractory_total: 15\`. If the period passes in narrative time, decrement \`refractory_minutes\` toward 0.
+The LLM may provide rest in minutes or hours. ALWAYS convert to minutes for the tracker. Example: "15 minutes rest" → \`refractory_minutes: 15\`, \`refractory_total: 15\`. Decrement toward 0 as narrative time passes.
 
-### Status Trackers
+## Colors
+Provide a \`"bg"\` hex color per character for theming. Example: \`"#ff7aa2"\`.
 
-**Health**: 0=Unharmed, 1=Injured, 2=Critical
-
-**Reaction**: 0=Neutral, 1=Approved, 2=Disapproved
-
-**Internal Thought**: Capture what the character is thinking but not saying.
-
-### JSON Structure (per character)
-\`\`\`json
-{
-  "name": "Elara",
-  "stats": {
-    "ap": 95, "dp": 60, "tp": 80, "cp": 10,
-    "apChange": 5, "dpChange": -3, "tpChange": 0, "cpChange": 0,
-    "sex": "female",
-    "cycle_stage": "ovulation",
-    "cycle_day": 14,
-    "preg": false,
-    "days_preg": 0,
-    "refractory_minutes": 0,
-    "refractory_total": 0,
-    "last_react": 1,
-    "internal_thought": "I wonder if they noticed my blush...",
-    "days_since_first_meeting": 12,
-    "inactive": false,
-    "inactiveReason": 0
-  }
-}
-\`\`\`
-
-For male characters after intimacy:
-\`\`\`json
-{
-  "name": "Marcus",
-  "stats": {
-    "ap": 110, "dp": 45, "tp": 90, "cp": 5,
-    "sex": "male",
-    "refractory_minutes": 25,
-    "refractory_total": 40,
-    "last_react": 1,
-    "internal_thought": "That was intense. Need a breather.",
-    "days_since_first_meeting": 12
-  }
-}
-\`\`\`
-
-### Change Detection
-**CRITICAL**: Track stat changes message-to-message by including \`apChange\`, \`dpChange\`, \`tpChange\`, \`cpChange\` (positive or negative integer, or 0 for no change). The tracker renders animated orbit indicators when these are non-zero.
+## Output Rules
+1. **Order**: Narrative → Tracker → Sim codeblock (NEVER omit sim codeblock)
+2. **Multi-Character**: Generate ALL active characters inside the \`characters\` array.
+3. **Performance**: Track up to 4 active characters. Mark inactive ones with \`"inactive": true\`.
 `,
   customFields: [
     {
