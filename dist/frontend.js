@@ -9257,35 +9257,35 @@ var pulse_thread_tracker_default = {
             &lt;/div&gt;
 
             &lt;!-- Biological --&gt;
-            {{#if (eq stats.sex &quot;female&quot;)}}
+            {{#if (hasFertilityTracking stats)}}
             &lt;div class=&quot;pt-bio-zone&quot;&gt;
                 &lt;div class=&quot;pt-fertility-ring&quot;&gt;
-                    &lt;div class=&quot;pt-fertility-marker {{#if (eq stats.cycle_stage &quot;ovulation&quot;)}}ovulation-glow{{/if}}&quot;
-                         style=&quot;color: {{#if (eq stats.cycle_stage &quot;ovulation&quot;)}}var(--cy-ovu){{else if (eq stats.cycle_stage &quot;menstruation&quot;)}}var(--cy-men){{else if (eq stats.cycle_stage &quot;follicular&quot;)}}var(--cy-fol){{else if (eq stats.cycle_stage &quot;luteal&quot;)}}var(--cy-lut){{else}}var(--cy-preg){{/if}};&quot;&gt;&lt;/div&gt;
-                    &lt;div class=&quot;pt-fertility-label&quot;&gt;Day {{stats.cycle_day}}&lt;/div&gt;
+                    &lt;div class=&quot;pt-fertility-marker {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}ovulation-glow{{/if}}&quot;
+                         style=&quot;color: {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}var(--cy-ovu){{else if (eq (cycleStage stats) &quot;menstruation&quot;)}}var(--cy-men){{else if (eq (cycleStage stats) &quot;follicular&quot;)}}var(--cy-fol){{else if (eq (cycleStage stats) &quot;luteal&quot;)}}var(--cy-lut){{else}}var(--cy-preg){{/if}};&quot;&gt;&lt;/div&gt;
+                    &lt;div class=&quot;pt-fertility-label&quot;&gt;{{#if stats.cycle_day}}Day {{stats.cycle_day}}{{else}}Cycle{{/if}}&lt;/div&gt;
                 &lt;/div&gt;
                 &lt;div class=&quot;pt-bio-text&quot;&gt;
                     &lt;h4&gt;Fertility Cycle&lt;/h4&gt;
                     &lt;p&gt;
-                        {{#if (eq stats.cycle_stage &quot;pregnancy&quot;)}}
+                        {{#if (or stats.preg (eq (cycleStage stats) &quot;pregnancy&quot;))}}
                             Pregnant — Day {{stats.days_preg}}
-                        {{else if (eq stats.cycle_stage &quot;menstruation&quot;)}}
+                        {{else if (eq (cycleStage stats) &quot;menstruation&quot;)}}
                             Menstruation phase. Pregnancy risk: minimal.
-                        {{else if (eq stats.cycle_stage &quot;follicular&quot;)}}
+                        {{else if (eq (cycleStage stats) &quot;follicular&quot;)}}
                             Follicular phase. Egg maturing; risk rising gradually.
-                        {{else if (eq stats.cycle_stage &quot;ovulation&quot;)}}
+                        {{else if (eq (cycleStage stats) &quot;ovulation&quot;)}}
                             &lt;span class=&quot;risk-high-text&quot;&gt;PEAK FERTILITY&lt;/span&gt;. Ovulation window active. Highest conception risk.
-                        {{else if (eq stats.cycle_stage &quot;luteal&quot;)}}
+                        {{else if (eq (cycleStage stats) &quot;luteal&quot;)}}
                             Luteal phase post-ovulation. Risk declining but viable until next cycle.
                         {{else}}
                             Cycle stage unclear.
                         {{/if}}
                     &lt;/p&gt;
-                    {{#if (eq stats.cycle_stage &quot;ovulation&quot;)}}
+                    {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}
                         &lt;span class=&quot;pt-risk-badge risk-high&quot;&gt;🔥 High Risk&lt;/span&gt;
-                    {{else if (eq stats.cycle_stage &quot;luteal&quot;)}}
+                    {{else if (eq (cycleStage stats) &quot;luteal&quot;)}}
                         &lt;span class=&quot;pt-risk-badge risk-med&quot;&gt;~ Medium Risk&lt;/span&gt;
-                    {{else if (eq stats.cycle_stage &quot;pregnancy&quot;)}}
+                    {{else if (or stats.preg (eq (cycleStage stats) &quot;pregnancy&quot;))}}
                         &lt;span class=&quot;pt-risk-badge risk-preg&quot;&gt;🤰 Pregnant&lt;/span&gt;
                     {{else}}
                         &lt;span class=&quot;pt-risk-badge risk-low&quot;&gt;✓ Low Risk&lt;/span&gt;
@@ -9294,7 +9294,7 @@ var pulse_thread_tracker_default = {
             &lt;/div&gt;
             {{/if}}
 
-            {{#if (eq stats.sex &quot;male&quot;)}}
+            {{#if (hasRefractoryTracking stats)}}
             &lt;div class=&quot;pt-bio-zone&quot;&gt;
                 &lt;div class=&quot;pt-refractory-gauge&quot;&gt;
                     &lt;div class=&quot;pt-refractory-arc&quot;&gt;&lt;/div&gt;
@@ -9401,22 +9401,22 @@ var pulse_thread_tracker_default = {
 
             &lt;!-- Pills --&gt;
             &lt;div class=&quot;pt-pill-row&quot;&gt;
-                {{#if (eq stats.cycle_stage &quot;pregnancy&quot;)}}
+                {{#if (or stats.preg (eq (cycleStage stats) &quot;pregnancy&quot;))}}
                     &lt;div class=&quot;pt-pill pill-preg&quot;&gt;
                         &lt;svg class=&quot;icon-12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;currentColor&quot;&gt;&lt;circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;10&quot;/&gt;&lt;/svg&gt;
                         Pregnant {{#if stats.days_preg}}({{stats.days_preg}}d){{/if}}
                     &lt;/div&gt;
-                {{else if (eq stats.cycle_stage &quot;ovulation&quot;)}}
+                {{else if (eq (cycleStage stats) &quot;ovulation&quot;)}}
                     &lt;div class=&quot;pt-pill pill-ovu&quot;&gt;
                         &lt;svg class=&quot;icon-12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;currentColor&quot;&gt;&lt;circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;10&quot;/&gt;&lt;/svg&gt;
                         Ovulating
                     &lt;/div&gt;
-                {{else if (eq stats.cycle_stage &quot;menstruation&quot;)}}
+                {{else if (eq (cycleStage stats) &quot;menstruation&quot;)}}
                     &lt;div class=&quot;pt-pill pill-men&quot;&gt;
                         &lt;svg class=&quot;icon-12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;currentColor&quot;&gt;&lt;circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;10&quot;/&gt;&lt;/svg&gt;
                         Period
                     &lt;/div&gt;
-                {{else if (eq stats.cycle_stage &quot;rut&quot;)}}
+                {{else if (eqi stats.cycle_stage &quot;rut&quot;)}}
                     &lt;div class=&quot;pt-pill pill-rut&quot;&gt;
                         &lt;svg class=&quot;icon-12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;currentColor&quot;&gt;&lt;circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;10&quot;/&gt;&lt;/svg&gt;
                         Rut
@@ -9463,7 +9463,7 @@ TEMPLATE VARIABLES (tabbed mode):
     - {{stats.ap}}, {{stats.dp}}, {{stats.tp}}, {{stats.cp}}
     - {{stats.apChange}}, {{stats.dpChange}}, {{stats.tpChange}}, {{stats.cpChange}}
     - {{stats.sex}}: &#039;female&#039;, &#039;male&#039;, or &#039;other&#039;
-    - {{stats.cycle_stage}}, {{stats.cycle_day}}, {{stats.days_preg}}
+    - {{stats.cycle_stage_id}}, {{stats.cycle_stage}}, {{stats.cycle_day}}, {{stats.days_preg}}
     - {{stats.refractory_minutes}}, {{stats.refractory_total}}
     - {{stats.last_react}}, {{stats.internal_thought}}
     - {{stats.days_since_first_meeting}}, {{stats.inactive}}
@@ -9497,6 +9497,7 @@ TEMPLATE VARIABLES (tabbed mode):
       "tpChange": 9,
       "cpChange": 0,
       "sex": "female",
+      "cycle_stage_id": 2,
       "cycle_stage": "follicular",
       "cycle_day": 10,
       "preg": false,
@@ -9543,19 +9544,25 @@ Track stat changes message-to-message via \`apChange\`, \`dpChange\`, \`tpChange
 ## Biological Tracking
 
 ### Sex Field
-Each character MUST have \`"sex": "female"\`, \`"male"\`, or \`"other"\`. This is the sole gate for biological modules.
+Each character MUST have \`"sex": "female"\`, \`"male"\`, or \`"other"\`. Use lowercase values exactly. This is the primary gate for biological modules, and it must be preserved from prior tracker state unless the character's biology is explicitly established differently.
 
 ### Female — Fertility Cycle
-Track \`cycle_day\` (1-28) and \`cycle_stage\`. The tracker auto-maps pregnancy risk:
-- **Day 1-5**: \`menstruation\` — Low risk
-- **Day 6-13**: \`follicular\` — Low risk, rising
-- **Day 14-16**: \`ovulation\` — **HIGH risk** (peak fertility)
-- **Day 17-22**: \`luteal\` — Medium risk, declining
-- **Day 23-28**: Late luteal — Low risk
+For every character with \`sex: "female"\` or any established menstrual/fertility cycle, ALWAYS include and update fertility fields each turn. Do not omit them when the current scene is non-sexual; preserve previous values and advance them when narrative time passes.
 
-If pregnant, set \`preg: true\`, \`cycle_stage: "pregnancy"\`, and track \`days_preg\`.
+Track \`cycle_day\` (1-28 by default unless the character/species has an established different cycle length), \`cycle_stage_id\`, \`cycle_stage\`, \`preg\`, \`days_preg\`, and \`conception_date\` when applicable. Prefer the numeric \`cycle_stage_id\` as canonical and keep \`cycle_stage\` as the matching readable label:
+- \`1\` = \`menstruation\` — Days 1-5, low risk
+- \`2\` = \`follicular\` — Days 6-13, low risk/rising
+- \`3\` = \`ovulation\` — Days 14-16, **HIGH risk** (peak fertility)
+- \`4\` = \`luteal\` — Days 17-28, medium then declining risk
+- \`5\` = \`pregnancy\` — Pregnancy confirmed/known
+
+If pregnant, set \`preg: true\`, \`cycle_stage_id: 5\`, \`cycle_stage: "pregnancy"\`, track \`days_preg\`, and preserve/set \`conception_date\` as \`YYYY-MM-DD\` when known. If not pregnant, set \`preg: false\` and \`days_preg: 0\`.
+
+If unprotected vaginal/reproductive sex occurs during \`ovulation\` or another fertile/rut stage, evaluate conception risk in narrative context and update \`preg\`, \`cycle_stage\`, \`days_preg\`, and \`conception_date\` if conception is confirmed or narratively certain. Early pregnancy signs may remain absent, but tracker state should still preserve conception timing when known.
 
 ### Male — Refractory Period
+Only characters with \`sex: "male"\` should include or display refractory information. Do not output refractory fields for female/other characters unless their biology is explicitly male for this purpose.
+
 After sexual climax, track:
 - \`refractory_minutes\`: Minutes remaining until recovery (0 = ready)
 - \`refractory_total\`: Total minutes of this refractory period (for gauge fill)
@@ -9613,35 +9620,39 @@ Provide a \`"bg"\` hex color per character for theming. Example: \`"#ff7aa2"\`.
     },
     {
       key: "sex",
-      description: "[string] Character sex: 'female', 'male', or 'other' — determines biological modules"
+      description: "[string] Character sex, lowercase: 'female', 'male', or 'other' — primary gate for biological modules; preserve from prior state unless explicitly changed"
+    },
+    {
+      key: "cycle_stage_id",
+      description: "[number] Canonical fertility stage enum: 1=menstruation, 2=follicular, 3=ovulation, 4=luteal, 5=pregnancy; preserve and advance for fertile characters each turn"
     },
     {
       key: "cycle_stage",
-      description: "[string] Biological stage: 'pregnancy', 'ovulation', 'menstruation', 'follicular', 'luteal', 'rut', or empty"
+      description: "[string] Readable fertility/biological stage label matching cycle_stage_id: 'pregnancy', 'ovulation', 'menstruation', 'follicular', 'luteal', 'rut', or empty"
     },
     {
       key: "cycle_day",
-      description: "[number] Day of cycle 1-28 (for fertility ring positioning)"
+      description: "[number] Current cycle day, usually 1-28, used for fertility ring positioning; preserve and advance when narrative time passes"
     },
     {
       key: "preg",
-      description: "[boolean] Pregnancy status (true/false)"
+      description: "[boolean] Pregnancy status (true/false); true also implies cycle_stage 'pregnancy'"
     },
     {
       key: "days_preg",
-      description: "[number] Days pregnant (0 if not applicable)"
+      description: "[number] Days pregnant (0 if not applicable); advance with narrative date/time once conception is known"
     },
     {
       key: "conception_date",
-      description: "[string] Date of conception (YYYY-MM-DD)"
+      description: "[string] Date of conception (YYYY-MM-DD), preserved when known"
     },
     {
       key: "refractory_minutes",
-      description: "[number] Minutes remaining in refractory period (0 = ready)"
+      description: "[number] Male characters only. Minutes remaining in refractory period (0 = ready)"
     },
     {
       key: "refractory_total",
-      description: "[number] Total minutes of current refractory period (for gauge fill)"
+      description: "[number] Male characters only. Total minutes of current refractory period (for gauge fill)"
     },
     {
       key: "health",
@@ -16153,6 +16164,27 @@ var runtimeSeededPresets = [];
 var TEMPLATE_CACHE = new Map;
 var helpersRegistered = false;
 var panelRoot = null;
+var FERTILITY_STAGE_BY_ID = {
+  1: "menstruation",
+  2: "follicular",
+  3: "ovulation",
+  4: "luteal",
+  5: "pregnancy"
+};
+function cycleStage(stats) {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats))
+    return "";
+  const record = stats;
+  const stageId = Number(record.cycle_stage_id || record.cycleStageId || 0);
+  if (FERTILITY_STAGE_BY_ID[stageId])
+    return FERTILITY_STAGE_BY_ID[stageId];
+  return typeof record.cycle_stage === "string" ? record.cycle_stage.toLowerCase() : "";
+}
+function sexValue(stats) {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats))
+    return "";
+  return String(stats.sex || "").toLowerCase();
+}
 function byId(id) {
   const scoped = panelRoot?.querySelector(`#${id}`);
   if (scoped)
@@ -16578,6 +16610,19 @@ function registerTemplateHelpers() {
     return;
   helpersRegistered = true;
   import_handlebars2.default.registerHelper("eq", (a, b) => a === b);
+  import_handlebars2.default.registerHelper("eqi", (a, b) => String(a || "").toLowerCase() === String(b || "").toLowerCase());
+  import_handlebars2.default.registerHelper("cycleStage", cycleStage);
+  import_handlebars2.default.registerHelper("hasFertilityTracking", (stats) => {
+    if (!stats || typeof stats !== "object" || Array.isArray(stats))
+      return false;
+    const record = stats;
+    const sex = sexValue(record);
+    const stage = cycleStage(record);
+    if (sex === "male")
+      return false;
+    return sex === "female" || record.preg === true || Number(record.cycle_day) > 0 || ["pregnancy", "ovulation", "menstruation", "follicular", "luteal"].includes(stage);
+  });
+  import_handlebars2.default.registerHelper("hasRefractoryTracking", (stats) => sexValue(stats) === "male");
   import_handlebars2.default.registerHelper("or", function(...args) {
     const values = args.slice(0, -1);
     return values.some((v) => !!v);
@@ -16657,6 +16702,8 @@ function buildTemplateData(data, preset, previousData) {
     if (isNestedStats) {
       delete templateStats.stats;
     }
+    const normalizedCycleStage = typeof templateStats.cycle_stage === "string" ? templateStats.cycle_stage.toLowerCase() : templateStats.cycle_stage;
+    const normalizedSex = typeof templateStats.sex === "string" ? templateStats.sex.toLowerCase() : templateStats.sex;
     return {
       name,
       characterName: name,
@@ -16664,6 +16711,8 @@ function buildTemplateData(data, preset, previousData) {
       currentTime,
       stats: {
         ...templateStats,
+        sex: normalizedSex,
+        cycle_stage: normalizedCycleStage,
         ...statChanges[name] || {},
         internal_thought: stats.internal_thought || stats.thought || "No thought recorded.",
         relationshipStatus: stats.relationshipStatus || "Unknown Status",

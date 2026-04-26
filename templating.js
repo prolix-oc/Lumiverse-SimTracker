@@ -42,6 +42,51 @@ Handlebars.registerHelper("eq", function (a, b) {
   return a === b;
 });
 
+Handlebars.registerHelper("eqi", function (a, b) {
+  return String(a || "").toLowerCase() === String(b || "").toLowerCase();
+});
+
+const FERTILITY_STAGE_BY_ID = {
+  1: "menstruation",
+  2: "follicular",
+  3: "ovulation",
+  4: "luteal",
+  5: "pregnancy",
+};
+
+function cycleStageValue(stats) {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return "";
+  const stageId = Number(stats.cycle_stage_id || stats.cycleStageId || 0);
+  if (FERTILITY_STAGE_BY_ID[stageId]) return FERTILITY_STAGE_BY_ID[stageId];
+  return typeof stats.cycle_stage === "string" ? stats.cycle_stage.toLowerCase() : "";
+}
+
+function sexValue(stats) {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return "";
+  return String(stats.sex || "").toLowerCase();
+}
+
+Handlebars.registerHelper("cycleStage", function (stats) {
+  return cycleStageValue(stats);
+});
+
+Handlebars.registerHelper("hasFertilityTracking", function (stats) {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return false;
+  const sex = sexValue(stats);
+  const stage = cycleStageValue(stats);
+  if (sex === "male") return false;
+  return (
+    sex === "female" ||
+    stats.preg === true ||
+    Number(stats.cycle_day) > 0 ||
+    ["pregnancy", "ovulation", "menstruation", "follicular", "luteal"].includes(stage)
+  );
+});
+
+Handlebars.registerHelper("hasRefractoryTracking", function (stats) {
+  return sexValue(stats) === "male";
+});
+
 Handlebars.registerHelper("gt", function (a, b) {
   return a > b;
 });

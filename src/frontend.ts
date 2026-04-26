@@ -58,6 +58,27 @@ const TEMPLATE_CACHE = new Map<string, Handlebars.TemplateDelegate>();
 let helpersRegistered = false;
 let panelRoot: Element | null = null;
 
+const FERTILITY_STAGE_BY_ID: Record<number, string> = {
+  1: "menstruation",
+  2: "follicular",
+  3: "ovulation",
+  4: "luteal",
+  5: "pregnancy",
+};
+
+function cycleStage(stats: unknown): string {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return "";
+  const record = stats as Record<string, unknown>;
+  const stageId = Number(record.cycle_stage_id || record.cycleStageId || 0);
+  if (FERTILITY_STAGE_BY_ID[stageId]) return FERTILITY_STAGE_BY_ID[stageId];
+  return typeof record.cycle_stage === "string" ? record.cycle_stage.toLowerCase() : "";
+}
+
+function sexValue(stats: unknown): string {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return "";
+  return String((stats as Record<string, unknown>).sex || "").toLowerCase();
+}
+
 function byId<T extends Element>(id: string): T | null {
   const scoped = panelRoot?.querySelector(`#${id}`) as T | null;
   if (scoped) return scoped;
@@ -513,6 +534,22 @@ function registerTemplateHelpers(): void {
   helpersRegistered = true;
 
   Handlebars.registerHelper("eq", (a, b) => a === b);
+  Handlebars.registerHelper("eqi", (a, b) => String(a || "").toLowerCase() === String(b || "").toLowerCase());
+  Handlebars.registerHelper("cycleStage", cycleStage);
+  Handlebars.registerHelper("hasFertilityTracking", (stats: unknown) => {
+    if (!stats || typeof stats !== "object" || Array.isArray(stats)) return false;
+    const record = stats as Record<string, unknown>;
+    const sex = sexValue(record);
+    const stage = cycleStage(record);
+    if (sex === "male") return false;
+    return (
+      sex === "female" ||
+      record.preg === true ||
+      Number(record.cycle_day) > 0 ||
+      ["pregnancy", "ovulation", "menstruation", "follicular", "luteal"].includes(stage)
+    );
+  });
+  Handlebars.registerHelper("hasRefractoryTracking", (stats: unknown) => sexValue(stats) === "male");
   // Variadic `or` / `and` — last argument is the Handlebars options
   // object, so we peel it off before folding. Values use JS truthiness
   // so `0`, `""`, `null`, `undefined`, and `false` are all falsy.
@@ -623,6 +660,10 @@ function buildTemplateData(
       delete templateStats.stats;
     }
 
+    const normalizedCycleStage =
+      typeof templateStats.cycle_stage === "string" ? templateStats.cycle_stage.toLowerCase() : templateStats.cycle_stage;
+    const normalizedSex = typeof templateStats.sex === "string" ? templateStats.sex.toLowerCase() : templateStats.sex;
+
     return {
       name,
       characterName: name,
@@ -630,6 +671,8 @@ function buildTemplateData(
       currentTime,
       stats: {
         ...templateStats,
+        sex: normalizedSex,
+        cycle_stage: normalizedCycleStage,
         ...(statChanges[name] || {}),
         internal_thought: stats.internal_thought || stats.thought || "No thought recorded.",
         relationshipStatus: stats.relationshipStatus || "Unknown Status",
