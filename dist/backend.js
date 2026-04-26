@@ -10268,6 +10268,7 @@ var pulse_thread_tracker_default = {
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         gap: 12px;
         margin-bottom: 16px;
+        align-items: start;
     }
 
     .pt-bio-column {
@@ -10280,12 +10281,12 @@ var pulse_thread_tracker_default = {
         display: grid;
         grid-template-columns: 92px minmax(0, 1fr);
         align-items: center;
-        gap: 16px;
-        padding: 14px;
+        gap: 14px;
+        padding: 14px 16px;
         background:
-            radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.08), transparent 30%),
-            linear-gradient(135deg, rgba(0, 0, 0, 0.24), rgba(255, 255, 255, 0.04));
-        border-radius: 20px;
+            radial-gradient(circle at 20% 12%, rgba(255, 255, 255, 0.06), transparent 32%),
+            linear-gradient(135deg, rgba(0, 0, 0, 0.28), rgba(255, 255, 255, 0.035));
+        border-radius: 18px;
         border: 1px solid rgba(255, 255, 255, 0.07);
         min-width: 0;
     }
@@ -10552,6 +10553,30 @@ var pulse_thread_tracker_default = {
         text-shadow: 0 1px 6px rgba(0,0,0,0.55);
     }
 
+    .pt-male-visuals {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .pt-cooldown-track {
+        width: 72px;
+        height: 4px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .pt-cooldown-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--pt-des), #ff99aa);
+        box-shadow: 0 0 8px rgba(255,92,138,0.25);
+        transition: width 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
     /* --- MALE: Refractory Gauge --- */
     .pt-refractory-gauge {
         width: 64px;
@@ -10628,7 +10653,7 @@ var pulse_thread_tracker_default = {
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 7px;
         min-width: 0;
     }
 
@@ -10641,10 +10666,11 @@ var pulse_thread_tracker_default = {
 
     .pt-bio-title-row h4 {
         margin: 0;
-        font-size: 0.72rem;
+        font-size: 0.7rem;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.8px;
+        letter-spacing: 0.85px;
+        color: var(--pt-txt);
     }
 
     .pt-bio-note {
@@ -10688,26 +10714,26 @@ var pulse_thread_tracker_default = {
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        padding: 2px 7px;
-        border-radius: 6px;
-        font-size: 0.6rem;
-        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 0.58rem;
+        font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-top: 2px;
+        letter-spacing: 0.6px;
         align-self: flex-start;
+        line-height: 1;
     }
 
-    .risk-low { background: rgba(112, 161, 255, 0.15); color: var(--cy-fol); border: 1px solid rgba(112, 161, 255, 0.2); }
-    .risk-med { background: rgba(165, 94, 234, 0.15); color: var(--cy-lut); border: 1px solid rgba(165, 94, 234, 0.2); }
-    .risk-high { background: rgba(255, 215, 0, 0.15); color: var(--cy-ovu); border: 1px solid rgba(255, 215, 0, 0.3); animation: riskGlow 2s ease-in-out infinite; }
-    .risk-preg { background: rgba(246, 211, 101, 0.15); color: var(--cy-preg); border: 1px solid rgba(246, 211, 101, 0.2); }
-    .risk-unknown { background: rgba(136, 153, 170, 0.12); color: var(--pt-txt-dim); border: 1px solid rgba(136, 153, 170, 0.18); }
+    .risk-low { background: rgba(112, 161, 255, 0.14); color: #9ac3ff; border: 1px solid rgba(112, 161, 255, 0.25); box-shadow: 0 0 10px rgba(112, 161, 255, 0.08); }
+    .risk-med { background: rgba(165, 94, 234, 0.14); color: #cda5f7; border: 1px solid rgba(165, 94, 234, 0.25); box-shadow: 0 0 10px rgba(165, 94, 234, 0.08); }
+    .risk-high { background: rgba(255, 215, 0, 0.14); color: #ffe259; border: 1px solid rgba(255, 215, 0, 0.30); animation: riskGlow 2s ease-in-out infinite; box-shadow: 0 0 10px rgba(255, 215, 0, 0.08); }
+    .risk-preg { background: rgba(246, 211, 101, 0.14); color: #fadd7e; border: 1px solid rgba(246, 211, 101, 0.25); box-shadow: 0 0 10px rgba(246, 211, 101, 0.08); }
+    .risk-unknown { background: rgba(136, 153, 170, 0.12); color: #aab6c4; border: 1px solid rgba(136, 153, 170, 0.20); }
 
     @media (max-width: 420px) {
         .pulse-tabbed-root { border-radius: 22px; }
         .pt-bio-zone { grid-template-columns: 1fr; }
-        .pt-fertility-ring, .pt-refractory-gauge, .pt-vial { justify-self: center; }
+        .pt-fertility-ring, .pt-vial, .pt-womb-vessel, .pt-male-visuals { justify-self: center; }
         .pt-bio-zone.pt-bio-compact { grid-template-columns: auto 1fr; }
     }
 
@@ -11122,10 +11148,15 @@ var pulse_thread_tracker_default = {
 
                 {{#if (hasRefractoryTracking stats)}}
                 &lt;div class=&quot;pt-bio-zone&quot;&gt;
-                    &lt;div class=&quot;pt-vial&quot;&gt;
-                        &lt;div class=&quot;pt-vial-chamber&quot;&gt;
-                            &lt;div class=&quot;pt-vial-fill&quot; style=&quot;height: {{semenPercent stats}}%&quot;&gt;&lt;/div&gt;
-                            &lt;div class=&quot;pt-vial-label&quot;&gt;{{semenPercent stats}}%&lt;/div&gt;
+                    &lt;div class=&quot;pt-male-visuals&quot;&gt;
+                        &lt;div class=&quot;pt-vial&quot;&gt;
+                            &lt;div class=&quot;pt-vial-chamber&quot;&gt;
+                                &lt;div class=&quot;pt-vial-fill&quot; style=&quot;height: {{semenPercent stats}}%&quot;&gt;&lt;/div&gt;
+                                &lt;div class=&quot;pt-vial-label&quot;&gt;{{semenPercent stats}}%&lt;/div&gt;
+                            &lt;/div&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;pt-cooldown-track&quot;&gt;
+                            &lt;div class=&quot;pt-cooldown-fill&quot; style=&quot;width: {{divide (multiply (subtract stats.refractory_total stats.refractory_minutes) 100) stats.refractory_total}}%&quot;&gt;&lt;/div&gt;
                         &lt;/div&gt;
                     &lt;/div&gt;
                     &lt;div class=&quot;pt-bio-panel&quot;&gt;
