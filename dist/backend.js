@@ -10306,8 +10306,8 @@ var pulse_thread_tracker_default = {
 
     /* --- FEMALE: Fertility / Womb Dial --- */
     .pt-fertility-ring {
-        width: 82px;
-        height: 82px;
+        width: 96px;
+        height: 96px;
         border-radius: 50%;
         position: relative;
         flex-shrink: 0;
@@ -10325,12 +10325,69 @@ var pulse_thread_tracker_default = {
     .pt-fertility-ring::before {
         content: &#039;&#039;;
         position: absolute;
-        inset: 7px;
+        inset: 8px;
         border-radius: 50%;
         background:
             radial-gradient(circle at 50% 42%, rgba(255,255,255,0.08), transparent 38%),
             var(--pt-bg-deep);
         z-index: 1;
+    }
+
+    .pt-fertility-core {
+        position: absolute;
+        inset: 22px;
+        border-radius: 50%;
+        overflow: hidden;
+        z-index: 2;
+        background:
+            radial-gradient(circle at 50% 25%, color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 20%, transparent), transparent 62%),
+            rgba(0,0,0,0.26);
+        border: 1px solid color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 38%, rgba(255,255,255,0.10));
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 0 16px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 22%, transparent);
+    }
+
+    .pt-womb-svg {
+        position: absolute;
+        inset: 8px;
+        width: calc(100% - 16px);
+        height: calc(100% - 16px);
+        z-index: 1;
+        overflow: visible;
+    }
+
+    .pt-womb-outline {
+        fill: none;
+        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 70%, white 30%);
+        stroke-width: 4;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        opacity: 0.95;
+        filter: drop-shadow(0 0 4px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 35%, transparent));
+    }
+
+    .pt-womb-inner {
+        fill: rgba(255,255,255,0.05);
+        stroke: rgba(255,255,255,0.08);
+        stroke-width: 1.5;
+    }
+
+    .pt-womb-ovary {
+        fill: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 22%, rgba(255,255,255,0.08));
+        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 48%, rgba(255,255,255,0.12));
+        stroke-width: 1.2;
+    }
+
+    .pt-womb-fill {
+        fill: rgba(255,255,255,0.95);
+        filter: drop-shadow(0 -2px 6px rgba(255,255,255,0.18));
+        transition: y 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .pt-womb-surface {
+        stroke: rgba(255,255,255,0.72);
+        stroke-width: 2;
+        stroke-linecap: round;
+        opacity: 0.88;
     }
 
     .pt-fertility-marker {
@@ -10342,8 +10399,8 @@ var pulse_thread_tracker_default = {
         border-radius: 50%;
         background: #fff;
         box-shadow: 0 0 8px currentColor;
-        z-index: 2;
-        transform: translate(-50%, -50%) rotate(var(--marker-deg)) translateY(-36px);
+        z-index: 4;
+        transform: translate(-50%, -50%) rotate(var(--marker-deg)) translateY(-42px);
         transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
@@ -10367,16 +10424,22 @@ var pulse_thread_tracker_default = {
         font-size: 0.52rem;
         font-weight: 700;
         color: var(--pt-txt-dim);
-        z-index: 2;
+        z-index: 3;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        text-shadow: 0 1px 6px rgba(0,0,0,0.35);
     }
 
     .pt-fertility-label strong {
         color: var(--pt-txt);
-        font-size: 0.9rem;
+        font-size: 1.05rem;
         line-height: 1;
         letter-spacing: -0.5px;
+    }
+
+    .pt-fertility-label span {
+        margin-top: 2px;
+        font-size: 0.5rem;
     }
 
     .pt-womb-meter,
@@ -10442,8 +10505,8 @@ var pulse_thread_tracker_default = {
         right: 0;
         bottom: 0;
         height: 0%;
-        background: linear-gradient(180deg, #fff8d6, #ffd86b 55%, #f0a93b);
-        box-shadow: 0 -8px 18px rgba(255,216,107,0.18);
+        background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,248,248,0.96) 55%, rgba(228,228,228,0.94));
+        box-shadow: 0 -8px 18px rgba(255,255,255,0.18);
         transition: height 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
@@ -10948,14 +11011,31 @@ var pulse_thread_tracker_default = {
             &lt;div class=&quot;pt-bio-stack&quot;&gt;
                 {{#if (hasFertilityTracking stats)}}
                 &lt;div class=&quot;pt-bio-zone&quot;&gt;
-                    &lt;div class=&quot;pt-fertility-ring&quot;&gt;
+                    &lt;div class=&quot;pt-fertility-ring&quot; style=&quot;--cycle-accent: {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}var(--cy-ovu){{else if (eq (cycleStage stats) &quot;menstruation&quot;)}}var(--cy-men){{else if (eq (cycleStage stats) &quot;follicular&quot;)}}var(--cy-fol){{else if (eq (cycleStage stats) &quot;luteal&quot;)}}var(--cy-lut){{else}}var(--cy-preg){{/if}};&quot;&gt;
+                        &lt;div class=&quot;pt-fertility-core&quot;&gt;
+                            &lt;svg class=&quot;pt-womb-svg&quot; viewBox=&quot;0 0 100 100&quot; aria-hidden=&quot;true&quot; focusable=&quot;false&quot;&gt;
+                                &lt;defs&gt;
+                                    &lt;clipPath id=&quot;pt-womb-clip-{{@index}}&quot;&gt;
+                                        &lt;path d=&quot;M50 24 C62 24 72 34 72 46 C72 57 66 66 58 74 C54 78 52 83 50 88 C48 83 46 78 42 74 C34 66 28 57 28 46 C28 34 38 24 50 24 Z&quot; /&gt;
+                                    &lt;/clipPath&gt;
+                                &lt;/defs&gt;
+                                &lt;path class=&quot;pt-womb-outline&quot; d=&quot;M24 30 C17 26 12 29 10 36 M76 30 C83 26 88 29 90 36 M24 30 C30 39 36 43 42 43 M76 30 C70 39 64 43 58 43 M42 43 C38 38 32 37 28 42 C24 47 27 55 34 58 M58 43 C62 38 68 37 72 42 C76 47 73 55 66 58 M50 24 C62 24 72 34 72 46 C72 57 66 66 58 74 C54 78 52 83 50 88 C48 83 46 78 42 74 C34 66 28 57 28 46 C28 34 38 24 50 24 Z&quot; /&gt;
+                                &lt;circle class=&quot;pt-womb-ovary&quot; cx=&quot;24&quot; cy=&quot;30&quot; r=&quot;6&quot; /&gt;
+                                &lt;circle class=&quot;pt-womb-ovary&quot; cx=&quot;76&quot; cy=&quot;30&quot; r=&quot;6&quot; /&gt;
+                                &lt;path class=&quot;pt-womb-inner&quot; d=&quot;M50 24 C62 24 72 34 72 46 C72 57 66 66 58 74 C54 78 52 83 50 88 C48 83 46 78 42 74 C34 66 28 57 28 46 C28 34 38 24 50 24 Z&quot; /&gt;
+                                &lt;g clip-path=&quot;url(#pt-womb-clip-{{@index}})&quot;&gt;
+                                    &lt;rect class=&quot;pt-womb-fill&quot; x=&quot;0&quot; y=&quot;{{subtract 100 (clampPercent stats.womb_fullness_pct)}}&quot; width=&quot;100&quot; height=&quot;{{clampPercent stats.womb_fullness_pct}}&quot; /&gt;
+                                    &lt;path class=&quot;pt-womb-surface&quot; d=&quot;M33 {{subtract 100 (clampPercent stats.womb_fullness_pct)}} C40 {{subtract 103 (clampPercent stats.womb_fullness_pct)}} 60 {{subtract 103 (clampPercent stats.womb_fullness_pct)}} 67 {{subtract 100 (clampPercent stats.womb_fullness_pct)}}&quot; /&gt;
+                                &lt;/g&gt;
+                            &lt;/svg&gt;
+                        &lt;/div&gt;
                         &lt;div class=&quot;pt-fertility-marker {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}ovulation-glow{{/if}}&quot;
                              style=&quot;color: {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}var(--cy-ovu){{else if (eq (cycleStage stats) &quot;menstruation&quot;)}}var(--cy-men){{else if (eq (cycleStage stats) &quot;follicular&quot;)}}var(--cy-fol){{else if (eq (cycleStage stats) &quot;luteal&quot;)}}var(--cy-lut){{else}}var(--cy-preg){{/if}};&quot;&gt;&lt;/div&gt;
                         &lt;div class=&quot;pt-fertility-label&quot;&gt;
                             {{#if (or stats.preg (eq (cycleStage stats) &quot;pregnancy&quot;))}}
-                                &lt;strong&gt;{{#if stats.days_preg}}{{stats.days_preg}}{{else}}0{{/if}}&lt;/strong&gt;&lt;span&gt;Preg d&lt;/span&gt;
+                                &lt;strong&gt;{{#if stats.days_preg}}{{stats.days_preg}}{{else}}0{{/if}}&lt;/strong&gt;&lt;span&gt;Preg&lt;/span&gt;
                             {{else if stats.cycle_day}}
-                                &lt;strong&gt;{{stats.cycle_day}}&lt;/strong&gt;&lt;span&gt;Cycle d&lt;/span&gt;
+                                &lt;strong&gt;{{stats.cycle_day}}&lt;/strong&gt;&lt;span&gt;Day&lt;/span&gt;
                             {{else}}
                                 &lt;strong&gt;--&lt;/strong&gt;&lt;span&gt;Cycle&lt;/span&gt;
                             {{/if}}
@@ -10969,7 +11049,7 @@ var pulse_thread_tracker_default = {
                         &lt;div class=&quot;pt-bio-grid&quot;&gt;
                             &lt;div class=&quot;pt-bio-row&quot;&gt;
                                 &lt;span class=&quot;pt-bio-key&quot;&gt;Cycle&lt;/span&gt;
-                                &lt;span class=&quot;pt-bio-value&quot;&gt;{{#if (cycleStageId stats)}}Stage {{cycleStageId stats}}: {{cycleStageLabel stats}}{{else}}Unknown{{/if}}&lt;/span&gt;
+                                &lt;span class=&quot;pt-bio-value&quot;&gt;{{#if (cycleStageId stats)}}{{cycleStageLabel stats}}{{else}}Unknown{{/if}}&lt;/span&gt;
                             &lt;/div&gt;
                             &lt;div class=&quot;pt-bio-row&quot;&gt;
                                 &lt;span class=&quot;pt-bio-key&quot;&gt;Womb&lt;/span&gt;
