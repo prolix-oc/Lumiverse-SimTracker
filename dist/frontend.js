@@ -8750,6 +8750,12 @@ var pulse_thread_tracker_default = {
         margin-bottom: 16px;
     }
 
+    .pt-bio-column {
+        display: grid;
+        gap: 12px;
+        align-content: start;
+    }
+
     .pt-bio-zone {
         display: grid;
         grid-template-columns: 92px minmax(0, 1fr);
@@ -9513,22 +9519,53 @@ var pulse_thread_tracker_default = {
             {{#if (or (hasFertilityTracking stats) (hasRefractoryTracking stats))}}
             &lt;div class=&quot;pt-bio-stack&quot;&gt;
                 {{#if (hasFertilityTracking stats)}}
-                &lt;div class=&quot;pt-bio-zone&quot;&gt;
-                    &lt;div class=&quot;pt-fertility-visuals&quot;&gt;
-                        &lt;div class=&quot;pt-fertility-ring&quot; style=&quot;--cycle-accent: {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}var(--cy-ovu){{else if (eq (cycleStage stats) &quot;menstruation&quot;)}}var(--cy-men){{else if (eq (cycleStage stats) &quot;follicular&quot;)}}var(--cy-fol){{else if (eq (cycleStage stats) &quot;luteal&quot;)}}var(--cy-lut){{else}}var(--cy-preg){{/if}};&quot;&gt;
-                            &lt;div class=&quot;pt-fertility-core&quot;&gt;&lt;/div&gt;
-                            &lt;div class=&quot;pt-fertility-marker {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}ovulation-glow{{/if}}&quot;
-                                 style=&quot;color: {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}var(--cy-ovu){{else if (eq (cycleStage stats) &quot;menstruation&quot;)}}var(--cy-men){{else if (eq (cycleStage stats) &quot;follicular&quot;)}}var(--cy-fol){{else if (eq (cycleStage stats) &quot;luteal&quot;)}}var(--cy-lut){{else}}var(--cy-preg){{/if}};&quot;&gt;&lt;/div&gt;
-                            &lt;div class=&quot;pt-fertility-label&quot;&gt;
-                                {{#if (or stats.preg (eq (cycleStage stats) &quot;pregnancy&quot;))}}
-                                    &lt;strong&gt;{{#if stats.days_preg}}{{stats.days_preg}}{{else}}0{{/if}}&lt;/strong&gt;&lt;span&gt;Preg&lt;/span&gt;
-                                {{else if stats.cycle_day}}
-                                    &lt;strong&gt;{{stats.cycle_day}}&lt;/strong&gt;&lt;span&gt;Day&lt;/span&gt;
-                                {{else}}
-                                    &lt;strong&gt;--&lt;/strong&gt;&lt;span&gt;Cycle&lt;/span&gt;
-                                {{/if}}
+                &lt;div class=&quot;pt-bio-column&quot;&gt;
+                    &lt;div class=&quot;pt-bio-zone&quot;&gt;
+                        &lt;div class=&quot;pt-fertility-visuals&quot;&gt;
+                            &lt;div class=&quot;pt-fertility-ring&quot; style=&quot;--cycle-accent: {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}var(--cy-ovu){{else if (eq (cycleStage stats) &quot;menstruation&quot;)}}var(--cy-men){{else if (eq (cycleStage stats) &quot;follicular&quot;)}}var(--cy-fol){{else if (eq (cycleStage stats) &quot;luteal&quot;)}}var(--cy-lut){{else}}var(--cy-preg){{/if}};&quot;&gt;
+                                &lt;div class=&quot;pt-fertility-core&quot;&gt;&lt;/div&gt;
+                                &lt;div class=&quot;pt-fertility-marker {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}ovulation-glow{{/if}}&quot;
+                                     style=&quot;color: {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}var(--cy-ovu){{else if (eq (cycleStage stats) &quot;menstruation&quot;)}}var(--cy-men){{else if (eq (cycleStage stats) &quot;follicular&quot;)}}var(--cy-fol){{else if (eq (cycleStage stats) &quot;luteal&quot;)}}var(--cy-lut){{else}}var(--cy-preg){{/if}};&quot;&gt;&lt;/div&gt;
+                                &lt;div class=&quot;pt-fertility-label&quot;&gt;
+                                    {{#if (or stats.preg (eq (cycleStage stats) &quot;pregnancy&quot;))}}
+                                        &lt;strong&gt;{{#if stats.days_preg}}{{stats.days_preg}}{{else}}0{{/if}}&lt;/strong&gt;&lt;span&gt;Preg&lt;/span&gt;
+                                    {{else if stats.cycle_day}}
+                                        &lt;strong&gt;{{stats.cycle_day}}&lt;/strong&gt;&lt;span&gt;Day&lt;/span&gt;
+                                    {{else}}
+                                        &lt;strong&gt;--&lt;/strong&gt;&lt;span&gt;Cycle&lt;/span&gt;
+                                    {{/if}}
+                                &lt;/div&gt;
                             &lt;/div&gt;
                         &lt;/div&gt;
+                        &lt;div class=&quot;pt-bio-panel&quot;&gt;
+                            &lt;div class=&quot;pt-bio-title-row&quot;&gt;
+                                &lt;h4&gt;Cycle&lt;/h4&gt;
+                                &lt;span class=&quot;pt-risk-badge {{fertilityRiskClass stats}}&quot;&gt;{{fertilityRiskLabel stats}}&lt;/span&gt;
+                            &lt;/div&gt;
+                            &lt;div class=&quot;pt-bio-grid&quot;&gt;
+                                &lt;div class=&quot;pt-bio-row&quot;&gt;
+                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Phase&lt;/span&gt;
+                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{#if (cycleStageId stats)}}{{cycleStageLabel stats}}{{else}}Unknown{{/if}}&lt;/span&gt;
+                                &lt;/div&gt;
+                                &lt;div class=&quot;pt-bio-row&quot;&gt;
+                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Cycle Day&lt;/span&gt;
+                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{#if stats.cycle_day}}{{stats.cycle_day}}{{else}}Unknown{{/if}}&lt;/span&gt;
+                                &lt;/div&gt;
+                                &lt;div class=&quot;pt-bio-row&quot;&gt;
+                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Pregnancy&lt;/span&gt;
+                                    &lt;span class=&quot;pt-bio-value&quot;&gt;
+                                        {{#if (or stats.preg (eq (cycleStage stats) &quot;pregnancy&quot;))}}
+                                            Pregnant {{#if stats.days_preg}}({{stats.days_preg}}d){{/if}}
+                                        {{else}}
+                                            No
+                                        {{/if}}
+                                    &lt;/span&gt;
+                                &lt;/div&gt;
+                            &lt;/div&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;pt-bio-zone&quot;&gt;
                         &lt;div class=&quot;pt-womb-vessel&quot; style=&quot;--cycle-accent: {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}var(--cy-ovu){{else if (eq (cycleStage stats) &quot;menstruation&quot;)}}var(--cy-men){{else if (eq (cycleStage stats) &quot;follicular&quot;)}}var(--cy-fol){{else if (eq (cycleStage stats) &quot;luteal&quot;)}}var(--cy-lut){{else}}var(--cy-preg){{/if}};&quot;&gt;
                             &lt;svg class=&quot;pt-womb-svg&quot; viewBox=&quot;0 0 100 100&quot; aria-hidden=&quot;true&quot; focusable=&quot;false&quot;&gt;
                                 &lt;defs&gt;
@@ -9546,31 +9583,17 @@ var pulse_thread_tracker_default = {
                                 &lt;/g&gt;
                             &lt;/svg&gt;
                         &lt;/div&gt;
-                    &lt;/div&gt;
-                    &lt;div class=&quot;pt-bio-panel&quot;&gt;
-                        &lt;div class=&quot;pt-bio-title-row&quot;&gt;
-                            &lt;h4&gt;Cycle &amp; Womb&lt;/h4&gt;
-                            &lt;span class=&quot;pt-risk-badge {{fertilityRiskClass stats}}&quot;&gt;{{fertilityRiskLabel stats}}&lt;/span&gt;
-                        &lt;/div&gt;
-                        &lt;div class=&quot;pt-bio-grid&quot;&gt;
-                            &lt;div class=&quot;pt-bio-row&quot;&gt;
-                                &lt;span class=&quot;pt-bio-key&quot;&gt;Cycle&lt;/span&gt;
-                                &lt;span class=&quot;pt-bio-value&quot;&gt;{{#if (cycleStageId stats)}}{{cycleStageLabel stats}}{{else}}Unknown{{/if}}&lt;/span&gt;
+                        &lt;div class=&quot;pt-bio-panel&quot;&gt;
+                            &lt;div class=&quot;pt-bio-title-row&quot;&gt;
+                                &lt;h4&gt;Womb Fullness&lt;/h4&gt;
+                                &lt;span class=&quot;pt-risk-badge risk-preg&quot;&gt;{{clampPercent stats.womb_fullness_pct}}%&lt;/span&gt;
                             &lt;/div&gt;
-                            &lt;div class=&quot;pt-bio-row&quot;&gt;
-                                &lt;span class=&quot;pt-bio-key&quot;&gt;Womb&lt;/span&gt;
-                                &lt;span class=&quot;pt-bio-value&quot;&gt;{{clampPercent stats.womb_fullness_pct}}%&lt;/span&gt;
-                            &lt;/div&gt;
-                            &lt;div class=&quot;pt-womb-meter&quot;&gt;&lt;div class=&quot;pt-womb-meter-fill&quot; style=&quot;width: {{clampPercent stats.womb_fullness_pct}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
-                            &lt;div class=&quot;pt-bio-row&quot;&gt;
-                                &lt;span class=&quot;pt-bio-key&quot;&gt;Pregnancy&lt;/span&gt;
-                                &lt;span class=&quot;pt-bio-value&quot;&gt;
-                                    {{#if (or stats.preg (eq (cycleStage stats) &quot;pregnancy&quot;))}}
-                                        Pregnant {{#if stats.days_preg}}({{stats.days_preg}}d){{/if}}
-                                    {{else}}
-                                        No
-                                    {{/if}}
-                                &lt;/span&gt;
+                            &lt;div class=&quot;pt-bio-grid&quot;&gt;
+                                &lt;div class=&quot;pt-bio-row&quot;&gt;
+                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Fullness&lt;/span&gt;
+                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{clampPercent stats.womb_fullness_pct}}%&lt;/span&gt;
+                                &lt;/div&gt;
+                                &lt;div class=&quot;pt-womb-meter&quot;&gt;&lt;div class=&quot;pt-womb-meter-fill&quot; style=&quot;width: {{clampPercent stats.womb_fullness_pct}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
                             &lt;/div&gt;
                         &lt;/div&gt;
                     &lt;/div&gt;
