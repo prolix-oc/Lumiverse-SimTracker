@@ -16469,7 +16469,7 @@ function clampPercent(value) {
   const n = Number(value);
   if (!Number.isFinite(n))
     return 0;
-  return Math.max(0, Math.min(100, n));
+  return Math.round(Math.max(0, Math.min(100, n)));
 }
 function percentOf(value, total) {
   const denominator = Number(total);
