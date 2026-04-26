@@ -10055,7 +10055,7 @@ var pulse_thread_tracker_default = {
         font-family: var(--pt-font);
         color: var(--pt-txt);
         width: 100%;
-        max-width: 520px;
+        max-width: 100%;
         margin: 0 auto;
         position: relative;
         border-radius: 28px;
@@ -10263,16 +10263,25 @@ var pulse_thread_tracker_default = {
     /* =========================================
        BIO ZONES (Fertility / Refractory)
        ========================================= */
+    .pt-bio-stack {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
     .pt-bio-zone {
         display: grid;
-        grid-template-columns: auto 1fr;
+        grid-template-columns: 92px minmax(0, 1fr);
         align-items: center;
-        gap: 14px;
-        padding: 12px;
-        background: linear-gradient(135deg, rgba(0, 0, 0, 0.22), rgba(255, 255, 255, 0.035));
-        border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        margin-bottom: 14px;
+        gap: 16px;
+        padding: 14px;
+        background:
+            radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.08), transparent 30%),
+            linear-gradient(135deg, rgba(0, 0, 0, 0.24), rgba(255, 255, 255, 0.04));
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        min-width: 0;
     }
 
     .pt-bio-zone.pt-bio-compact {
@@ -10281,8 +10290,8 @@ var pulse_thread_tracker_default = {
     }
 
     .pt-bio-ready-dot {
-        width: 38px;
-        height: 38px;
+        width: 68px;
+        height: 68px;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -10295,10 +10304,10 @@ var pulse_thread_tracker_default = {
         font-weight: 900;
     }
 
-    /* --- FEMALE: Fertility Ring --- */
+    /* --- FEMALE: Fertility / Womb Dial --- */
     .pt-fertility-ring {
-        width: 64px;
-        height: 64px;
+        width: 82px;
+        height: 82px;
         border-radius: 50%;
         position: relative;
         flex-shrink: 0;
@@ -10309,16 +10318,18 @@ var pulse_thread_tracker_default = {
             var(--cy-lut) 206deg 309deg,
             var(--cy-men) 309deg 360deg
         );
-        padding: 4px;
-        box-shadow: 0 0 15px rgba(0,0,0,0.4);
+        padding: 5px;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 0 22px rgba(0,0,0,0.45);
     }
 
     .pt-fertility-ring::before {
         content: &#039;&#039;;
         position: absolute;
-        inset: 4px;
+        inset: 7px;
         border-radius: 50%;
-        background: var(--pt-bg-deep);
+        background:
+            radial-gradient(circle at 50% 42%, rgba(255,255,255,0.08), transparent 38%),
+            var(--pt-bg-deep);
         z-index: 1;
     }
 
@@ -10332,7 +10343,7 @@ var pulse_thread_tracker_default = {
         background: #fff;
         box-shadow: 0 0 8px currentColor;
         z-index: 2;
-        transform: translate(-50%, -50%) rotate(var(--marker-deg)) translateY(-28px);
+        transform: translate(-50%, -50%) rotate(var(--marker-deg)) translateY(-36px);
         transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
@@ -10347,17 +10358,106 @@ var pulse_thread_tracker_default = {
 
     .pt-fertility-label {
         position: absolute;
-        inset: 4px;
+        inset: 12px;
         border-radius: 50%;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        font-size: 0.55rem;
+        font-size: 0.52rem;
         font-weight: 700;
         color: var(--pt-txt-dim);
         z-index: 2;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+    }
+
+    .pt-fertility-label strong {
+        color: var(--pt-txt);
+        font-size: 0.9rem;
+        line-height: 1;
+        letter-spacing: -0.5px;
+    }
+
+    .pt-womb-meter,
+    .pt-metric-bar {
+        height: 7px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .pt-womb-fill,
+    .pt-metric-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: inherit;
+        transition: width 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .pt-womb-fill { background: linear-gradient(90deg, #f6d365, #ff7aa2); }
+    .pt-metric-fill { background: linear-gradient(90deg, #fff8d6, #ffd86b); }
+    .pt-fertility-fill { background: linear-gradient(90deg, #70a1ff, #ffd700); }
+
+    /* --- MALE: Semen / Refractory Vial --- */
+    .pt-vial {
+        width: 82px;
+        min-height: 104px;
+        padding: 10px;
+        border-radius: 22px 22px 26px 26px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03));
+        border: 1px solid rgba(255,255,255,0.09);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 14px 26px rgba(0,0,0,0.28);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .pt-vial::before {
+        content: &#039;&#039;;
+        position: absolute;
+        left: 14px;
+        right: 14px;
+        top: 7px;
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.16);
+    }
+
+    .pt-vial-chamber {
+        position: absolute;
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        top: 22px;
+        border-radius: 16px 16px 20px 20px;
+        overflow: hidden;
+        background: rgba(0,0,0,0.28);
+        border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .pt-vial-fill {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 0%;
+        background: linear-gradient(180deg, #fff8d6, #ffd86b 55%, #f0a93b);
+        box-shadow: 0 -8px 18px rgba(255,216,107,0.18);
+        transition: height 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .pt-vial-label {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+        color: rgba(255,255,255,0.82);
+        font-size: 0.62rem;
+        font-weight: 900;
+        text-shadow: 0 1px 6px rgba(0,0,0,0.55);
     }
 
     /* --- MALE: Refractory Gauge --- */
@@ -10513,8 +10613,9 @@ var pulse_thread_tracker_default = {
     .risk-unknown { background: rgba(136, 153, 170, 0.12); color: var(--pt-txt-dim); border: 1px solid rgba(136, 153, 170, 0.18); }
 
     @media (max-width: 420px) {
+        .pulse-tabbed-root { border-radius: 22px; }
         .pt-bio-zone { grid-template-columns: 1fr; }
-        .pt-fertility-ring, .pt-refractory-gauge { justify-self: center; }
+        .pt-fertility-ring, .pt-refractory-gauge, .pt-vial { justify-self: center; }
         .pt-bio-zone.pt-bio-compact { grid-template-columns: auto 1fr; }
     }
 
@@ -10843,106 +10944,93 @@ var pulse_thread_tracker_default = {
             &lt;/div&gt;
 
             &lt;!-- Biological --&gt;
-            {{#if (hasFertilityTracking stats)}}
-            &lt;div class=&quot;pt-bio-zone&quot;&gt;
-                &lt;div class=&quot;pt-fertility-ring&quot;&gt;
-                    &lt;div class=&quot;pt-fertility-marker {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}ovulation-glow{{/if}}&quot;
-                         style=&quot;color: {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}var(--cy-ovu){{else if (eq (cycleStage stats) &quot;menstruation&quot;)}}var(--cy-men){{else if (eq (cycleStage stats) &quot;follicular&quot;)}}var(--cy-fol){{else if (eq (cycleStage stats) &quot;luteal&quot;)}}var(--cy-lut){{else}}var(--cy-preg){{/if}};&quot;&gt;&lt;/div&gt;
-                    &lt;div class=&quot;pt-fertility-label&quot;&gt;
-                        {{#if (or stats.preg (eq (cycleStage stats) &quot;pregnancy&quot;))}}
-                            Preg {{#if stats.days_preg}}{{stats.days_preg}}d{{/if}}
-                        {{else if stats.cycle_day}}
-                            Day {{stats.cycle_day}}
-                        {{else}}
-                            Cycle
-                        {{/if}}
-                    &lt;/div&gt;
-                &lt;/div&gt;
-                &lt;div class=&quot;pt-bio-panel&quot;&gt;
-                    &lt;div class=&quot;pt-bio-title-row&quot;&gt;
-                        &lt;h4&gt;Biology&lt;/h4&gt;
-                        &lt;span class=&quot;pt-risk-badge {{fertilityRiskClass stats}}&quot;&gt;{{fertilityRiskLabel stats}}&lt;/span&gt;
-                    &lt;/div&gt;
-                    &lt;div class=&quot;pt-bio-grid&quot;&gt;
-                        &lt;div class=&quot;pt-bio-row&quot;&gt;
-                            &lt;span class=&quot;pt-bio-key&quot;&gt;Sex&lt;/span&gt;
-                            &lt;span class=&quot;pt-bio-value&quot;&gt;{{stats.sex}}&lt;/span&gt;
-                        &lt;/div&gt;
-                        &lt;div class=&quot;pt-bio-row&quot;&gt;
-                            &lt;span class=&quot;pt-bio-key&quot;&gt;Cycle&lt;/span&gt;
-                            &lt;span class=&quot;pt-bio-value&quot;&gt;
-                                {{#if (cycleStageId stats)}}Stage {{cycleStageId stats}}: {{cycleStageLabel stats}}{{else}}Unknown{{/if}}
-                            &lt;/span&gt;
-                        &lt;/div&gt;
-                        &lt;div class=&quot;pt-bio-row&quot;&gt;
-                            &lt;span class=&quot;pt-bio-key&quot;&gt;Risk&lt;/span&gt;
-                            &lt;span class=&quot;pt-bio-value {{#if (eq (fertilityRiskLabel stats) &quot;Unknown&quot;)}}pt-bio-value-muted{{/if}}&quot;&gt;{{fertilityRiskLabel stats}}&lt;/span&gt;
-                        &lt;/div&gt;
-                        &lt;div class=&quot;pt-bio-row&quot;&gt;
-                            &lt;span class=&quot;pt-bio-key&quot;&gt;Pregnancy&lt;/span&gt;
-                            &lt;span class=&quot;pt-bio-value&quot;&gt;
-                                {{#if (or stats.preg (eq (cycleStage stats) &quot;pregnancy&quot;))}}
-                                    Pregnant {{#if stats.days_preg}}({{stats.days_preg}}d){{/if}}
-                                {{else}}
-                                    No
-                                {{/if}}
-                            &lt;/span&gt;
-                        &lt;/div&gt;
-                    &lt;/div&gt;
-                &lt;/div&gt;
-            &lt;/div&gt;
-            {{/if}}
-
-            {{#if (hasRefractoryTracking stats)}}
-            &lt;div class=&quot;pt-bio-zone {{#unless (gt stats.refractory_minutes 0)}}pt-bio-compact{{/unless}}&quot;&gt;
-                {{#if (gt stats.refractory_minutes 0)}}
-                &lt;div class=&quot;pt-refractory-gauge&quot;&gt;
-                    &lt;div class=&quot;pt-refractory-arc&quot;&gt;&lt;/div&gt;
-                    &lt;div class=&quot;pt-refractory-center&quot;&gt;
-                        &lt;div class=&quot;ref-icon&quot;&gt;{{#if (gt stats.refractory_minutes 0)}}\uD83D\uDD25{{else}}\u2726{{/if}}&lt;/div&gt;
-                        &lt;div class=&quot;ref-time {{#if (gt stats.refractory_minutes 0)}}ref-cool{{else}}ref-ready{{/if}}&quot;&gt;
-                            {{#if (gt stats.refractory_minutes 60)}}
-                                {{divideRoundUp stats.refractory_minutes 60}}h
-                            {{else if (gt stats.refractory_minutes 0)}}
-                                {{stats.refractory_minutes}}m
+            {{#if (or (hasFertilityTracking stats) (hasRefractoryTracking stats))}}
+            &lt;div class=&quot;pt-bio-stack&quot;&gt;
+                {{#if (hasFertilityTracking stats)}}
+                &lt;div class=&quot;pt-bio-zone&quot;&gt;
+                    &lt;div class=&quot;pt-fertility-ring&quot;&gt;
+                        &lt;div class=&quot;pt-fertility-marker {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}ovulation-glow{{/if}}&quot;
+                             style=&quot;color: {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}var(--cy-ovu){{else if (eq (cycleStage stats) &quot;menstruation&quot;)}}var(--cy-men){{else if (eq (cycleStage stats) &quot;follicular&quot;)}}var(--cy-fol){{else if (eq (cycleStage stats) &quot;luteal&quot;)}}var(--cy-lut){{else}}var(--cy-preg){{/if}};&quot;&gt;&lt;/div&gt;
+                        &lt;div class=&quot;pt-fertility-label&quot;&gt;
+                            {{#if (or stats.preg (eq (cycleStage stats) &quot;pregnancy&quot;))}}
+                                &lt;strong&gt;{{#if stats.days_preg}}{{stats.days_preg}}{{else}}0{{/if}}&lt;/strong&gt;&lt;span&gt;Preg d&lt;/span&gt;
+                            {{else if stats.cycle_day}}
+                                &lt;strong&gt;{{stats.cycle_day}}&lt;/strong&gt;&lt;span&gt;Cycle d&lt;/span&gt;
                             {{else}}
-                                Ready
+                                &lt;strong&gt;--&lt;/strong&gt;&lt;span&gt;Cycle&lt;/span&gt;
                             {{/if}}
                         &lt;/div&gt;
                     &lt;/div&gt;
-                    &lt;div class=&quot;pt-refractory-label&quot;&gt;Cooldown&lt;/div&gt;
+                    &lt;div class=&quot;pt-bio-panel&quot;&gt;
+                        &lt;div class=&quot;pt-bio-title-row&quot;&gt;
+                            &lt;h4&gt;Cycle &amp; Womb&lt;/h4&gt;
+                            &lt;span class=&quot;pt-risk-badge {{fertilityRiskClass stats}}&quot;&gt;{{fertilityRiskLabel stats}}&lt;/span&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;pt-bio-grid&quot;&gt;
+                            &lt;div class=&quot;pt-bio-row&quot;&gt;
+                                &lt;span class=&quot;pt-bio-key&quot;&gt;Cycle&lt;/span&gt;
+                                &lt;span class=&quot;pt-bio-value&quot;&gt;{{#if (cycleStageId stats)}}Stage {{cycleStageId stats}}: {{cycleStageLabel stats}}{{else}}Unknown{{/if}}&lt;/span&gt;
+                            &lt;/div&gt;
+                            &lt;div class=&quot;pt-bio-row&quot;&gt;
+                                &lt;span class=&quot;pt-bio-key&quot;&gt;Womb&lt;/span&gt;
+                                &lt;span class=&quot;pt-bio-value&quot;&gt;{{clampPercent stats.womb_fullness_pct}}%&lt;/span&gt;
+                            &lt;/div&gt;
+                            &lt;div class=&quot;pt-womb-meter&quot;&gt;&lt;div class=&quot;pt-womb-fill&quot; style=&quot;width: {{clampPercent stats.womb_fullness_pct}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+                            &lt;div class=&quot;pt-bio-row&quot;&gt;
+                                &lt;span class=&quot;pt-bio-key&quot;&gt;Pregnancy&lt;/span&gt;
+                                &lt;span class=&quot;pt-bio-value&quot;&gt;
+                                    {{#if (or stats.preg (eq (cycleStage stats) &quot;pregnancy&quot;))}}
+                                        Pregnant {{#if stats.days_preg}}({{stats.days_preg}}d){{/if}}
+                                    {{else}}
+                                        No
+                                    {{/if}}
+                                &lt;/span&gt;
+                            &lt;/div&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
                 &lt;/div&gt;
-                {{else}}
-                &lt;div class=&quot;pt-bio-ready-dot&quot;&gt;OK&lt;/div&gt;
                 {{/if}}
-                &lt;div class=&quot;pt-bio-panel&quot;&gt;
-                    &lt;div class=&quot;pt-bio-title-row&quot;&gt;
-                        &lt;h4&gt;Refractory&lt;/h4&gt;
-                        {{#if (gt stats.refractory_minutes 0)}}
-                            &lt;span class=&quot;pt-risk-badge risk-med&quot;&gt;Recovery&lt;/span&gt;
-                        {{else}}
-                            &lt;span class=&quot;pt-risk-badge risk-low&quot;&gt;Ready&lt;/span&gt;
-                        {{/if}}
-                    &lt;/div&gt;
-                    &lt;div class=&quot;pt-bio-grid&quot;&gt;
-                        &lt;div class=&quot;pt-bio-row&quot;&gt;
-                            &lt;span class=&quot;pt-bio-key&quot;&gt;Status&lt;/span&gt;
-                            &lt;span class=&quot;pt-bio-value&quot;&gt;{{#if (gt stats.refractory_minutes 0)}}Cooling down{{else}}Ready{{/if}}&lt;/span&gt;
+
+                {{#if (hasRefractoryTracking stats)}}
+                &lt;div class=&quot;pt-bio-zone&quot;&gt;
+                    &lt;div class=&quot;pt-vial&quot;&gt;
+                        &lt;div class=&quot;pt-vial-chamber&quot;&gt;
+                            &lt;div class=&quot;pt-vial-fill&quot; style=&quot;height: {{semenPercent stats}}%&quot;&gt;&lt;/div&gt;
+                            &lt;div class=&quot;pt-vial-label&quot;&gt;{{semenPercent stats}}%&lt;/div&gt;
                         &lt;/div&gt;
-                        &lt;div class=&quot;pt-bio-row&quot;&gt;
-                            &lt;span class=&quot;pt-bio-key&quot;&gt;Remaining&lt;/span&gt;
-                            &lt;span class=&quot;pt-bio-value&quot;&gt;
-                                {{#if (gt stats.refractory_minutes 60)}}
-                                    ~{{divideRoundUp stats.refractory_minutes 60}} hours
-                                {{else if (gt stats.refractory_minutes 0)}}
-                                    ~{{stats.refractory_minutes}} minutes
-                                {{else}}
-                                    0 minutes
-                                {{/if}}
-                            &lt;/span&gt;
+                    &lt;/div&gt;
+                    &lt;div class=&quot;pt-bio-panel&quot;&gt;
+                        &lt;div class=&quot;pt-bio-title-row&quot;&gt;
+                            &lt;h4&gt;Semen &amp; Fertility&lt;/h4&gt;
+                            {{#if (gt stats.refractory_minutes 0)}}
+                                &lt;span class=&quot;pt-risk-badge risk-med&quot;&gt;Recovery&lt;/span&gt;
+                            {{else}}
+                                &lt;span class=&quot;pt-risk-badge risk-low&quot;&gt;Ready&lt;/span&gt;
+                            {{/if}}
+                        &lt;/div&gt;
+                        &lt;div class=&quot;pt-bio-grid&quot;&gt;
+                            &lt;div class=&quot;pt-bio-row&quot;&gt;
+                                &lt;span class=&quot;pt-bio-key&quot;&gt;Volume&lt;/span&gt;
+                                &lt;span class=&quot;pt-bio-value&quot;&gt;
+                                    {{#if stats.semen_capacity_ml}}{{stats.semen_ml}} / {{stats.semen_capacity_ml}} ml{{else}}Unknown{{/if}}
+                                &lt;/span&gt;
+                            &lt;/div&gt;
+                            &lt;div class=&quot;pt-metric-bar&quot;&gt;&lt;div class=&quot;pt-metric-fill&quot; style=&quot;width: {{semenPercent stats}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+                            &lt;div class=&quot;pt-bio-row&quot;&gt;
+                                &lt;span class=&quot;pt-bio-key&quot;&gt;Sperm&lt;/span&gt;
+                                &lt;span class=&quot;pt-bio-value&quot;&gt;{{maleFertilityLabel stats}} {{#if (maleFertilityPercent stats)}}({{maleFertilityPercent stats}}%){{/if}}&lt;/span&gt;
+                            &lt;/div&gt;
+                            &lt;div class=&quot;pt-metric-bar&quot;&gt;&lt;div class=&quot;pt-metric-fill pt-fertility-fill&quot; style=&quot;width: {{maleFertilityPercent stats}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+                            &lt;div class=&quot;pt-bio-row&quot;&gt;
+                                &lt;span class=&quot;pt-bio-key&quot;&gt;Cooldown&lt;/span&gt;
+                                &lt;span class=&quot;pt-bio-value&quot;&gt;
+                                    {{#if (gt stats.refractory_minutes 60)}}~{{divideRoundUp stats.refractory_minutes 60}} hours{{else if (gt stats.refractory_minutes 0)}}~{{stats.refractory_minutes}} minutes{{else}}Ready{{/if}}
+                                &lt;/span&gt;
+                            &lt;/div&gt;
                         &lt;/div&gt;
                     &lt;/div&gt;
                 &lt;/div&gt;
+                {{/if}}
             &lt;/div&gt;
             {{/if}}
 
@@ -11076,9 +11164,9 @@ TEMPLATE VARIABLES (tabbed mode):
   - {{stats}}: Flattened stats object containing:
     - {{stats.ap}}, {{stats.dp}}, {{stats.tp}}, {{stats.cp}}
     - {{stats.apChange}}, {{stats.dpChange}}, {{stats.tpChange}}, {{stats.cpChange}}
-    - {{stats.sex}}: &#039;female&#039;, &#039;male&#039;, or &#039;other&#039;
-    - {{stats.cycle_stage_id}}, {{stats.cycle_stage}}, {{stats.cycle_day}}, {{stats.days_preg}}
-    - {{stats.refractory_minutes}}, {{stats.refractory_total}}
+    - {{stats.sex}}: &#039;female&#039;, &#039;male&#039;, &#039;futanari&#039;, or &#039;other&#039;
+    - {{stats.cycle_stage_id}}, {{stats.cycle_stage}}, {{stats.cycle_day}}, {{stats.womb_fullness_pct}}, {{stats.days_preg}}
+    - {{stats.refractory_minutes}}, {{stats.refractory_total}}, {{stats.semen_ml}}, {{stats.semen_capacity_ml}}, {{stats.male_fertility_pct}}
     - {{stats.last_react}}, {{stats.internal_thought}}
     - {{stats.days_since_first_meeting}}, {{stats.inactive}}
 --&gt;
@@ -11114,10 +11202,15 @@ TEMPLATE VARIABLES (tabbed mode):
       "cycle_stage_id": 2,
       "cycle_stage": "follicular",
       "cycle_day": 10,
+      "womb_fullness_pct": 0,
       "preg": false,
       "days_preg": 0,
+      "conception_date": "",
       "refractory_minutes": 0,
       "refractory_total": 0,
+      "semen_ml": 0,
+      "semen_capacity_ml": 0,
+      "male_fertility_pct": 0,
       "last_react": 1,
       "internal_thought": "I said yes. I'm spending the night...",
       "days_since_first_meeting": 0,
@@ -11130,6 +11223,15 @@ TEMPLATE VARIABLES (tabbed mode):
 \`\`\`
 
 For multiple characters, append additional objects to the \`characters\` array. Each character object is independent.
+
+### No Optional Fields
+NO field is optional. Every character object MUST include every field listed in the example and custom fields on every turn, even when a field is not biologically applicable.
+
+Use neutral values instead of omitting fields:
+- Use \`0\` for unavailable numeric meters, counts, and percentages.
+- Use \`false\` for inactive boolean states.
+- Use \`""\` for unknown/not-applicable dates or short text fields.
+- Preserve prior values whenever possible; only use neutral values when the field is genuinely unknown or inapplicable.
 
 ### Why the array matters
 The frontend normalizer looks for \`characters\` first. If you emit a flat object like \`{ "name": "...", "stats": { ... } }\` at the top level, the \`"stats"\` key is misidentified as a character named \`"stats"\`, destroying all names and breaking biological filtering.
@@ -11158,30 +11260,40 @@ Track stat changes message-to-message via \`apChange\`, \`dpChange\`, \`tpChange
 ## Biological Tracking
 
 ### Sex Field
-Each character MUST have \`"sex": "female"\`, \`"male"\`, or \`"other"\`. Use lowercase values exactly. This is the primary gate for biological modules, and it must be preserved from prior tracker state unless the character's biology is explicitly established differently.
+Each character MUST have \`"sex": "female"\`, \`"male"\`, \`"futanari"\`, or \`"other"\`. Use lowercase values exactly. This is the primary gate for biological modules, and it must be preserved from prior tracker state unless the character's biology is explicitly established differently.
 
-### Female \u2014 Fertility Cycle
-For every character with \`sex: "female"\` or any established menstrual/fertility cycle, ALWAYS include and update fertility fields each turn. Do not omit them when the current scene is non-sexual; preserve previous values and advance them when narrative time passes.
+### Female \u2014 Fertility Cycle & Womb Fullness
+For every character with \`sex: "female"\`, \`sex: "futanari"\`, or any established menstrual/fertility cycle, ALWAYS include and update fertility fields each turn. Do not omit them when the current scene is non-sexual; preserve previous values and advance them when narrative time passes.
 
-Track \`cycle_day\` (1-28 by default unless the character/species has an established different cycle length), \`cycle_stage_id\`, \`cycle_stage\`, \`preg\`, \`days_preg\`, and \`conception_date\` when applicable. Prefer the numeric \`cycle_stage_id\` as canonical and keep \`cycle_stage\` as the matching readable label:
+Track \`cycle_day\` (1-28 by default unless the character/species has an established different cycle length), \`cycle_stage_id\`, \`cycle_stage\`, \`womb_fullness_pct\`, \`preg\`, \`days_preg\`, and \`conception_date\` when applicable. Prefer the numeric \`cycle_stage_id\` as canonical and keep \`cycle_stage\` as the matching readable label:
 - \`1\` = \`menstruation\` \u2014 Days 1-5, low risk
 - \`2\` = \`follicular\` \u2014 Days 6-13, low risk/rising
 - \`3\` = \`ovulation\` \u2014 Days 14-16, **HIGH risk** (peak fertility)
 - \`4\` = \`luteal\` \u2014 Days 17-28, medium then declining risk
 - \`5\` = \`pregnancy\` \u2014 Pregnancy confirmed/known
 
+Set \`womb_fullness_pct\` as a number from 0-100 estimating current womb fullness from the narrative state. Use \`0\` when empty/unknown and preserve the prior value unless events or time passage would change it.
+
 If pregnant, set \`preg: true\`, \`cycle_stage_id: 5\`, \`cycle_stage: "pregnancy"\`, track \`days_preg\`, and preserve/set \`conception_date\` as \`YYYY-MM-DD\` when known. If not pregnant, set \`preg: false\` and \`days_preg: 0\`.
 
 If unprotected vaginal/reproductive sex occurs during \`ovulation\` or another fertile/rut stage, evaluate conception risk in narrative context and update \`preg\`, \`cycle_stage\`, \`days_preg\`, and \`conception_date\` if conception is confirmed or narratively certain. Early pregnancy signs may remain absent, but tracker state should still preserve conception timing when known.
 
-### Male \u2014 Refractory Period
-Only characters with \`sex: "male"\` should include or display refractory information. Do not output refractory fields for female/other characters unless their biology is explicitly male for this purpose.
+### Male \u2014 Refractory Period, Semen Volume, Fertility
+Characters with \`sex: "male"\` or \`sex: "futanari"\` should populate male reproductive fields. Female/other characters still MUST include these fields, but should use neutral values (\`0\`) unless their biology is explicitly male for this purpose.
 
-After sexual climax, track:
+Track:
 - \`refractory_minutes\`: Minutes remaining until recovery (0 = ready)
 - \`refractory_total\`: Total minutes of this refractory period (for gauge fill)
+- \`semen_ml\`: Current semen volume available in milliliters
+- \`semen_capacity_ml\`: Maximum semen capacity in milliliters
+- \`male_fertility_pct\`: Current sperm count/fertility level from 0-100
 
 The LLM may provide rest in minutes or hours. ALWAYS convert to minutes for the tracker. Example: "15 minutes rest" \u2192 \`refractory_minutes: 15\`, \`refractory_total: 15\`. Decrement toward 0 as narrative time passes.
+
+Adjust \`semen_ml\` after ejaculation, arousal/rest, or explicit biological changes. Clamp it between \`0\` and \`semen_capacity_ml\`. Preserve \`semen_capacity_ml\` unless the character's biology changes. Update \`male_fertility_pct\` when narrative context implies low/high sperm count, magical fertility, infertility, rut, recovery, or other reproductive changes. The UI derives labels like Low/High from this number, so do not invent a separate label field.
+
+### Futanari / Dual-Biology Characters
+For \`sex: "futanari"\`, output BOTH female cycle fields and male reproductive fields. The tracker will display a mixed biological panel with cycle/womb status plus semen/fertility/refractory status.
 
 ## Colors
 Provide a \`"bg"\` hex color per character for theming. Example: \`"#ff7aa2"\`.
@@ -11234,7 +11346,7 @@ Provide a \`"bg"\` hex color per character for theming. Example: \`"#ff7aa2"\`.
     },
     {
       key: "sex",
-      description: "[string] Character sex, lowercase: 'female', 'male', or 'other' \u2014 primary gate for biological modules; preserve from prior state unless explicitly changed"
+      description: "[string] Character sex, lowercase: 'female', 'male', 'futanari', or 'other' \u2014 primary gate for biological modules; preserve from prior state unless explicitly changed"
     },
     {
       key: "cycle_stage_id",
@@ -11247,6 +11359,10 @@ Provide a \`"bg"\` hex color per character for theming. Example: \`"#ff7aa2"\`.
     {
       key: "cycle_day",
       description: "[number] Current cycle day, usually 1-28, used for fertility ring positioning; preserve and advance when narrative time passes"
+    },
+    {
+      key: "womb_fullness_pct",
+      description: "[number] Required for all characters. Current womb fullness percentage (0-100); use 0 when not applicable"
     },
     {
       key: "preg",
@@ -11262,11 +11378,23 @@ Provide a \`"bg"\` hex color per character for theming. Example: \`"#ff7aa2"\`.
     },
     {
       key: "refractory_minutes",
-      description: "[number] Male characters only. Minutes remaining in refractory period (0 = ready)"
+      description: "[number] Required for all characters. Minutes remaining in refractory period (0 = ready/not applicable)"
     },
     {
       key: "refractory_total",
-      description: "[number] Male characters only. Total minutes of current refractory period (for gauge fill)"
+      description: "[number] Required for all characters. Total minutes of current refractory period (0 when not applicable)"
+    },
+    {
+      key: "semen_ml",
+      description: "[number] Required for all characters. Current semen volume available in milliliters; use 0 when not applicable"
+    },
+    {
+      key: "semen_capacity_ml",
+      description: "[number] Required for all characters. Maximum semen capacity in milliliters; use 0 when not applicable"
+    },
+    {
+      key: "male_fertility_pct",
+      description: "[number] Required for all characters. Current sperm count/fertility level (0-100); use 0 when not applicable"
     },
     {
       key: "health",
@@ -11304,7 +11432,7 @@ Provide a \`"bg"\` hex color per character for theming. Example: \`"#ff7aa2"\`.
     hideSimBlocks: true,
     templateFile: "pulse-thread-tracker.html"
   },
-  trackerDesc: "Narrative character tracker with fertility cycle ring and refractory gauge."
+  trackerDesc: "Narrative character tracker with fertility, womb fullness, semen volume, and refractory gauges."
 };
 
 // src/templatePresets.ts

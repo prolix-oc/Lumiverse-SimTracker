@@ -117,6 +117,69 @@ function sexValue(stats: unknown): string {
   return String((stats as Record<string, unknown>).sex || "").toLowerCase();
 }
 
+function hasMaleBiology(stats: unknown): boolean {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return false;
+  const record = stats as Record<string, unknown>;
+  const sex = sexValue(record);
+  return (
+    ["male", "futanari", "futa", "both", "intersex", "hermaphrodite"].includes(sex) ||
+    Number(record.refractory_minutes) > 0 ||
+    Number(record.semen_capacity_ml) > 0 ||
+    Number(record.semen_ml) > 0 ||
+    Number(record.male_fertility_pct) > 0
+  );
+}
+
+function hasFemaleBiology(stats: unknown): boolean {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return false;
+  const record = stats as Record<string, unknown>;
+  const sex = sexValue(record);
+  const stage = cycleStage(record);
+  return (
+    ["female", "futanari", "futa", "both", "intersex", "hermaphrodite"].includes(sex) ||
+    record.preg === true ||
+    Number(record.cycle_day) > 0 ||
+    Number(record.womb_fullness_pct) > 0 ||
+    ["pregnancy", "ovulation", "menstruation", "follicular", "luteal"].includes(stage)
+  );
+}
+
+function clampPercent(value: unknown): number {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(100, n));
+}
+
+function percentOf(value: unknown, total: unknown): number {
+  const denominator = Number(total);
+  if (!Number.isFinite(denominator) || denominator <= 0) return 0;
+  return clampPercent(((Number(value) || 0) / denominator) * 100);
+}
+
+function maleFertilityLabel(stats: unknown): string {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return "Unknown";
+  const record = stats as Record<string, unknown>;
+  const pct = Number(record.male_fertility_pct ?? record.sperm_count_pct);
+  if (!Number.isFinite(pct)) return "Unknown";
+  if (pct >= 80) return "Very high";
+  if (pct >= 60) return "High";
+  if (pct >= 35) return "Average";
+  if (pct >= 15) return "Low";
+  return "Very low";
+}
+
+function maleFertilityPercent(stats: unknown): number {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return 0;
+  const record = stats as Record<string, unknown>;
+  return clampPercent(record.male_fertility_pct ?? record.sperm_count_pct);
+}
+
+function semenPercent(stats: unknown): number {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return 0;
+  const record = stats as Record<string, unknown>;
+  return percentOf(record.semen_ml, record.semen_capacity_ml);
+}
+
 function byId<T extends Element>(id: string): T | null {
   const scoped = panelRoot?.querySelector(`#${id}`) as T | null;
   if (scoped) return scoped;
@@ -578,20 +641,15 @@ function registerTemplateHelpers(): void {
   Handlebars.registerHelper("cycleStageLabel", cycleStageLabel);
   Handlebars.registerHelper("fertilityRiskLabel", fertilityRiskLabel);
   Handlebars.registerHelper("fertilityRiskClass", fertilityRiskClass);
-  Handlebars.registerHelper("hasFertilityTracking", (stats: unknown) => {
-    if (!stats || typeof stats !== "object" || Array.isArray(stats)) return false;
-    const record = stats as Record<string, unknown>;
-    const sex = sexValue(record);
-    const stage = cycleStage(record);
-    if (sex === "male") return false;
-    return (
-      sex === "female" ||
-      record.preg === true ||
-      Number(record.cycle_day) > 0 ||
-      ["pregnancy", "ovulation", "menstruation", "follicular", "luteal"].includes(stage)
-    );
-  });
-  Handlebars.registerHelper("hasRefractoryTracking", (stats: unknown) => sexValue(stats) === "male");
+  Handlebars.registerHelper("hasFertilityTracking", hasFemaleBiology);
+  Handlebars.registerHelper("hasRefractoryTracking", hasMaleBiology);
+  Handlebars.registerHelper("hasMaleBiology", hasMaleBiology);
+  Handlebars.registerHelper("hasFemaleBiology", hasFemaleBiology);
+  Handlebars.registerHelper("clampPercent", clampPercent);
+  Handlebars.registerHelper("percentOf", percentOf);
+  Handlebars.registerHelper("maleFertilityLabel", maleFertilityLabel);
+  Handlebars.registerHelper("maleFertilityPercent", maleFertilityPercent);
+  Handlebars.registerHelper("semenPercent", semenPercent);
   // Variadic `or` / `and` — last argument is the Handlebars options
   // object, so we peel it off before folding. Values use JS truthiness
   // so `0`, `""`, `null`, `undefined`, and `false` are all falsy.
