@@ -129,14 +129,34 @@ Handlebars.registerHelper("hasFertilityTracking", function (stats) {
   if (sex === "male") return false;
   return (
     sex === "female" ||
+    sex === "futanari" ||
+    sex === "futa" ||
+    sex === "both" ||
+    sex === "intersex" ||
+    sex === "hermaphrodite" ||
     stats.preg === true ||
+    stats.conceived === true ||
     Number(stats.cycle_day) > 0 ||
+    Number(stats.womb_fullness_pct) > 0 ||
     ["pregnancy", "ovulation", "menstruation", "follicular", "luteal"].includes(stage)
   );
 });
 
 Handlebars.registerHelper("hasRefractoryTracking", function (stats) {
-  return sexValue(stats) === "male";
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return false;
+  const sex = sexValue(stats);
+  return (
+    sex === "male" ||
+    sex === "futanari" ||
+    sex === "futa" ||
+    sex === "both" ||
+    sex === "intersex" ||
+    sex === "hermaphrodite" ||
+    Number(stats.refractory_minutes) > 0 ||
+    Number(stats.semen_capacity_ml) > 0 ||
+    Number(stats.semen_ml) > 0 ||
+    Number(stats.male_fertility_pct) > 0
+  );
 });
 
 Handlebars.registerHelper("hasAnalTracking", function (stats) {

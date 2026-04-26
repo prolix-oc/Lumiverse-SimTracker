@@ -11193,7 +11193,7 @@ var pulse_thread_tracker_default = {
             &lt;/div&gt;
 
             &lt;!-- Biological --&gt;
-            {{#if (or (hasFertilityTracking stats) (hasRefractoryTracking stats))}}
+            {{#if (or (hasFertilityTracking stats) (hasRefractoryTracking stats) (hasAnalTracking stats))}}
             &lt;div class=&quot;pt-bio-stack&quot;&gt;
                 {{#if (hasFertilityTracking stats)}}
                 &lt;div class=&quot;pt-bio-column&quot;&gt;
