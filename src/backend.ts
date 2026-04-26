@@ -1142,13 +1142,59 @@ spindle.registerMacro({
   handler: "",
 });
 
-const promptMap: Record<string, string> = {
-  "bento-style-tracker": getTemplatePresetById("bento-style-tracker").sysPrompt || "",
-  "dating-card-template": getTemplatePresetById("dating-card-template").sysPrompt || "",
-  "tactical-hud-sidebar-tabs": getTemplatePresetById("tactical-hud-sidebar-tabs").sysPrompt || "",
-  "rpg-sidebar-preset": getTemplatePresetById("rpg-sidebar-preset").sysPrompt || "",
-  "pulse-thread-tracker": getTemplatePresetById("pulse-thread-tracker").sysPrompt || "",
-};
+/**
+ * Rewrite any instructions in the preset's sysPrompt that would lead the
+ * LLM to emit a markdown code fence (e.g. ```sim ... ```) for tracker
+ * data. The frontend's MESSAGE_TAG_INTERCEPTED path only fires on the
+ * configured XML tag, so a fenced block silently bypasses tracker
+ * capture, side-channel history, and secondary-LLM plumbing.
+ *
+ * Three passes, each targeting a different way the fence format leaks in:
+ *   1. `\`\`\`<identifier> ... \`\`\`` fences — authors copy/paste these
+ *      as literal examples. Rewritten as the XML wrapper so the example
+ *      still shows the intended shape but in the correct format.
+ *   2. `\`\`\`json` / `\`\`\`yaml` fences whose body looks like a tracker
+ *      payload (references `worldData` / `characters` / a `"name"` key).
+ *      Non-tracker code examples are left alone.
+ *   3. Textual references like ``\`sim\` codeblock``, `Sim codeblock`,
+ *      `DISP code block` — replaced with the tracker-tag terminology.
+ */
+function sanitizeSysPromptForWireFormat(base: string, tagName: string, identifier: string): string {
+  if (!base) return base;
+  const safeTag = sanitizeTagName(tagName);
+  const safeId = sanitizeIdentifier(identifier);
+  const idEsc = escapeRegex(safeId);
+  const wrap = (body: string) => `<${safeTag} type="${safeId}">\n${body.trim()}\n</${safeTag}>`;
+
+  // Pass 1: identifier-tagged fences. Case-insensitive so `\`\`\`SIM` and
+  // `\`\`\`sim` both match.
+  const idFenceRe = new RegExp(
+    String.raw`\`\`\`[ \t]*${idEsc}\b[^\n]*\r?\n([\s\S]*?)\r?\n?[ \t]*\`\`\``,
+    "gi",
+  );
+  let out = base.replace(idFenceRe, (_m, body: string) => wrap(body));
+
+  // Pass 2: json/yaml fences that actually contain tracker data. The
+  // heuristic is deliberately conservative to avoid rewriting unrelated
+  // JSON snippets that may appear in docs-heavy presets.
+  const dataFenceRe = /```[ \t]*(?:json|yaml|yml)\b[^\n]*\r?\n([\s\S]*?)\r?\n?[ \t]*```/gi;
+  out = out.replace(dataFenceRe, (match, body: string) => {
+    const looksLikeTracker = /\bworldData\b|\bcharacters?\b|"name"\s*:/.test(body);
+    return looksLikeTracker ? wrap(body) : match;
+  });
+
+  // Pass 3: textual references. Matches `\`sim\` codeblock`, `sim
+  // codeblocks`, `Sim code block`, etc. — anything where the identifier
+  // (optionally backticked) is followed by the word "codeblock" or
+  // "code block" (plural/singular).
+  const textRe = new RegExp(
+    String.raw`\`?${idEsc}\`?[ \t]*code[ \t-]*block(?:s)?`,
+    "gi",
+  );
+  out = out.replace(textRe, `${safeTag} tag`);
+
+  return out;
+}
 
 /**
  * Push current macro values to the host so prompt assembly can resolve
@@ -1159,10 +1205,14 @@ function pushMacroValues(): void {
   const fmt = buildExampleTrackerBlock(config.trackerFormat, config.codeBlockIdentifier);
   spindle.updateMacroValue("sim_format", fmt);
 
-  // sim_tracker
-  const tag = config.trackerTagName || "tracker";
-  const id = config.codeBlockIdentifier || "sim";
-  const base = promptMap[config.templateId] || "";
+  // sim_tracker — always resolve the *active* preset (built-in, seeded,
+  // or user-imported) so switching the template dropdown actually swaps
+  // the prompt the LLM sees. A static id→prompt map here previously
+  // ignored anything outside the bundled defaults.
+  const tag = sanitizeTagName(config.trackerTagName);
+  const id = sanitizeIdentifier(config.codeBlockIdentifier);
+  const rawBase = getActivePreset().sysPrompt || "";
+  const base = sanitizeSysPromptForWireFormat(rawBase, tag, id);
   const directive = [
     "IMPORTANT OUTPUT FORMAT:",
     "Do not emit markdown code fences for tracker data.",
