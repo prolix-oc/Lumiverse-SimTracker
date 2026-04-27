@@ -1467,7 +1467,10 @@ export function setup(ctx: SpindleFrontendContext) {
     initialTrackerRehydrateRequested = true;
     try {
       const active = ctx.getActiveChat();
-      if (active?.chatId) maybeRequestTrackerRehydrate(active.chatId);
+      if (active?.chatId && !rehydratedChatIds.has(active.chatId)) {
+        rehydratedChatIds.add(active.chatId);
+        ctx.sendToBackend({ type: "get_latest_tracker", chatId: active.chatId });
+      }
     } catch {
       // getActiveChat is best-effort; ignore if unavailable.
     }

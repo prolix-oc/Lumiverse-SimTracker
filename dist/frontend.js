@@ -8502,16 +8502,26 @@ var pulse_thread_tracker_default = {
        PULSE THREAD TABBED: CONTAINER &amp; VARS
        ========================================= */
     .pulse-tabbed-root {
-        --pt-font: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Helvetica, Arial, sans-serif;
-        --pt-bg-deep: rgba(12, 12, 22, 0.82);
-        --pt-bg-glass: rgba(30, 28, 48, 0.65);
-        --pt-border: rgba(255, 255, 255, 0.10);
-        --pt-blur: 48px;
-        --pt-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.7);
+        --pt-font: var(--lumiverse-font-family, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Helvetica, Arial, sans-serif);
+        --pt-scale: var(--lumiverse-font-scale, 1);
+        --pt-bg-deep: var(--lumiverse-bg-deep, rgba(12, 12, 22, 0.92));
+        --pt-bg-glass: var(--lcs-glass-bg, color-mix(in srgb, var(--lumiverse-bg, rgba(30, 28, 48, 0.95)) 84%, transparent));
+        --pt-surface: color-mix(in srgb, var(--pt-bg-glass) 78%, var(--lumiverse-fill-subtle, rgba(0, 0, 0, 0.10)) 22%);
+        --pt-surface-strong: color-mix(in srgb, var(--pt-bg-glass) 62%, var(--lumiverse-fill, rgba(0, 0, 0, 0.15)) 38%);
+        --pt-border: var(--lcs-glass-border, var(--lumiverse-border, rgba(255, 255, 255, 0.10)));
+        --pt-border-hover: var(--lcs-glass-border-hover, var(--lumiverse-border-hover, rgba(255, 255, 255, 0.16)));
+        --pt-blur: min(var(--lcs-glass-soft-blur, 6px), 8px);
+        --pt-shadow: var(--lumiverse-shadow-lg, 0 24px 60px -12px rgba(0, 0, 0, 0.7));
+        --pt-radius: calc(var(--lcs-radius, 14px) + 12px);
+        --pt-radius-sm: calc(var(--lcs-radius-sm, 8px) + 4px);
+        --pt-radius-xs: var(--lcs-radius-sm, 8px);
+        --pt-transition: var(--lcs-transition, 220ms cubic-bezier(0.4, 0, 0.2, 1));
+        --pt-transition-fast: var(--lcs-transition-fast, 120ms cubic-bezier(0.4, 0, 0.2, 1));
 
-        --pt-txt: #e8e6f0;
-        --pt-txt-dim: #9088a8;
-        --pt-accent: #c9a6ff;
+        --pt-txt: var(--lumiverse-text, #e8e6f0);
+        --pt-txt-dim: var(--lumiverse-text-muted, #9088a8);
+        --pt-txt-soft: var(--lumiverse-text-dim, #706889);
+        --pt-accent: var(--lumiverse-primary-text, #c9a6ff);
         --pt-gold: #ffd700;
 
         --pt-aff: #ff7aa2;
@@ -8534,20 +8544,45 @@ var pulse_thread_tracker_default = {
 
         font-family: var(--pt-font);
         color: var(--pt-txt);
+        font-size: calc(14px * var(--pt-scale));
         width: 100%;
         max-width: 100%;
         margin: 0 auto;
         position: relative;
-        border-radius: 28px;
+        border-radius: var(--pt-radius);
         overflow: hidden;
-        box-shadow: var(--pt-shadow);
+        isolation: isolate;
+        contain: layout style paint;
+        box-shadow: var(--pt-shadow), var(--lumiverse-highlight-inset, inset 0 1px 0 rgba(255, 255, 255, 0.08));
         border: 1px solid var(--pt-border);
-        background: var(--pt-bg-deep);
+        background: linear-gradient(
+            180deg,
+            color-mix(in srgb, var(--pt-bg-glass) 78%, var(--pt-bg-deep) 22%) 0%,
+            color-mix(in srgb, var(--pt-bg-deep) 94%, transparent) 100%
+        );
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .pulse-tabbed-root * { box-sizing: border-box; }
+
+    [data-glass] .pulse-tabbed-root {
         backdrop-filter: blur(var(--pt-blur));
         -webkit-backdrop-filter: blur(var(--pt-blur));
     }
 
-    .pulse-tabbed-root * { box-sizing: border-box; }
+    @media (prefers-reduced-motion: reduce) {
+        .pulse-tabbed-root,
+        .pulse-tabbed-root * {
+            animation: none !important;
+            transition: none !important;
+        }
+
+        .pt-page,
+        .pt-root-inner {
+            transform: none !important;
+        }
+    }
 
     /* Hidden radio inputs for CSS-only tab switching */
     .pt-char-radio {
@@ -8579,12 +8614,17 @@ var pulse_thread_tracker_default = {
         align-items: center;
         gap: 8px;
         padding: 6px 12px;
-        border-radius: 20px;
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: calc(var(--pt-radius-sm) + 2px);
+        background: var(--pt-surface);
+        border: 1px solid var(--pt-border);
         cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-        opacity: 0.5;
+        transition:
+            background var(--pt-transition-fast),
+            border-color var(--pt-transition-fast),
+            box-shadow var(--pt-transition-fast),
+            opacity var(--pt-transition-fast),
+            transform var(--pt-transition-fast);
+        opacity: 0.64;
         white-space: nowrap;
         flex-shrink: 0;
         scroll-snap-align: start;
@@ -8592,7 +8632,11 @@ var pulse_thread_tracker_default = {
         -webkit-user-select: none;
     }
 
-    .pt-tab:hover { opacity: 0.8; background: rgba(255,255,255,0.07); }
+    .pt-tab:hover {
+        opacity: 0.92;
+        background: var(--pt-surface-strong);
+        border-color: var(--pt-border-hover);
+    }
 
     .pt-tab-avatar {
         width: 24px;
@@ -8601,14 +8645,14 @@ var pulse_thread_tracker_default = {
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.7rem;
+        font-size: calc(11px * var(--pt-scale));
         font-weight: 700;
         text-transform: uppercase;
-        background: rgba(255,255,255,0.1);
+        background: color-mix(in srgb, var(--pt-surface-strong) 88%, transparent);
     }
 
     .pt-tab-name {
-        font-size: 0.78rem;
+        font-size: calc(12px * var(--pt-scale));
         font-weight: 600;
     }
 
@@ -8624,9 +8668,9 @@ var pulse_thread_tracker_default = {
     .pt-char-radio:nth-of-type(9):checked ~ .pt-tab-bar .pt-tab:nth-child(9),
     .pt-char-radio:nth-of-type(10):checked ~ .pt-tab-bar .pt-tab:nth-child(10) {
         opacity: 1;
-        background: rgba(255,255,255,0.10);
-        border-color: rgba(201, 166, 255, 0.35);
-        box-shadow: 0 0 12px rgba(201, 166, 255, 0.08);
+        background: color-mix(in srgb, var(--lumiverse-primary-010, rgba(201, 166, 255, 0.10)) 68%, var(--pt-surface-strong) 32%);
+        border-color: var(--pt-border-hover);
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--pt-accent) 16%, transparent);
     }
 
     /* =========================================
@@ -8638,7 +8682,7 @@ var pulse_thread_tracker_default = {
 
     .pt-page {
         display: none;
-        animation: ptPageIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+        animation: ptPageIn 180ms ease-out;
     }
 
     @keyframes ptPageIn {
@@ -8678,7 +8722,7 @@ var pulse_thread_tracker_default = {
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.1rem;
+        font-size: calc(17px * var(--pt-scale));
         font-weight: 700;
         text-transform: uppercase;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
@@ -8687,13 +8731,13 @@ var pulse_thread_tracker_default = {
 
     .pt-header-info h3 {
         margin: 0;
-        font-size: 0.95rem;
+        font-size: calc(15px * var(--pt-scale));
         font-weight: 700;
         letter-spacing: -0.3px;
     }
 
     .pt-header-meta {
-        font-size: 0.65rem;
+        font-size: calc(10px * var(--pt-scale));
         color: var(--pt-txt-dim);
         text-transform: uppercase;
         letter-spacing: 0.8px;
@@ -8720,7 +8764,7 @@ var pulse_thread_tracker_default = {
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.7rem;
+        font-size: calc(11px * var(--pt-scale));
         flex-shrink: 0;
     }
 
@@ -8729,14 +8773,14 @@ var pulse_thread_tracker_default = {
        ========================================= */
     .pt-mono {
         position: relative;
-        background: rgba(0, 0, 0, 0.25);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 16px;
+        background: color-mix(in srgb, var(--pt-surface-strong) 94%, transparent);
+        border: 1px solid var(--pt-border);
+        border-radius: var(--pt-radius-sm);
         padding: 24px 14px 12px 14px;
         font-style: italic;
-        font-size: 0.85rem;
+        font-size: calc(13px * var(--pt-scale));
         line-height: 1.5;
-        color: #d4d0e0;
+        color: var(--pt-txt);
         margin-bottom: 14px;
     }
 
@@ -8744,12 +8788,12 @@ var pulse_thread_tracker_default = {
         position: absolute;
         top: 6px;
         left: 12px;
-        font-size: 0.55rem;
+        font-size: calc(8.5px * var(--pt-scale));
         text-transform: uppercase;
         font-weight: 800;
         letter-spacing: 1px;
-        color: #6a6080;
-        background: rgba(0,0,0,0.35);
+        color: var(--pt-txt-soft);
+        background: color-mix(in srgb, var(--pt-bg-deep) 84%, transparent);
         padding: 2px 8px;
         border-radius: 4px;
         border: 1px solid rgba(255,255,255,0.08);
@@ -8779,10 +8823,10 @@ var pulse_thread_tracker_default = {
         gap: 14px;
         padding: 14px 16px;
         background:
-            radial-gradient(circle at 20% 12%, rgba(255, 255, 255, 0.06), transparent 32%),
-            linear-gradient(135deg, rgba(0, 0, 0, 0.28), rgba(255, 255, 255, 0.035));
-        border-radius: 18px;
-        border: 1px solid rgba(255, 255, 255, 0.07);
+            radial-gradient(circle at 20% 12%, color-mix(in srgb, var(--pt-accent) 10%, transparent), transparent 32%),
+            linear-gradient(135deg, color-mix(in srgb, var(--pt-surface-strong) 90%, transparent), color-mix(in srgb, var(--pt-surface) 96%, transparent));
+        border-radius: var(--pt-radius-sm);
+        border: 1px solid var(--pt-border);
         min-width: 0;
     }
 
@@ -8799,10 +8843,10 @@ var pulse_thread_tracker_default = {
         align-items: center;
         justify-content: center;
         color: var(--pt-accent);
-        background: rgba(201, 166, 255, 0.08);
-        border: 1px solid rgba(201, 166, 255, 0.22);
-        box-shadow: 0 0 16px rgba(201, 166, 255, 0.08);
-        font-size: 0.9rem;
+        background: color-mix(in srgb, var(--lumiverse-primary-010, rgba(201, 166, 255, 0.08)) 84%, transparent);
+        border: 1px solid color-mix(in srgb, var(--pt-accent) 24%, var(--pt-border));
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--pt-accent) 10%, transparent);
+        font-size: calc(14px * var(--pt-scale));
         font-weight: 900;
     }
 
@@ -8821,7 +8865,7 @@ var pulse_thread_tracker_default = {
             var(--cy-men) 309deg 360deg
         );
         padding: 6px;
-        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 0 22px rgba(0,0,0,0.45);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 8px 20px rgba(0,0,0,0.24);
     }
 
     .pt-fertility-ring::before {
@@ -8851,7 +8895,7 @@ var pulse_thread_tracker_default = {
             radial-gradient(circle at 50% 25%, color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 20%, transparent), transparent 62%),
             rgba(0,0,0,0.26);
         border: 1px solid color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 38%, rgba(255,255,255,0.10));
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 0 16px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 22%, transparent);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 18px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 10%, transparent);
     }
 
     .pt-fertility-core::after {
@@ -8876,7 +8920,7 @@ var pulse_thread_tracker_default = {
         height: 100%;
         display: block;
         overflow: visible;
-        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.35));
+        filter: none;
     }
 
     .pt-womb-outline {
@@ -8886,7 +8930,7 @@ var pulse_thread_tracker_default = {
         stroke-linecap: round;
         stroke-linejoin: round;
         opacity: 0.95;
-        filter: drop-shadow(0 0 5px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 35%, transparent));
+        filter: none;
     }
 
     .pt-womb-inner {
@@ -8902,7 +8946,7 @@ var pulse_thread_tracker_default = {
     }
 
     .pt-womb-ovary.pulse {
-        animation: ovaryPulse 1.2s ease-in-out infinite;
+        animation: ovaryPulse 1.5s ease-in-out infinite;
     }
 
     @keyframes ovaryPulse {
@@ -8912,12 +8956,10 @@ var pulse_thread_tracker_default = {
 
     .pt-womb-seed {
         fill: rgba(255,255,255,0.92);
-        filter: drop-shadow(0 0 4px rgba(255,255,255,0.35));
     }
 
     .pt-womb-liquid {
         fill: rgba(255,255,255,0.95);
-        filter: drop-shadow(0 -2px 6px rgba(255,255,255,0.18));
         transition: y 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
@@ -8943,7 +8985,7 @@ var pulse_thread_tracker_default = {
     }
 
     .pt-fertility-marker.ovulation-glow {
-        animation: ovuPulse 1.5s ease-in-out infinite;
+        animation: ovuPulse 1.8s ease-in-out infinite;
     }
 
     @keyframes ovuPulse {
@@ -8959,7 +9001,7 @@ var pulse_thread_tracker_default = {
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        font-size: 0.6rem;
+        font-size: calc(9.5px * var(--pt-scale));
         font-weight: 700;
         color: var(--pt-txt-dim);
         z-index: 3;
@@ -8970,14 +9012,14 @@ var pulse_thread_tracker_default = {
 
     .pt-fertility-label strong {
         color: var(--pt-txt);
-        font-size: 1.15rem;
+        font-size: calc(18px * var(--pt-scale));
         line-height: 1;
         letter-spacing: -0.5px;
     }
 
     .pt-fertility-label span {
         margin-top: 2px;
-        font-size: 0.55rem;
+        font-size: calc(8.5px * var(--pt-scale));
     }
 
     .pt-womb-meter,
@@ -8985,8 +9027,8 @@ var pulse_thread_tracker_default = {
         height: 7px;
         border-radius: 999px;
         overflow: hidden;
-        background: rgba(255,255,255,0.07);
-        border: 1px solid rgba(255,255,255,0.06);
+        background: color-mix(in srgb, var(--pt-surface-strong) 92%, transparent);
+        border: 1px solid color-mix(in srgb, var(--pt-border) 75%, transparent);
     }
 
     .pt-womb-meter-fill,
@@ -9015,7 +9057,7 @@ var pulse_thread_tracker_default = {
         height: 100%;
         display: block;
         overflow: visible;
-        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.35));
+        filter: none;
     }
 
     .pt-anal-outline {
@@ -9025,7 +9067,7 @@ var pulse_thread_tracker_default = {
         stroke-linecap: round;
         stroke-linejoin: round;
         opacity: 0.95;
-        filter: drop-shadow(0 0 5px color-mix(in srgb, #d946ef 35%, transparent));
+        filter: none;
     }
 
     .pt-anal-inner {
@@ -9056,17 +9098,16 @@ var pulse_thread_tracker_default = {
     }
 
     .pt-prostate.glow {
-        animation: prostatePulse 1.2s ease-in-out infinite;
+        animation: prostatePulse 1.5s ease-in-out infinite;
     }
 
     @keyframes prostatePulse {
-        0%, 100% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 2px rgba(244,114,182,0.4)); }
-        50% { transform: scale(1.15); opacity: 0.85; filter: drop-shadow(0 0 8px rgba(244,114,182,0.7)); }
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.1); opacity: 0.82; }
     }
 
     .pt-anal-liquid {
         fill: rgba(255,255,255,0.95);
-        filter: drop-shadow(0 -2px 6px rgba(255,255,255,0.18));
         transition: y 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
@@ -9081,8 +9122,8 @@ var pulse_thread_tracker_default = {
         height: 7px;
         border-radius: 999px;
         overflow: hidden;
-        background: rgba(255,255,255,0.07);
-        border: 1px solid rgba(255,255,255,0.06);
+        background: color-mix(in srgb, var(--pt-surface-strong) 92%, transparent);
+        border: 1px solid color-mix(in srgb, var(--pt-border) 75%, transparent);
     }
 
     .pt-anal-meter-fill {
@@ -9108,7 +9149,7 @@ var pulse_thread_tracker_default = {
         height: 100%;
         display: block;
         overflow: visible;
-        filter: drop-shadow(0 4px 14px rgba(0,0,0,0.4));
+        filter: none;
     }
 
     .pt-penis-shaft {
@@ -9117,7 +9158,7 @@ var pulse_thread_tracker_default = {
         stroke-width: 5.5;
         stroke-linecap: round;
         stroke-linejoin: round;
-        filter: drop-shadow(0 0 4px rgba(255,255,255,0.25));
+        filter: none;
     }
 
     .pt-penis-glans {
@@ -9137,7 +9178,6 @@ var pulse_thread_tracker_default = {
 
     .pt-semen-fill {
         fill: rgba(255,255,255,0.95);
-        filter: drop-shadow(0 -2px 6px rgba(255,255,255,0.18));
         transition: y 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
@@ -9156,7 +9196,7 @@ var pulse_thread_tracker_default = {
         justify-content: center;
         z-index: 2;
         color: rgba(255,255,255,0.82);
-        font-size: 0.62rem;
+        font-size: calc(10px * var(--pt-scale));
         font-weight: 900;
         text-shadow: 0 1px 6px rgba(0,0,0,0.55);
         pointer-events: none;
@@ -9177,7 +9217,6 @@ var pulse_thread_tracker_default = {
 
     .pt-male-visuals.pt-futa-accent .pt-semen-fill {
         fill: rgba(255,244,250,0.95);
-        filter: drop-shadow(0 -2px 6px rgba(255,122,162,0.22));
     }
 
     .pt-male-visuals.pt-futa-accent .pt-cooldown-fill {
@@ -9190,8 +9229,8 @@ var pulse_thread_tracker_default = {
         height: 4px;
         border-radius: 999px;
         overflow: hidden;
-        background: rgba(255,255,255,0.07);
-        border: 1px solid rgba(255,255,255,0.06);
+        background: color-mix(in srgb, var(--pt-surface-strong) 92%, transparent);
+        border: 1px solid color-mix(in srgb, var(--pt-border) 75%, transparent);
     }
 
     .pt-cooldown-fill {
@@ -9247,9 +9286,9 @@ var pulse_thread_tracker_default = {
         z-index: 1;
     }
 
-    .pt-refractory-center .ref-icon { font-size: 1rem; line-height: 1; }
+    .pt-refractory-center .ref-icon { font-size: calc(16px * var(--pt-scale)); line-height: 1; }
     .pt-refractory-center .ref-time {
-        font-size: 0.52rem;
+        font-size: calc(8px * var(--pt-scale));
         font-weight: 800;
         color: var(--pt-txt-dim);
         margin-top: 2px;
@@ -9259,11 +9298,11 @@ var pulse_thread_tracker_default = {
         position: absolute;
         top: -4px;
         right: -2px;
-        background: var(--pt-bg-deep);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 6px;
+        background: color-mix(in srgb, var(--pt-bg-deep) 90%, transparent);
+        border: 1px solid var(--pt-border);
+        border-radius: var(--pt-radius-xs);
         padding: 1px 4px;
-        font-size: 0.5rem;
+        font-size: calc(8px * var(--pt-scale));
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
@@ -9291,7 +9330,7 @@ var pulse_thread_tracker_default = {
 
     .pt-bio-title-row h4 {
         margin: 0;
-        font-size: 0.7rem;
+        font-size: calc(11px * var(--pt-scale));
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.85px;
@@ -9300,7 +9339,7 @@ var pulse_thread_tracker_default = {
 
     .pt-bio-note {
         margin: 0;
-        font-size: 0.72rem;
+        font-size: calc(11px * var(--pt-scale));
         color: var(--pt-txt-dim);
         line-height: 1.45;
     }
@@ -9320,7 +9359,7 @@ var pulse_thread_tracker_default = {
 
     .pt-bio-key {
         color: var(--pt-txt-dim);
-        font-size: 0.58rem;
+        font-size: calc(9px * var(--pt-scale));
         font-weight: 800;
         letter-spacing: 0.7px;
         text-transform: uppercase;
@@ -9328,7 +9367,7 @@ var pulse_thread_tracker_default = {
 
     .pt-bio-value {
         color: var(--pt-txt);
-        font-size: 0.72rem;
+        font-size: calc(11px * var(--pt-scale));
         font-weight: 650;
         min-width: 0;
     }
@@ -9341,7 +9380,7 @@ var pulse_thread_tracker_default = {
         gap: 4px;
         padding: 2px 8px;
         border-radius: 999px;
-        font-size: 0.58rem;
+        font-size: calc(9px * var(--pt-scale));
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.6px;
@@ -9351,20 +9390,15 @@ var pulse_thread_tracker_default = {
 
     .risk-low { background: rgba(112, 161, 255, 0.14); color: #9ac3ff; border: 1px solid rgba(112, 161, 255, 0.25); box-shadow: 0 0 10px rgba(112, 161, 255, 0.08); }
     .risk-med { background: rgba(165, 94, 234, 0.14); color: #cda5f7; border: 1px solid rgba(165, 94, 234, 0.25); box-shadow: 0 0 10px rgba(165, 94, 234, 0.08); }
-    .risk-high { background: rgba(255, 215, 0, 0.14); color: #ffe259; border: 1px solid rgba(255, 215, 0, 0.30); animation: riskGlow 2s ease-in-out infinite; box-shadow: 0 0 10px rgba(255, 215, 0, 0.08); }
+    .risk-high { background: rgba(255, 215, 0, 0.14); color: #ffe259; border: 1px solid rgba(255, 215, 0, 0.30); box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.05); }
     .risk-preg { background: rgba(246, 211, 101, 0.14); color: #fadd7e; border: 1px solid rgba(246, 211, 101, 0.25); box-shadow: 0 0 10px rgba(246, 211, 101, 0.08); }
     .risk-unknown { background: rgba(136, 153, 170, 0.12); color: #aab6c4; border: 1px solid rgba(136, 153, 170, 0.20); }
 
     @media (max-width: 420px) {
-        .pulse-tabbed-root { border-radius: 22px; }
+        .pulse-tabbed-root { border-radius: calc(var(--pt-radius) - 6px); }
         .pt-bio-zone { grid-template-columns: 1fr; }
         .pt-fertility-ring, .pt-penis-container, .pt-womb-vessel, .pt-anal-vessel, .pt-male-visuals { justify-self: center; }
         .pt-bio-zone.pt-bio-compact { grid-template-columns: auto 1fr; }
-    }
-
-    @keyframes riskGlow {
-        0%, 100% { box-shadow: 0 0 0 transparent; }
-        50% { box-shadow: 0 0 8px rgba(255, 215, 0, 0.15); }
     }
 
     /* =========================================
@@ -9392,8 +9426,8 @@ var pulse_thread_tracker_default = {
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.08);
+        background: color-mix(in srgb, var(--pt-surface-strong) 92%, transparent);
+        border: 1px solid color-mix(in srgb, var(--pt-border) 82%, transparent);
         position: relative;
     }
 
@@ -9423,7 +9457,7 @@ var pulse_thread_tracker_default = {
 
     .pt-track-bg {
         height: 5px;
-        background: rgba(255,255,255,0.06);
+        background: color-mix(in srgb, var(--pt-surface-strong) 92%, transparent);
         border-radius: 10px;
         position: relative;
         overflow: hidden;
@@ -9432,7 +9466,7 @@ var pulse_thread_tracker_default = {
     .pt-track-fill {
         height: 100%;
         border-radius: 10px;
-        transition: width 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+        transition: width 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
         position: relative;
     }
 
@@ -9443,8 +9477,8 @@ var pulse_thread_tracker_default = {
         right: 0;
         width: 12px;
         height: 100%;
-        background: rgba(255,255,255,0.3);
-        filter: blur(4px);
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28));
+        opacity: 0.72;
         border-radius: 10px;
     }
 
@@ -9454,7 +9488,7 @@ var pulse_thread_tracker_default = {
     .fill-con { background: linear-gradient(90deg, var(--pt-con), #aabbcc); }
 
     .pt-stat-val {
-        font-size: 0.7rem;
+        font-size: calc(11px * var(--pt-scale));
         font-weight: 700;
         text-align: right;
         position: relative;
@@ -9464,7 +9498,7 @@ var pulse_thread_tracker_default = {
         position: absolute;
         top: -12px;
         right: 0;
-        font-size: 0.55rem;
+        font-size: calc(8.5px * var(--pt-scale));
         padding: 2px 4px;
         border-radius: 5px;
         white-space: nowrap;
@@ -9498,12 +9532,12 @@ var pulse_thread_tracker_default = {
         align-items: center;
         gap: 4px;
         padding: 5px 8px;
-        border-radius: 6px;
-        font-size: 0.65rem;
+        border-radius: var(--pt-radius-xs);
+        font-size: calc(10px * var(--pt-scale));
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        border: 1px solid rgba(255,255,255,0.06);
+        border: 1px solid var(--pt-border);
     }
 
     .pill-preg { background: rgba(246, 211, 101, 0.12); color: var(--cy-preg); }
@@ -9513,7 +9547,7 @@ var pulse_thread_tracker_default = {
     .pill-react-app { background: var(--bg-approved); color: var(--st-app); }
     .pill-react-neu { background: var(--bg-neutral); color: var(--st-neu); }
     .pill-react-dis { background: var(--bg-disapproved); color: var(--st-dis); }
-    .pt-empty-pill { background: rgba(0,0,0,0.2); border: 1px dashed rgba(255,255,255,0.08); color: rgba(255,255,255,0.15); }
+    .pt-empty-pill { background: color-mix(in srgb, var(--pt-bg-deep) 78%, transparent); border: 1px dashed color-mix(in srgb, var(--pt-border) 75%, transparent); color: color-mix(in srgb, var(--pt-txt-dim) 45%, transparent); }
 
     .pulse-tabbed-root svg { display: block; }
     .icon-12 { width: 12px; height: 12px; }
@@ -9542,7 +9576,7 @@ var pulse_thread_tracker_default = {
         user-select: none;
         position: relative;
         border-bottom: 1px solid transparent;
-        transition: border-color 0.3s ease;
+        transition: border-color var(--pt-transition-fast), background var(--pt-transition-fast);
     }
 
     .pt-root-bar::after {
@@ -9552,9 +9586,8 @@ var pulse_thread_tracker_default = {
         left: 10%;
         width: 80%;
         height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(201, 166, 255, 0.2), transparent);
+        background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--pt-accent) 32%, transparent), transparent);
         opacity: 0.4;
-        animation: barPulse 3s ease-in-out infinite;
     }
 
     .pt-root-toggle:checked ~ .pt-root-bar {
@@ -9565,7 +9598,7 @@ var pulse_thread_tracker_default = {
         display: flex;
         align-items: center;
         gap: 10px;
-        font-size: 0.75rem;
+        font-size: calc(12px * var(--pt-scale));
         font-weight: 600;
         color: var(--pt-txt-dim);
         text-transform: uppercase;
@@ -9580,7 +9613,7 @@ var pulse_thread_tracker_default = {
 
     .pt-root-chevron {
         opacity: 0.4;
-        transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        transition: transform var(--pt-transition), opacity var(--pt-transition-fast);
         z-index: 1;
     }
 
@@ -9592,8 +9625,7 @@ var pulse_thread_tracker_default = {
     .pt-root-body {
         max-height: 0;
         overflow: hidden;
-        transition: max-height 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
-        will-change: max-height;
+        transition: max-height 280ms ease;
     }
 
     .pt-root-toggle:checked ~ .pt-root-body {
@@ -9603,7 +9635,7 @@ var pulse_thread_tracker_default = {
     .pt-root-inner {
         opacity: 0;
         transform: translate3d(0, -10px, 0);
-        transition: opacity 0.35s ease, transform 0.35s ease;
+        transition: opacity 180ms ease, transform 180ms ease;
     }
 
     .pt-root-toggle:checked ~ .pt-root-body .pt-root-inner {
@@ -9618,7 +9650,7 @@ var pulse_thread_tracker_default = {
         align-items: center;
         gap: 8px;
         margin-bottom: 10px;
-        font-size: 0.62rem;
+        font-size: calc(10px * var(--pt-scale));
         color: var(--pt-txt-dim);
         text-transform: uppercase;
         letter-spacing: 0.7px;
@@ -10072,7 +10104,7 @@ TEMPLATE VARIABLES (tabbed mode):
     - {{stats.days_since_first_meeting}}, {{stats.inactive}}
 --&gt;
 `,
-  sysPrompt: '## NARRATIVE CHARACTER TRACKER (Pulse Thread)\n\n**Objective:** Emit one JSON/YAML tracker per turn. Include `worldData` with `current_date` (YYYY-MM-DD) and `current_time` (24h), plus a `characters` array containing every tracked character.\n\n---\n\n### CRITICAL RULES\n\n1. **Array wrapping is mandatory.** Never emit a flat top-level map like `{ "CharacterName": { ... } }`. Always use `{ "characters": [ { ... }, { ... } ] }`, even for one character.\n2. **`name` must be at the character object level.** You may nest stats under `"stats": { ... }`; the tracker flattens them. `name` must not be inside `stats`.\n3. **No omitted fields.** Every character object must include every field below on every turn. Use `0`, `false`, or `""` for unknown/inapplicable values. Preserve prior values when known.\n4. **Output order:** Narrative → Tracker tag → `sim` codeblock. Never omit the codeblock.\n5. **Never track the user.** Do not include `{{user}}`, the player, or any self-insert persona in the `characters` array. The tracker is for narrative characters and NPCs only.\n6. **Multi-character support:** Track every active character present in the current scene. Mark inactive ones `"inactive": true`.\n\n---\n\n### CANONICAL SCHEMA\n\n```json\n{\n  "worldData": {\n    "current_date": "YYYY-MM-DD",\n    "current_time": "HH:MM"\n  },\n  "characters": [\n    {\n      "name": "<CharacterName>",\n      "ap": 0,\n      "dp": 0,\n      "tp": 0,\n      "cp": 0,\n      "sex": "female | male | futanari | other",\n      "cycle_stage_id": 0,\n      "cycle_day": 0,\n      "womb_fullness_pct": 0,\n      "womb_receptivity_pct": 0,\n      "cervix_state_id": 0,\n      "breeding_count": 0,\n      "conceived": false,\n      "preg": false,\n      "days_preg": 0,\n      "conception_date": "",\n      "refractory_minutes": 0,\n      "refractory_total": 0,\n      "semen_ml": 0,\n      "semen_capacity_ml": 0,\n      "male_fertility_pct": 0,\n      "anal_fullness_pct": 0,\n      "anal_tightness_pct": 0,\n      "prostate_stimulation_pct": 0,\n      "last_react": 0,\n      "internal_thought": "",\n      "days_since_first_meeting": 0,\n      "inactive": false,\n      "inactiveReason": 0,\n      "bg": "#000000"\n    }\n  ]\n}\n```\n\nThe `characters` array contains one entry per tracked character. Every entry must conform to the shape above. Use the literal defaults shown when a value is unknown or inapplicable.\n\n---\n\n### STAT METERS (HARD CAPS)\n\nStat-change indicators (`apChange`, `dpChange`, `tpChange`, `cpChange`) are **auto-derived** by the extension. Do not emit them. The tracker compares each turn\'s values against the previous tracker and computes the delta automatically.\n\n| Field | Range | Brackets |\n|---|---|---|\n| **ap** Affection | 0-200 | 0-30 Strangers / 31-60 Acquaintances / 61-90 Friends / 91-120 Romantic / 121-150 Steady / 151-180 Committed / 181-200 Devoted |\n| **dp** Desire | 0-150 | 0-25 Cold / 26-50 Warm / 51-75 Interested / 76-100 Aroused / 101-125 Needy / 126-150 Desperate |\n| **tp** Trust | 0-150 | Falls when lied to, cheated, or promises broken. |\n| **cp** Contempt | 0-150 | Rises when harmed. CP rise can lower AP/DP/TP. |\n\n---\n\n### BIOLOGICAL TRACKING\n\n**`sex` gate:** `"female"`, `"male"`, `"futanari"`, or `"other"` (lowercase). Preserve from prior state unless the narrative explicitly changes biology.\n\n**General rule for all biology:** Preserve prior values. Advance only when narrative time passes. Use `0`/`""`/`false` when genuinely inapplicable.\n\n**Gender applicability is strict:**\n- **Female-only fields** (`cycle_stage_id`, `cycle_day`, `womb_fullness_pct`, `womb_receptivity_pct`, `cervix_state_id`, `breeding_count`) apply only to `female`, `futanari`, `intersex`, `hermaphrodite`, and `both`. Set to `0`/`""`/`false` for male characters.\n- **Male-only fields** (`refractory_minutes`, `refractory_total`, `semen_ml`, `semen_capacity_ml`, `male_fertility_pct`, `anal_fullness_pct`, `anal_tightness_pct`, `prostate_stimulation_pct`) apply only to `male`, `futanari`, `intersex`, `hermaphrodite`, and `both`. Set to `0` for female characters.\n- **Futanari / dual-biology** characters receive **both** sets of fields. The tracker renders a mixed panel.\n- **Pure female** (`sex: "female"`): emit female fields; male fields must all be `0`.\n- **Pure male** (`sex: "male"`): emit male fields; female fields must all be `0`/`""`.\n\n#### Female / Futanari — Fertility & Womb\n\n- `cycle_day`: 1-28 (or established species length). Advance with narrative time.\n- `cycle_stage_id` enum:\n  - `1` = `"menstruation"` (days 1-5)\n  - `2` = `"follicular"` (days 6-13)\n  - `3` = `"ovulation"` (days 14-16, peak fertility)\n  - `4` = `"luteal"` (days 17-28)\n  - `5` = `"pregnancy"`\n- `womb_fullness_pct`: 0-100. Estimate from narrative; preserve unless events change it.\n- `womb_receptivity_pct`: 0-100. High during ovulation/rut, low during menstruation or low arousal.\n- `cervix_state_id` enum: `0` = `""` (unknown), `1` = `"soft"`, `2` = `"firm"`, `3` = `"open"`, `4` = `"dilated"`, `5` = `"sealed"`. Soft/open during fertile/high-arousal windows.\n- `breeding_count`: Times filled this cycle. Increment after internal ejaculation; preserve between turns.\n\nIf pregnant: `preg: true`, `cycle_stage_id: 5`, track `days_preg`, preserve `conception_date` (YYYY-MM-DD) when known.\n\nIf not pregnant: `preg: false`, `days_preg: 0`.\n\nIf unprotected vaginal sex occurs during ovulation or rut, evaluate conception risk narratively. Update `preg`, `days_preg`, and `conception_date` when conception is confirmed or narratively certain.\n\n`conceived` is an intermediate state between fertilisation and confirmed pregnancy. Set `conceived: true` when a character has ovulated with high womb fullness and fertilisation has occurred, but pregnancy has not yet been medically or narratively confirmed. Transition to `preg: true` (and `cycle_stage_id: 5`) on a later turn when the narrative confirms it. `conceived` and `preg` may both be false simultaneously.\n\n#### Male / Futanari — Refractory & Semen\n\n- `refractory_minutes`: Minutes remaining until ready (0 = ready).\n- `refractory_total`: Total minutes of this refractory period.\n- `semen_ml`: Current volume (0 to `semen_capacity_ml`). Adjust after ejaculation, rest, or arousal.\n- `semen_capacity_ml`: Maximum volume. Preserve unless biology changes.\n- `male_fertility_pct`: 0-100. Update for sperm count, magical fertility, infertility, rut, recovery, etc.\n\nConvert all time to minutes. Decrement `refractory_minutes` toward 0 as narrative time passes.\n\n#### Male / Futanari — Anal & Prostate\n\nFor characters engaging in penetrative anal sex (typically male or futanari bottoms):\n\n- `anal_fullness_pct`: 0-100. Estimate rectal cum fullness from narrative events. Increases after internal ejaculation; may decrease over time or through expulsion. Preserve unless events change it.\n- `anal_tightness_pct`: 0-100. Reflects sphincter tone and stretching.\n  - `100-80` = Very tight / virginal.\n  - `79-50` = Moderately tight.\n  - `49-20` = Loose / well-used.\n  - `19-0` = Gaped / fully dilated.\n  - Adjust based on narrative activity, rest, and prior stretching.\n- `prostate_stimulation_pct`: 0-100. Rises with direct prostate contact, penetration angle, or sustained pressure. Falls during rest or after orgasm. High values strongly amplify arousal and can trigger hands-free orgasm narratively.\n\nThese fields are strictly male/futanari/intersex/herm/both. Set to `0` for pure female characters.\n\n---\n\n### THEMING\n\nProvide `"bg"` as a hex color per character. Example: `"#ff7aa2"`.\n',
+  sysPrompt: '## NARRATIVE CHARACTER TRACKER (Pulse Thread)\n\n**Objective:** Emit one JSON/YAML tracker per turn. Include `worldData` with `current_date` (YYYY-MM-DD) and `current_time` (24h), plus a `characters` array containing every tracked character.\n\n---\n\n### CRITICAL RULES\n\n1. **Array wrapping is mandatory.** Never emit a flat top-level map like `{ "CharacterName": { ... } }`. Always use `{ "characters": [ { ... }, { ... } ] }`, even for one character.\n2. **`name` must be at the character object level.** You may nest stats under `"stats": { ... }`; the tracker flattens them. `name` must not be inside `stats`.\n3. **No omitted fields.** Every character object must include every field below on every turn. Use `0`, `false`, or `""` for unknown/inapplicable values. Preserve prior values when known.\n4. **Output order:** Narrative → Tracker tag → `sim` codeblock. Never omit the codeblock.\n5. **Never track the user.** Do not include `{{user}}`, the player, or any self-insert persona in the `characters` array. The tracker is for narrative characters and NPCs only.\n6. **Multi-character cap:** Track up to 4 active characters. Mark inactive ones `"inactive": true`.\n\n---\n\n### CANONICAL SCHEMA\n\n```json\n{\n  "worldData": {\n    "current_date": "2025-04-25",\n    "current_time": "22:15"\n  },\n  "characters": [\n    {\n      "name": "Ukinami Yuzuha",\n      "ap": 128,\n      "dp": 105,\n      "tp": 85,\n      "cp": 0,\n      "apChange": 12,\n      "dpChange": 15,\n      "tpChange": 9,\n      "cpChange": 0,\n      "sex": "female",\n      "cycle_stage_id": 2,\n      "cycle_stage": "follicular",\n      "cycle_day": 10,\n      "womb_fullness_pct": 0,\n      "womb_receptivity_pct": 0,\n      "cervix_state": "",\n      "breeding_count": 0,\n      "preg": false,\n      "days_preg": 0,\n      "conception_date": "",\n      "refractory_minutes": 0,\n      "refractory_total": 0,\n      "semen_ml": 0,\n      "semen_capacity_ml": 0,\n      "male_fertility_pct": 0,\n      "last_react": 1,\n      "internal_thought": "I said yes. I\'m spending the night...",\n      "days_since_first_meeting": 0,\n      "inactive": false,\n      "inactiveReason": 0,\n      "bg": "#ff7aa2"\n    }\n  ]\n}\n```\n\n---\n\n### STAT METERS (HARD CAPS)\n\nTrack message-to-message changes in `apChange`, `dpChange`, `tpChange`, `cpChange` (+/- integer, 0 for none).\n\n| Field | Range | Brackets |\n|---|---|---|\n| **ap** Affection | 0-200 | 0-30 Strangers / 31-60 Acquaintances / 61-90 Friends / 91-120 Romantic / 121-150 Steady / 151-180 Committed / 181-200 Devoted |\n| **dp** Desire | 0-150 | 0-25 Cold / 26-50 Warm / 51-75 Interested / 76-100 Aroused / 101-125 Needy / 126-150 Desperate |\n| **tp** Trust | 0-150 | Falls when lied to, cheated, or promises broken. |\n| **cp** Contempt | 0-150 | Rises when harmed. CP rise can lower AP/DP/TP. |\n\n---\n\n### BIOLOGICAL TRACKING\n\n**`sex` gate:** `"female"`, `"male"`, `"futanari"`, or `"other"` (lowercase). Preserve from prior state unless the narrative explicitly changes biology.\n\n**General rule for all biology:** Preserve prior values. Advance only when narrative time passes. Use `0`/`""`/`false` when genuinely inapplicable.\n\n#### Female / Futanari — Fertility & Womb\nFor `sex: "female"` or `"futanari"`, always include and update these fields:\n\n- `cycle_day`: 1-28 (or established species length). Advance with narrative time.\n- `cycle_stage_id` → `cycle_stage` mapping:\n  - `1` = `"menstruation"` (days 1-5)\n  - `2` = `"follicular"` (days 6-13)\n  - `3` = `"ovulation"` (days 14-16, peak fertility)\n  - `4` = `"luteal"` (days 17-28)\n  - `5` = `"pregnancy"`\n- `womb_fullness_pct`: 0-100. Estimate from narrative; preserve unless events change it.\n- `womb_receptivity_pct`: 0-100. High during ovulation/rut, low during menstruation or low arousal.\n- `cervix_state`: `"soft"`, `"firm"`, `"open"`, `"dilated"`, `"sealed"`. Soft/open during fertile/high-arousal windows.\n- `breeding_count`: Times filled this cycle. Increment after internal ejaculation; preserve between turns.\n\nIf pregnant: `preg: true`, `cycle_stage_id: 5`, `cycle_stage: "pregnancy"`, track `days_preg`, preserve `conception_date` (YYYY-MM-DD) when known.\n\nIf not pregnant: `preg: false`, `days_preg: 0`.\n\nIf unprotected vaginal sex occurs during ovulation or rut, evaluate conception risk narratively. Update `preg`, `cycle_stage`, `days_preg`, and `conception_date` when conception is confirmed or narratively certain.\n\n#### Male / Futanari — Refractory & Semen\nFor `sex: "male"` or `"futanari"`, populate these fields. Female/other characters still include them with neutral values (`0`) unless explicitly male.\n\n- `refractory_minutes`: Minutes remaining until ready (0 = ready).\n- `refractory_total`: Total minutes of this refractory period.\n- `semen_ml`: Current volume (0 to `semen_capacity_ml`). Adjust after ejaculation, rest, or arousal.\n- `semen_capacity_ml`: Maximum volume. Preserve unless biology changes.\n- `male_fertility_pct`: 0-100. Update for sperm count, magical fertility, infertility, rut, recovery, etc.\n\nConvert all time to minutes. Decrement `refractory_minutes` toward 0 as narrative time passes.\n\n#### Futanari / Dual-Biology\nOutput **both** female cycle fields and male reproductive fields. The tracker renders a mixed panel.\n\n---\n\n### THEMING\n\nProvide `"bg"` as a hex color per character. Example: `"#ff7aa2"`.\n',
   customFields: [
     {
       key: "ap",
@@ -10091,6 +10123,22 @@ TEMPLATE VARIABLES (tabbed mode):
       description: "[number] Contempt Points (0-150)"
     },
     {
+      key: "apChange",
+      description: "[number] Change in AP since last message (+/- integer, 0 for none)"
+    },
+    {
+      key: "dpChange",
+      description: "[number] Change in DP since last message (+/- integer, 0 for none)"
+    },
+    {
+      key: "tpChange",
+      description: "[number] Change in TP since last message (+/- integer, 0 for none)"
+    },
+    {
+      key: "cpChange",
+      description: "[number] Change in CP since last message (+/- integer, 0 for none)"
+    },
+    {
       key: "relationshipStatus",
       description: "[string] Relationship status text"
     },
@@ -10100,27 +10148,27 @@ TEMPLATE VARIABLES (tabbed mode):
     },
     {
       key: "sex",
-      description: "[string] Character sex, lowercase: 'female', 'male', 'futanari', 'intersex', 'hermaphrodite', 'both', or 'other' — primary gate for biological modules; preserve from prior state unless explicitly changed"
+      description: "[string] Character sex, lowercase: 'female', 'male', 'futanari', or 'other' — primary gate for biological modules; preserve from prior state unless explicitly changed"
     },
     {
       key: "cycle_stage_id",
-      description: "[number] Canonical fertility stage enum: 1=menstruation, 2=follicular, 3=ovulation, 4=luteal, 5=pregnancy; preserve and advance for female/futa/intersex/herm/both characters each turn; use 0 for pure male"
+      description: "[number] Canonical fertility stage enum: 1=menstruation, 2=follicular, 3=ovulation, 4=luteal, 5=pregnancy; preserve and advance for fertile characters each turn"
+    },
+    {
+      key: "cycle_stage",
+      description: "[string] Readable fertility/biological stage label matching cycle_stage_id: 'pregnancy', 'ovulation', 'menstruation', 'follicular', 'luteal', 'rut', or empty"
     },
     {
       key: "cycle_day",
-      description: "[number] Current cycle day, usually 1-28, used for fertility ring positioning; preserve and advance when narrative time passes; use 0 for pure male"
+      description: "[number] Current cycle day, usually 1-28, used for fertility ring positioning; preserve and advance when narrative time passes"
     },
     {
       key: "womb_fullness_pct",
-      description: "[number] Current womb fullness percentage (0-100); use 0 for pure male characters"
-    },
-    {
-      key: "conceived",
-      description: "[boolean] True when fertilisation has occurred but pregnancy is not yet confirmed. Transition to 'preg' happens later."
+      description: "[number] Required for all characters. Current womb fullness percentage (0-100); use 0 when not applicable"
     },
     {
       key: "preg",
-      description: "[boolean] Pregnancy status (true/false); true also implies cycle_stage_id 5"
+      description: "[boolean] Pregnancy status (true/false); true also implies cycle_stage 'pregnancy'"
     },
     {
       key: "days_preg",
@@ -10132,47 +10180,35 @@ TEMPLATE VARIABLES (tabbed mode):
     },
     {
       key: "refractory_minutes",
-      description: "[number] Minutes remaining in refractory period (0 = ready/not applicable); use 0 for pure female characters"
+      description: "[number] Required for all characters. Minutes remaining in refractory period (0 = ready/not applicable)"
     },
     {
       key: "refractory_total",
-      description: "[number] Total minutes of current refractory period (0 when not applicable); use 0 for pure female characters"
+      description: "[number] Required for all characters. Total minutes of current refractory period (0 when not applicable)"
     },
     {
       key: "semen_ml",
-      description: "[number] Current semen volume available in milliliters; use 0 for pure female characters"
+      description: "[number] Required for all characters. Current semen volume available in milliliters; use 0 when not applicable"
     },
     {
       key: "semen_capacity_ml",
-      description: "[number] Maximum semen capacity in milliliters; use 0 for pure female characters"
+      description: "[number] Required for all characters. Maximum semen capacity in milliliters; use 0 when not applicable"
     },
     {
       key: "male_fertility_pct",
-      description: "[number] Current sperm count/fertility level (0-100); use 0 for pure female characters"
-    },
-    {
-      key: "anal_fullness_pct",
-      description: "[number] Current anal canal/rectum cum fullness percentage (0-100); use 0 for pure female characters or when not applicable"
-    },
-    {
-      key: "anal_tightness_pct",
-      description: "[number] Anal sphincter tightness (0-100, where 100 = very tight/virginal, 0 = fully stretched/gaped); use 0 for pure female characters or when not applicable"
-    },
-    {
-      key: "prostate_stimulation_pct",
-      description: "[number] Current prostate stimulation/arousal level (0-100); use 0 for pure female characters or when not applicable"
+      description: "[number] Required for all characters. Current sperm count/fertility level (0-100); use 0 when not applicable"
     },
     {
       key: "womb_receptivity_pct",
-      description: "[number] Current womb receptivity/primed state (0-100); use 0 for pure male characters"
+      description: "[number] Required for all characters. Current womb receptivity/primed state (0-100); use 0 when not applicable"
     },
     {
-      key: "cervix_state_id",
-      description: "[number] Cervix state enum: 0=unknown/empty, 1=soft, 2=firm, 3=open, 4=dilated, 5=sealed; use 0 for pure male characters"
+      key: "cervix_state",
+      description: "[string] Required for all characters. Cervix firmness/openness state such as 'soft', 'firm', 'open', 'dilated', 'sealed'; use empty when not applicable"
     },
     {
       key: "breeding_count",
-      description: "[number] Times filled this cycle (0 or higher); use 0 for pure male characters"
+      description: "[number] Required for all characters. Times filled this cycle (0 or higher); use 0 when not applicable"
     },
     {
       key: "bg",
@@ -17951,8 +17987,10 @@ function setup(ctx) {
     initialTrackerRehydrateRequested = true;
     try {
       const active = ctx.getActiveChat();
-      if (active?.chatId)
-        maybeRequestTrackerRehydrate(active.chatId);
+      if (active?.chatId && !rehydratedChatIds.has(active.chatId)) {
+        rehydratedChatIds.add(active.chatId);
+        ctx.sendToBackend({ type: "get_latest_tracker", chatId: active.chatId });
+      }
     } catch {}
   };
   const backendUnsub = ctx.onBackendMessage((payload) => {
