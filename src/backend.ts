@@ -181,6 +181,31 @@ function extractTrackerTag(message: string, tagName: string, identifier: string)
   return null;
 }
 
+function extractTrackerTagLoose(message: string, tagName: string): string | null {
+  const re = buildTrackerTagRegex(tagName, "ig");
+  const match = re.exec(message);
+  return match ? (match[2] || "").trim() || null : null;
+}
+
+function buildCanonicalTrackerTag(payload: string, identifier: string): string {
+  const tagName = sanitizeTagName(config.trackerTagName);
+  const safeIdentifier = sanitizeIdentifier(identifier);
+  return `<${tagName} type="${safeIdentifier}">\n${payload.trim()}\n</${tagName}>`;
+}
+
+function extractLegacyHiddenDivNormalizedPayload(inner: string, identifier: string): string | null {
+  const directTagPayload = extractTrackerTagLoose(inner, config.trackerTagName);
+  if (directTagPayload) return directTagPayload;
+
+  const fencedPayload = extractSimBlock(inner, identifier)
+    || (identifier !== DEFAULT_CONFIG.codeBlockIdentifier
+      ? extractSimBlock(inner, DEFAULT_CONFIG.codeBlockIdentifier)
+      : null);
+  if (!fencedPayload) return null;
+
+  return extractTrackerTagLoose(fencedPayload, config.trackerTagName) || fencedPayload.trim() || null;
+}
+
 function extractLegacyHiddenDivTrackerPayload(message: string): string | null {
   const divRe = /<div\b([^>]*)>([\s\S]*?)<\/div>/gi;
   let match: RegExpExecArray | null;
@@ -190,10 +215,7 @@ function extractLegacyHiddenDivTrackerPayload(message: string): string | null {
     if (!/style\s*=\s*(?:"[^"]*display\s*:\s*none\s*;?[^"]*"|'[^']*display\s*:\s*none\s*;?[^']*')/i.test(attrs)) {
       continue;
     }
-    const payload = extractSimBlock(inner, config.codeBlockIdentifier)
-      || (config.codeBlockIdentifier !== DEFAULT_CONFIG.codeBlockIdentifier
-        ? extractSimBlock(inner, DEFAULT_CONFIG.codeBlockIdentifier)
-        : null);
+    const payload = extractLegacyHiddenDivNormalizedPayload(inner, config.codeBlockIdentifier);
     if (payload) return payload;
   }
   return null;
@@ -222,14 +244,11 @@ function normalizeLegacyHiddenDivTrackers(message: string): { content: string; r
       return full;
     }
 
-    const payload = extractSimBlock(inner, identifier)
-      || (identifier !== DEFAULT_CONFIG.codeBlockIdentifier
-        ? extractSimBlock(inner, DEFAULT_CONFIG.codeBlockIdentifier)
-        : null);
+    const payload = extractLegacyHiddenDivNormalizedPayload(inner, identifier);
     if (!payload) return full;
 
     replacements += 1;
-    return `<${tagName} type="${identifier}">\n${payload}\n</${tagName}>`;
+    return buildCanonicalTrackerTag(payload, identifier);
   });
 
   return { content, replacements };
@@ -433,6 +452,7 @@ async function normalizeLegacyTrackersInChat(chatId: string): Promise<Array<{
     await spindle.chat.updateMessage(chatId, msg.id, {
       content: normalizedContent.content,
       swipes: nextSwipes,
+      skipChunkRebuild: true,
     } as {
       content?: string;
       swipes?: string[];

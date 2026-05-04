@@ -11945,6 +11945,27 @@ function extractTrackerTag(message, tagName, identifier) {
   }
   return null;
 }
+function extractTrackerTagLoose(message, tagName) {
+  const re = buildTrackerTagRegex(tagName, "ig");
+  const match = re.exec(message);
+  return match ? (match[2] || "").trim() || null : null;
+}
+function buildCanonicalTrackerTag(payload, identifier) {
+  const tagName = sanitizeTagName(config.trackerTagName);
+  const safeIdentifier = sanitizeIdentifier(identifier);
+  return `<${tagName} type="${safeIdentifier}">
+${payload.trim()}
+</${tagName}>`;
+}
+function extractLegacyHiddenDivNormalizedPayload(inner, identifier) {
+  const directTagPayload = extractTrackerTagLoose(inner, config.trackerTagName);
+  if (directTagPayload)
+    return directTagPayload;
+  const fencedPayload = extractSimBlock(inner, identifier) || (identifier !== DEFAULT_CONFIG.codeBlockIdentifier ? extractSimBlock(inner, DEFAULT_CONFIG.codeBlockIdentifier) : null);
+  if (!fencedPayload)
+    return null;
+  return extractTrackerTagLoose(fencedPayload, config.trackerTagName) || fencedPayload.trim() || null;
+}
 function extractLegacyHiddenDivTrackerPayload(message) {
   const divRe = /<div\b([^>]*)>([\s\S]*?)<\/div>/gi;
   let match;
@@ -11954,7 +11975,7 @@ function extractLegacyHiddenDivTrackerPayload(message) {
     if (!/style\s*=\s*(?:"[^"]*display\s*:\s*none\s*;?[^"]*"|'[^']*display\s*:\s*none\s*;?[^']*')/i.test(attrs)) {
       continue;
     }
-    const payload = extractSimBlock(inner, config.codeBlockIdentifier) || (config.codeBlockIdentifier !== DEFAULT_CONFIG.codeBlockIdentifier ? extractSimBlock(inner, DEFAULT_CONFIG.codeBlockIdentifier) : null);
+    const payload = extractLegacyHiddenDivNormalizedPayload(inner, config.codeBlockIdentifier);
     if (payload)
       return payload;
   }
@@ -11976,13 +11997,11 @@ function normalizeLegacyHiddenDivTrackers(message) {
     if (!/style\s*=\s*(?:"[^"]*display\s*:\s*none\s*;?[^"]*"|'[^']*display\s*:\s*none\s*;?[^']*')/i.test(attrs)) {
       return full;
     }
-    const payload = extractSimBlock(inner, identifier) || (identifier !== DEFAULT_CONFIG.codeBlockIdentifier ? extractSimBlock(inner, DEFAULT_CONFIG.codeBlockIdentifier) : null);
+    const payload = extractLegacyHiddenDivNormalizedPayload(inner, identifier);
     if (!payload)
       return full;
     replacements += 1;
-    return `<${tagName} type="${identifier}">
-${payload}
-</${tagName}>`;
+    return buildCanonicalTrackerTag(payload, identifier);
   });
   return { content, replacements };
 }
@@ -12135,7 +12154,8 @@ async function normalizeLegacyTrackersInChat(chatId) {
     const nextSwipes = swipesChanged ? normalizedSwipes.map((entry) => entry.content) : msg.swipes;
     await spindle.chat.updateMessage(chatId, msg.id, {
       content: normalizedContent.content,
-      swipes: nextSwipes
+      swipes: nextSwipes,
+      skipChunkRebuild: true
     });
     msg.content = normalizedContent.content;
     msg.swipes = nextSwipes;
