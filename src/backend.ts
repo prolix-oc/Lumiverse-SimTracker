@@ -433,6 +433,10 @@ async function normalizeLegacyTrackersInChat(chatId: string): Promise<Array<{
     await spindle.chat.updateMessage(chatId, msg.id, {
       content: normalizedContent.content,
       swipes: nextSwipes,
+    } as {
+      content?: string;
+      swipes?: string[];
+      skipChunkRebuild?: boolean;
     });
 
     msg.content = normalizedContent.content;

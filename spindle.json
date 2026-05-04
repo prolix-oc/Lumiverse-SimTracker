@@ -10,7 +10,6 @@
     "interceptor",
     "ephemeral_storage",
     "chat_mutation",
-    "chats",
     "event_tracking",
     "generation",
     "app_manipulation"
