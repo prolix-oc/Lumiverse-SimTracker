@@ -13316,16 +13316,38 @@ function resolveInterceptorChatId(context) {
   }
   return activeChatId;
 }
-function messagesContainTracker(messages) {
+function countMatchingTrackerBlocksInMessage(content) {
+  if (!content)
+    return 0;
+  let count = 0;
+  const fenceRe = buildTrackerFenceRegex(config.codeBlockIdentifier, "gi");
+  for (const match of content.matchAll(fenceRe)) {
+    if (match[0])
+      count++;
+  }
+  const tagRe = buildTrackerTagRegex(config.trackerTagName, "gi");
+  const cleanIdentifier = sanitizeIdentifier(config.codeBlockIdentifier);
+  for (const match of content.matchAll(tagRe)) {
+    const attrs = parseTagAttributes(match[1] || "");
+    const typeAttr = sanitizeIdentifier(attrs.type || "");
+    if (typeAttr && typeAttr !== cleanIdentifier)
+      continue;
+    if (match[0])
+      count++;
+  }
+  for (const _range of legacyHiddenDivTrackerRanges(content)) {
+    count++;
+  }
+  return count;
+}
+function countTrackersInMessages(messages) {
+  let count = 0;
   for (const msg of messages) {
     if (!msg || typeof msg.content !== "string")
       continue;
-    if (msg.role === "system")
-      continue;
-    if (extractTrackerPayloadFromMessage(msg.content))
-      return true;
+    count += countMatchingTrackerBlocksInMessage(msg.content);
   }
-  return false;
+  return count;
 }
 function buildTrackerInjectionBlock(entries) {
   const tagName = sanitizeTagName(config.trackerTagName);
@@ -13352,17 +13374,29 @@ function tryRegisterInterceptor() {
       const retained = stripOldTrackerBlocksGlobal(messages, config.codeBlockIdentifier, keepNewest);
       if (keepNewest === 0)
         return retained;
-      if (messagesContainTracker(retained))
+      const currentCount = countTrackersInMessages(retained);
+      if (currentCount >= keepNewest)
         return retained;
       const chatId = resolveInterceptorChatId(context);
       if (!chatId)
         return retained;
       await rehydrateChatTrackerHistory(chatId);
-      const injectCount = Math.max(1, Math.min(10, keepNewest));
-      const history = getRecentChatTrackers(chatId, injectCount);
+      const needed = keepNewest - currentCount;
+      const history = getRecentChatTrackers(chatId, keepNewest);
       if (history.length === 0)
         return retained;
-      const block = buildTrackerInjectionBlock(history);
+      const existingPayloads = new Set;
+      for (const msg of retained) {
+        if (!msg || typeof msg.content !== "string")
+          continue;
+        const payload = extractTrackerPayloadFromMessage(msg.content);
+        if (payload)
+          existingPayloads.add(payload.trim());
+      }
+      const toInject = history.slice().reverse().filter((entry) => !existingPayloads.has(entry.payload.trim())).slice(0, needed).reverse();
+      if (toInject.length === 0)
+        return retained;
+      const block = buildTrackerInjectionBlock(toInject);
       const latestPayload = parseTrackerPayload(history[history.length - 1].payload);
       const conceptionNames = latestPayload ? checkConceptionTriggers(chatId, latestPayload) : [];
       const conceptionDirective = buildConceptionDirective(conceptionNames);

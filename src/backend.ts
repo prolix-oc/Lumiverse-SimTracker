@@ -1937,21 +1937,46 @@ function resolveInterceptorChatId(context: unknown): string | null {
 }
 
 /**
- * Returns true if any user or assistant message in the list still contains
- * a tracker tag or fence block for the current identifier. System messages
- * are deliberately excluded: the `sim_tracker` macro expands into the
- * system prompt with a literal tracker-tag format example (`<tracker
- * type="sim">{...}</tracker>`), and that example would otherwise be
- * mistaken for real tracker data and suppress re-injection from the
- * side-channel.
+ * Count how many tracker blocks (fences, tags, or legacy hidden-divs)
+ * appear in a single message content string.
  */
-function messagesContainTracker(messages: Array<{ role?: string; content: string }>): boolean {
+function countMatchingTrackerBlocksInMessage(content: string): number {
+  if (!content) return 0;
+  let count = 0;
+
+  const fenceRe = buildTrackerFenceRegex(config.codeBlockIdentifier, "gi");
+  for (const match of content.matchAll(fenceRe)) {
+    if (match[0]) count++;
+  }
+
+  const tagRe = buildTrackerTagRegex(config.trackerTagName, "gi");
+  const cleanIdentifier = sanitizeIdentifier(config.codeBlockIdentifier);
+  for (const match of content.matchAll(tagRe)) {
+    const attrs = parseTagAttributes(match[1] || "");
+    const typeAttr = sanitizeIdentifier(attrs.type || "");
+    if (typeAttr && typeAttr !== cleanIdentifier) continue;
+    if (match[0]) count++;
+  }
+
+  for (const _range of legacyHiddenDivTrackerRanges(content)) {
+    count++;
+  }
+
+  return count;
+}
+
+/**
+ * Count tracker blocks across the whole message array.  Unlike the old
+ * `messagesContainTracker` helper, this counts *all* blocks so we can tell
+ * whether the prompt already satisfies the user's `retainTrackerCount`.
+ */
+function countTrackersInMessages(messages: Array<{ content?: string }>): number {
+  let count = 0;
   for (const msg of messages) {
     if (!msg || typeof msg.content !== "string") continue;
-    if (msg.role === "system") continue;
-    if (extractTrackerPayloadFromMessage(msg.content)) return true;
+    count += countMatchingTrackerBlocksInMessage(msg.content);
   }
-  return false;
+  return count;
 }
 
 /**
@@ -1981,24 +2006,23 @@ function tryRegisterInterceptor(): void {
       if (keepNewest < 0) return messages;
       if (!Array.isArray(messages) || messages.length === 0) return messages;
 
-      // 1. Honour the global retention limit on any trackers that survived
-      //    into canonical storage (the `removeFromMessage: false` path).
+      // 1. Strip older tracker blocks so the prompt never exceeds the
+      //    user's retention limit.
       const retained = stripOldTrackerBlocksGlobal(messages, config.codeBlockIdentifier, keepNewest);
 
       // If the user explicitly set `retainTrackerCount` to 0 they want a
       // clean context — skip injection entirely.
       if (keepNewest === 0) return retained;
 
-      // 2. If the assembled messages already contain tracker blocks, we're
-      //    done. The main LLM can reference them directly.
-      if (messagesContainTracker(retained)) return retained;
+      // 2. Count how many tracker blocks remain after stripping.  If we
+      //    already have enough, the LLM can reference them directly.
+      const currentCount = countTrackersInMessages(retained);
+      if (currentCount >= keepNewest) return retained;
 
-      // 3. Otherwise the messages have no tracker data — almost always
-      //    because the frontend's tag interceptor has `removeFromMessage:
-      //    true` stripping trackers out of canonical message content.
-      //    Re-inject the most recent history entries from the side-channel
-      //    so the main LLM can still see "the last tracker state" and
-      //    generate the next one as a continuation.
+      // 3. Otherwise the prompt is short on tracker history (usually because
+      //    the frontend's tag interceptor has `removeFromMessage: true`).
+      //    Back-fill the difference from the side-channel so the main LLM
+      //    still sees the last N tracker states.
       const chatId = resolveInterceptorChatId(context);
       if (!chatId) return retained;
 
@@ -2006,11 +2030,30 @@ function tryRegisterInterceptor(): void {
       // a no-op after the first call for a given chat.
       await rehydrateChatTrackerHistory(chatId);
 
-      const injectCount = Math.max(1, Math.min(10, keepNewest));
-      const history = getRecentChatTrackers(chatId, injectCount);
+      const needed = keepNewest - currentCount;
+      // Fetch the most recent entries; we may discard duplicates already
+      // present in the assembled prompt.
+      const history = getRecentChatTrackers(chatId, keepNewest);
       if (history.length === 0) return retained;
 
-      const block = buildTrackerInjectionBlock(history);
+      // Avoid injecting a payload that's already represented in the prompt.
+      const existingPayloads = new Set<string>();
+      for (const msg of retained) {
+        if (!msg || typeof msg.content !== "string") continue;
+        const payload = extractTrackerPayloadFromMessage(msg.content);
+        if (payload) existingPayloads.add(payload.trim());
+      }
+
+      const toInject = history
+        .slice()
+        .reverse() // newest first
+        .filter((entry) => !existingPayloads.has(entry.payload.trim()))
+        .slice(0, needed)
+        .reverse(); // back to oldest → newest
+
+      if (toInject.length === 0) return retained;
+
+      const block = buildTrackerInjectionBlock(toInject);
 
       // ── Conception gate ───────────────────────────────────────────────
       // Check the very latest tracker for characters that are ovulating
