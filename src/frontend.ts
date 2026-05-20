@@ -1053,6 +1053,14 @@ export function setup(ctx: SpindleFrontendContext) {
   let initialTrackerRehydrateRequested = false;
   const trackerMessageIds = new Set<string>();
   const trackerMessageMounts = new Map<string, Element>();
+  type TrackerRenderInputs = {
+    data: TrackerData;
+    preset: TemplatePreset;
+    previousData: TrackerData | null;
+    mode: TrackerMountMode;
+  };
+  const trackerMessageRenders = new Map<string, TrackerRenderInputs>();
+  let stopTrackerObserver: (() => void) | null = null;
   const inlineProcessor = createInlineTemplateProcessor({
     getConfig: () => ({
       enableInlineTemplates: config.enableInlineTemplates,
@@ -1269,6 +1277,7 @@ export function setup(ctx: SpindleFrontendContext) {
       mount.remove();
       trackerMessageMounts.delete(messageId);
     }
+    trackerMessageRenders.delete(messageId);
   };
 
   const pruneNonLatestMessageTrackers = () => {
@@ -1280,6 +1289,7 @@ export function setup(ctx: SpindleFrontendContext) {
       if (id === latestId) continue;
       mount.remove();
       trackerMessageMounts.delete(id);
+      trackerMessageRenders.delete(id);
     }
     if (latestId) latestTrackerMessageId = latestId;
   };
@@ -1395,6 +1405,7 @@ export function setup(ctx: SpindleFrontendContext) {
     const insertPos: InsertPosition = mode === "message_top" ? "afterbegin" : "beforeend";
     const mount = ctx.dom.inject(bubbleNode, host, insertPos);
     trackerMessageMounts.set(messageId, mount);
+    trackerMessageRenders.set(messageId, { data, preset, previousData, mode });
   };
 
   const handleTrackerPayload = (raw: string, sourceContent: string, messageId: string | null = null) => {
@@ -1683,6 +1694,83 @@ export function setup(ctx: SpindleFrontendContext) {
     }
   };
 
+  // Lumiverse virtualizes the message list (TanStack Virtual). When a message
+  // scrolls out and back in, React rebuilds its subtree and wipes our injected
+  // tracker host. ctx.dom.inject is one-shot, so we mirror inlineTemplates'
+  // MutationObserver pattern to re-inject from the cached render inputs.
+  const observeTrackerHosts = (): (() => void) => {
+    const pending = new Set<string>();
+    let scheduled = false;
+    const flush = () => {
+      scheduled = false;
+      for (const id of pending) {
+        const inputs = trackerMessageRenders.get(id);
+        if (!inputs) continue;
+        const messageNode = document.querySelector(`[data-message-id="${id}"]`);
+        if (!messageNode) continue;
+        const existingHost = document.querySelector(`[data-sst-message-tracker-id="${id}"]`);
+        if (existingHost && existingHost.isConnected) continue;
+        const tracked = trackerMessageMounts.get(id);
+        if (tracked && !tracked.isConnected) trackerMessageMounts.delete(id);
+        renderTrackerIntoMessage(id, inputs.data, inputs.preset, inputs.previousData, inputs.mode);
+      }
+      pending.clear();
+    };
+    const schedule = () => {
+      if (scheduled) return;
+      scheduled = true;
+      queueMicrotask(flush);
+    };
+    const collectMessageIdsInNode = (node: Node): string[] => {
+      const ids: string[] = [];
+      if (!(node instanceof Element)) return ids;
+      if (node.hasAttribute("data-message-id")) {
+        const id = node.getAttribute("data-message-id");
+        if (id) ids.push(id);
+      }
+      const nested = node.querySelectorAll?.("[data-message-id]");
+      if (nested) {
+        for (let i = 0; i < nested.length; i += 1) {
+          const id = nested[i].getAttribute("data-message-id");
+          if (id) ids.push(id);
+        }
+      }
+      return ids;
+    };
+    const isOurHost = (node: Node): boolean =>
+      node instanceof Element && node.hasAttribute?.("data-sst-message-tracker-id");
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.target instanceof Element && m.target.closest?.("[data-sst-message-tracker-id]")) continue;
+        if (m.type === "childList") {
+          for (const node of Array.from(m.addedNodes)) {
+            if (isOurHost(node)) continue;
+            for (const id of collectMessageIdsInNode(node)) {
+              if (trackerMessageRenders.has(id)) pending.add(id);
+            }
+          }
+          for (const node of Array.from(m.removedNodes)) {
+            if (isOurHost(node)) {
+              const id = (node as Element).getAttribute("data-sst-message-tracker-id");
+              if (id && trackerMessageRenders.has(id)) pending.add(id);
+            }
+          }
+        } else if (m.type === "attributes" && m.target instanceof Element && m.attributeName === "data-message-id") {
+          const id = m.target.getAttribute("data-message-id");
+          if (id && trackerMessageRenders.has(id)) pending.add(id);
+        }
+      }
+      if (pending.size > 0) schedule();
+    });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-message-id"],
+    });
+    return () => observer.disconnect();
+  };
+
   const resetChatState = () => {
     previousTrackerData = null;
     latestTrackerMessageId = null;
@@ -1692,6 +1780,7 @@ export function setup(ctx: SpindleFrontendContext) {
     trackerMessageIds.clear();
     for (const mount of trackerMessageMounts.values()) mount.remove();
     trackerMessageMounts.clear();
+    trackerMessageRenders.clear();
     clearSideTrackerRender();
     inlineProcessor.destroy();
   };
@@ -1703,6 +1792,7 @@ export function setup(ctx: SpindleFrontendContext) {
   const messageRenderedUnsub = ctx.events.on("CHARACTER_MESSAGE_RENDERED", onMessageRendered);
 
   const stopInlineObserver = inlineProcessor.observeDocument();
+  stopTrackerObserver = observeTrackerHosts();
 
   const permissionUnsub = ctx.events.on("PERMISSION_CHANGED", (detail: unknown) => {
     if (!detail || typeof detail !== "object") return;
@@ -1876,6 +1966,11 @@ export function setup(ctx: SpindleFrontendContext) {
     clearSideTrackerRender();
     for (const mount of trackerMessageMounts.values()) mount.remove();
     trackerMessageMounts.clear();
+    trackerMessageRenders.clear();
+    if (stopTrackerObserver) {
+      stopTrackerObserver();
+      stopTrackerObserver = null;
+    }
     inlineProcessor.destroy();
     removePanelStyle();
     ctx.dom.cleanup();
