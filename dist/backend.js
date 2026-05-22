@@ -13323,6 +13323,9 @@ var SECONDARY_LLM_MODEL_PLACEHOLDERS = new Set(["", "string", "model", "your-mod
 function describeMissingModelGuidance() {
   return "Secondary LLM model is not configured. Open SimTracker settings \u2192 Secondary LLM and enter a real model id (e.g. `gpt-4o-mini`, `claude-haiku-4-5`, `deepseek-chat`). The provider rejected the request because the model field was empty or a placeholder.";
 }
+function describeRejectedModelGuidance(model) {
+  return `The provider rejected the configured model id \`${model}\`. Open SimTracker settings \u2192 Secondary LLM and confirm the override matches a model this connection can serve, or clear the override to fall back to the connection's default.`;
+}
 async function generateTrackerWithSecondaryLLM(chatId, targetMessageId) {
   if (secondaryGenerationInProgress)
     return;
@@ -13477,7 +13480,7 @@ ${trackerBlock}`;
     const looksLikeModelError = /\bmodel\b/i.test(rawMessage) && /(missing|invalid|empty|required|not.*found)/i.test(rawMessage);
     const message = looksLikeModelError ? `${rawMessage}
 
-${describeMissingModelGuidance()}` : rawMessage;
+${describeRejectedModelGuidance(trimmedModel)}` : rawMessage;
     spindle.log.error(`Secondary LLM generation failed: ${rawMessage}`);
     spindle.sendToFrontend({ type: "secondary_generation_error", message }, activeUserId || undefined);
     await trackEvent("sst.secondary_generation.failed", { error: rawMessage }, { level: "error" });

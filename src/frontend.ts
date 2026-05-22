@@ -1,5 +1,5 @@
 import Handlebars from "handlebars";
-import type { SpindleFrontendContext } from "lumiverse-spindle-types";
+import type { SpindleFrontendContext, SpindleModelComboboxHandle } from "lumiverse-spindle-types";
 import { getTemplatePresets, type TemplatePreset } from "./templatePresets";
 import { parseTrackerBlock, type TrackerData } from "./trackerData";
 import { createInlineTemplateProcessor } from "./inlineTemplates";
@@ -542,9 +542,10 @@ const PANEL_HTML = `
         <label class="sst-lumi-checkbox"><input id="sst-lumi-llm-enable" type="checkbox" />Enable secondary LLM generation</label>
         <label>Connection Profile
           <select id="sst-lumi-llm-connection"><option value="">Loading connections...</option></select>
-          <button id="sst-lumi-llm-refresh" type="button" class="sst-lumi-llm-refresh">Refresh</button>
         </label>
-        <label>Model Override<input id="sst-lumi-llm-model" type="text" placeholder="Leave empty to use connection default" /></label>
+        <label>Model
+          <div id="sst-lumi-llm-model-mount" class="sst-lumi-llm-model-mount"></div>
+        </label>
         <label>Context Messages<input id="sst-lumi-llm-msgcount" type="number" min="1" max="50" value="5" /></label>
         <label>Temperature<input id="sst-lumi-llm-temp" type="number" min="0" max="2" step="0.1" value="0.7" /></label>
         <label class="sst-lumi-checkbox"><input id="sst-lumi-llm-strip" type="checkbox" checked />Strip structural HTML from context</label>
@@ -599,7 +600,7 @@ const PANEL_CSS = `
   .sst-lumi-llm-controls { padding: 0 12px 10px; display: grid; gap: 8px; }
   .sst-lumi-llm-controls label { font-size: 11px; color: var(--lumiverse-text-muted); display: grid; gap: 5px; }
   .sst-lumi-llm-controls input[type="text"], .sst-lumi-llm-controls input[type="number"], .sst-lumi-llm-controls select { font-size: 12px; padding: 6px 8px; border: 1px solid var(--lumiverse-border); border-radius: 8px; background: var(--lumiverse-fill-subtle); color: var(--lumiverse-text); }
-  .sst-lumi-llm-refresh { font-size: 11px; padding: 4px 8px; border: 1px solid var(--lumiverse-border); border-radius: 6px; background: var(--lumiverse-fill-subtle); color: var(--lumiverse-text); cursor: pointer; width: fit-content; margin-top: 4px; }
+  .sst-lumi-llm-model-mount { width: 100%; }
   .sst-lumi-llm-status { font-size: 11px; color: var(--lumiverse-text-muted); min-height: 16px; }
   .sst-lumi-llm-status.sst-generating { color: var(--lumiverse-accent, #7c6aef); }
   .sst-lumi-llm-status.sst-error { color: #ff6b6b; }
@@ -1335,6 +1336,7 @@ export function setup(ctx: SpindleFrontendContext) {
   let requestedPermissions: string[] = [];
   let ephemeralPoolStatus: Record<string, unknown> | null = null;
   let connections: ConnectionProfile[] = [];
+  let modelCombobox: SpindleModelComboboxHandle | null = null;
 
   const removePanelStyle = ctx.dom.addStyle(PANEL_CSS);
   const mountRoot = ctx.ui.mount("settings_extensions");
@@ -1358,6 +1360,28 @@ export function setup(ctx: SpindleFrontendContext) {
     );
   };
 
+  const buildConnectionRef = (connectionId: string) =>
+    connectionId
+      ? ({ kind: "llm", id: connectionId } as const)
+      : ({ kind: "llm" } as const);
+
+  const ensureModelCombobox = () => {
+    if (modelCombobox) return modelCombobox;
+    const mount = byId<HTMLElement>("sst-lumi-llm-model-mount");
+    if (!mount) return null;
+    modelCombobox = ctx.components.mountModelCombobox(mount, {
+      value: config.secondaryLLMModel,
+      connection: buildConnectionRef(config.secondaryLLMConnectionId),
+      appearance: "standard",
+      placeholder: "Leave empty to use connection default",
+      browseHint: "Search the connection's catalog",
+      onChange: (value) => {
+        config = { ...config, secondaryLLMModel: value };
+      },
+    });
+    return modelCombobox;
+  };
+
   const populateConnectionDropdown = () => {
     const select = byId<HTMLSelectElement>("sst-lumi-llm-connection");
     if (!select) return;
@@ -1375,13 +1399,9 @@ export function setup(ctx: SpindleFrontendContext) {
     if (config.secondaryLLMConnectionId) {
       select.value = config.secondaryLLMConnectionId;
     }
-    const modelInput = byId<HTMLInputElement>("sst-lumi-llm-model");
-    if (modelInput) {
-      const selected = connections.find((c) => c.id === config.secondaryLLMConnectionId);
-      modelInput.placeholder = selected?.model
-        ? `Default: ${selected.model}`
-        : "Leave empty to use connection default";
-    }
+    ensureModelCombobox()?.update({
+      connection: buildConnectionRef(config.secondaryLLMConnectionId),
+    });
   };
 
   const setLLMStatus = (text: string, type: "" | "generating" | "error" = "") => {
@@ -1461,16 +1481,15 @@ export function setup(ctx: SpindleFrontendContext) {
     if (retainInput) retainInput.value = String(config.retainTrackerCount);
 
     const llmEnable = byId<HTMLInputElement>("sst-lumi-llm-enable");
-    const llmModel = byId<HTMLInputElement>("sst-lumi-llm-model");
     const llmMsgCount = byId<HTMLInputElement>("sst-lumi-llm-msgcount");
     const llmTemp = byId<HTMLInputElement>("sst-lumi-llm-temp");
     const llmStrip = byId<HTMLInputElement>("sst-lumi-llm-strip");
     if (llmEnable) llmEnable.checked = config.useSecondaryLLM;
-    if (llmModel) llmModel.value = config.secondaryLLMModel;
     if (llmMsgCount) llmMsgCount.value = String(config.secondaryLLMMessageCount);
     if (llmTemp) llmTemp.value = String(config.secondaryLLMTemperature);
     if (llmStrip) llmStrip.checked = config.secondaryLLMStripHTML;
     populateConnectionDropdown();
+    ensureModelCombobox()?.update({ value: config.secondaryLLMModel });
     renderInlinePacksList();
   };
 
@@ -2148,7 +2167,6 @@ export function setup(ctx: SpindleFrontendContext) {
 
     const llmEnable = byId<HTMLInputElement>("sst-lumi-llm-enable");
     const llmConnection = byId<HTMLSelectElement>("sst-lumi-llm-connection");
-    const llmModel = byId<HTMLInputElement>("sst-lumi-llm-model");
     const llmMsgCount = byId<HTMLInputElement>("sst-lumi-llm-msgcount");
     const llmTemp = byId<HTMLInputElement>("sst-lumi-llm-temp");
     const llmStrip = byId<HTMLInputElement>("sst-lumi-llm-strip");
@@ -2164,7 +2182,7 @@ export function setup(ctx: SpindleFrontendContext) {
       retainTrackerCount: sanitizeRetainCount(retainInput?.value || "3"),
       useSecondaryLLM: Boolean(llmEnable?.checked),
       secondaryLLMConnectionId: llmConnection?.value || "",
-      secondaryLLMModel: sanitizeSecondaryLLMModel(llmModel?.value),
+      secondaryLLMModel: sanitizeSecondaryLLMModel(modelCombobox?.getValue() ?? ""),
       secondaryLLMMessageCount: Math.max(1, Math.min(50, Math.floor(Number(llmMsgCount?.value) || 5))),
       secondaryLLMTemperature: Math.max(0, Math.min(2, Number(llmTemp?.value) || 0.7)),
       secondaryLLMStripHTML: Boolean(llmStrip?.checked),
@@ -2214,21 +2232,11 @@ export function setup(ctx: SpindleFrontendContext) {
     void pickAndImport("Importing");
   });
 
-  const llmRefreshBtn = byId<HTMLElement>("sst-lumi-llm-refresh");
-  llmRefreshBtn?.addEventListener("click", () => {
-    ctx.sendToBackend({ type: "get_connections" });
-    setLLMStatus("Refreshing connections...");
-  });
-
   const llmConnectionSelect = byId<HTMLSelectElement>("sst-lumi-llm-connection");
   llmConnectionSelect?.addEventListener("change", () => {
-    const selected = connections.find((c) => c.id === llmConnectionSelect.value);
-    const modelInput = byId<HTMLInputElement>("sst-lumi-llm-model");
-    if (modelInput) {
-      modelInput.placeholder = selected?.model
-        ? `Default: ${selected.model}`
-        : "Leave empty to use connection default";
-    }
+    ensureModelCombobox()?.update({
+      connection: buildConnectionRef(llmConnectionSelect.value),
+    });
   });
 
   void ctx.permissions.getGranted().then((granted) => {
@@ -2238,6 +2246,7 @@ export function setup(ctx: SpindleFrontendContext) {
     renderCapabilities(grantedPermissions, requestedPermissions, ephemeralPoolStatus);
   });
 
+  ensureModelCombobox();
   ctx.sendToBackend({ type: "get_config" });
   ctx.sendToBackend({ type: "get_connections" });
   updatePermissionGatedControls();
@@ -2260,6 +2269,10 @@ export function setup(ctx: SpindleFrontendContext) {
 
   return () => {
     panelRoot = null;
+    if (modelCombobox) {
+      modelCombobox.destroy();
+      modelCombobox = null;
+    }
     backendUnsub();
     generationUnsub();
     messageUnsub();

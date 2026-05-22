@@ -6,7 +6,7 @@
       "name": "silly-sim-tracker-lumiverse",
       "devDependencies": {
         "handlebars": "^4.7.8",
-        "lumiverse-spindle-types": "0.4.60",
+        "lumiverse-spindle-types": "0.5.7",
         "typescript": "^5.7.3",
         "yaml": "^2.8.1",
       },
@@ -15,7 +15,7 @@
   "packages": {
     "handlebars": ["handlebars@4.7.8", "", { "dependencies": { "minimist": "^1.2.5", "neo-async": "^2.6.2", "source-map": "^0.6.1", "wordwrap": "^1.0.0" }, "optionalDependencies": { "uglify-js": "^3.1.4" }, "bin": { "handlebars": "bin/handlebars" } }, "sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ=="],
 
-    "lumiverse-spindle-types": ["lumiverse-spindle-types@0.4.60", "", {}, "sha512-Sj+ZRb6u6MldKuPaDdzXxVXFlJXGhO3CJOvehhYlo18pnmJAl8D93muQDNNNPPsZWZ0d3KgUMYBAyG9vS564Ew=="],
+    "lumiverse-spindle-types": ["lumiverse-spindle-types@0.5.7", "", {}, "sha512-6lvIazisXtpxcKomxAjytpyaMGI63a2MvM1MZmAENVuf2fRYpHC/x2mx6FdetEyjPoCiXGL67Wt/8pdVE31H2g=="],
 
     "minimist": ["minimist@1.2.8", "", {}, "sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA=="],
 

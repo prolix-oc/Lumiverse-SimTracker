@@ -17381,9 +17381,10 @@ var PANEL_HTML = `
         <label class="sst-lumi-checkbox"><input id="sst-lumi-llm-enable" type="checkbox" />Enable secondary LLM generation</label>
         <label>Connection Profile
           <select id="sst-lumi-llm-connection"><option value="">Loading connections...</option></select>
-          <button id="sst-lumi-llm-refresh" type="button" class="sst-lumi-llm-refresh">Refresh</button>
         </label>
-        <label>Model Override<input id="sst-lumi-llm-model" type="text" placeholder="Leave empty to use connection default" /></label>
+        <label>Model
+          <div id="sst-lumi-llm-model-mount" class="sst-lumi-llm-model-mount"></div>
+        </label>
         <label>Context Messages<input id="sst-lumi-llm-msgcount" type="number" min="1" max="50" value="5" /></label>
         <label>Temperature<input id="sst-lumi-llm-temp" type="number" min="0" max="2" step="0.1" value="0.7" /></label>
         <label class="sst-lumi-checkbox"><input id="sst-lumi-llm-strip" type="checkbox" checked />Strip structural HTML from context</label>
@@ -17437,7 +17438,7 @@ var PANEL_CSS = `
   .sst-lumi-llm-controls { padding: 0 12px 10px; display: grid; gap: 8px; }
   .sst-lumi-llm-controls label { font-size: 11px; color: var(--lumiverse-text-muted); display: grid; gap: 5px; }
   .sst-lumi-llm-controls input[type="text"], .sst-lumi-llm-controls input[type="number"], .sst-lumi-llm-controls select { font-size: 12px; padding: 6px 8px; border: 1px solid var(--lumiverse-border); border-radius: 8px; background: var(--lumiverse-fill-subtle); color: var(--lumiverse-text); }
-  .sst-lumi-llm-refresh { font-size: 11px; padding: 4px 8px; border: 1px solid var(--lumiverse-border); border-radius: 6px; background: var(--lumiverse-fill-subtle); color: var(--lumiverse-text); cursor: pointer; width: fit-content; margin-top: 4px; }
+  .sst-lumi-llm-model-mount { width: 100%; }
   .sst-lumi-llm-status { font-size: 11px; color: var(--lumiverse-text-muted); min-height: 16px; }
   .sst-lumi-llm-status.sst-generating { color: var(--lumiverse-accent, #7c6aef); }
   .sst-lumi-llm-status.sst-error { color: #ff6b6b; }
@@ -18073,6 +18074,7 @@ function setup(ctx) {
   let requestedPermissions = [];
   let ephemeralPoolStatus = null;
   let connections = [];
+  let modelCombobox = null;
   const removePanelStyle = ctx.dom.addStyle(PANEL_CSS);
   const mountRoot = ctx.ui.mount("settings_extensions");
   const stalePanels = document.querySelectorAll("#sst-lumi-panel");
@@ -18086,6 +18088,25 @@ function setup(ctx) {
       removeHideStyle = null;
     }
     removeHideStyle = ctx.dom.addStyle(`pre[data-code-lang="${config.codeBlockIdentifier}"] { display: ${config.hideSimBlocks ? "none" : "block"} !important; }`);
+  };
+  const buildConnectionRef = (connectionId) => connectionId ? { kind: "llm", id: connectionId } : { kind: "llm" };
+  const ensureModelCombobox = () => {
+    if (modelCombobox)
+      return modelCombobox;
+    const mount = byId("sst-lumi-llm-model-mount");
+    if (!mount)
+      return null;
+    modelCombobox = ctx.components.mountModelCombobox(mount, {
+      value: config.secondaryLLMModel,
+      connection: buildConnectionRef(config.secondaryLLMConnectionId),
+      appearance: "standard",
+      placeholder: "Leave empty to use connection default",
+      browseHint: "Search the connection's catalog",
+      onChange: (value) => {
+        config = { ...config, secondaryLLMModel: value };
+      }
+    });
+    return modelCombobox;
   };
   const populateConnectionDropdown = () => {
     const select = byId("sst-lumi-llm-connection");
@@ -18105,11 +18126,9 @@ function setup(ctx) {
     if (config.secondaryLLMConnectionId) {
       select.value = config.secondaryLLMConnectionId;
     }
-    const modelInput = byId("sst-lumi-llm-model");
-    if (modelInput) {
-      const selected = connections.find((c) => c.id === config.secondaryLLMConnectionId);
-      modelInput.placeholder = selected?.model ? `Default: ${selected.model}` : "Leave empty to use connection default";
-    }
+    ensureModelCombobox()?.update({
+      connection: buildConnectionRef(config.secondaryLLMConnectionId)
+    });
   };
   const setLLMStatus = (text, type = "") => {
     const el = byId("sst-lumi-llm-status");
@@ -18188,14 +18207,11 @@ function setup(ctx) {
     if (retainInput)
       retainInput.value = String(config.retainTrackerCount);
     const llmEnable = byId("sst-lumi-llm-enable");
-    const llmModel = byId("sst-lumi-llm-model");
     const llmMsgCount = byId("sst-lumi-llm-msgcount");
     const llmTemp = byId("sst-lumi-llm-temp");
     const llmStrip = byId("sst-lumi-llm-strip");
     if (llmEnable)
       llmEnable.checked = config.useSecondaryLLM;
-    if (llmModel)
-      llmModel.value = config.secondaryLLMModel;
     if (llmMsgCount)
       llmMsgCount.value = String(config.secondaryLLMMessageCount);
     if (llmTemp)
@@ -18203,6 +18219,7 @@ function setup(ctx) {
     if (llmStrip)
       llmStrip.checked = config.secondaryLLMStripHTML;
     populateConnectionDropdown();
+    ensureModelCombobox()?.update({ value: config.secondaryLLMModel });
     renderInlinePacksList();
   };
   const renderInlinePacksList = () => {
@@ -18829,7 +18846,6 @@ function setup(ctx) {
     const fallbackId = preset.extSettings?.codeBlockIdentifier;
     const llmEnable = byId("sst-lumi-llm-enable");
     const llmConnection = byId("sst-lumi-llm-connection");
-    const llmModel = byId("sst-lumi-llm-model");
     const llmMsgCount = byId("sst-lumi-llm-msgcount");
     const llmTemp = byId("sst-lumi-llm-temp");
     const llmStrip = byId("sst-lumi-llm-strip");
@@ -18844,7 +18860,7 @@ function setup(ctx) {
       retainTrackerCount: sanitizeRetainCount(retainInput?.value || "3"),
       useSecondaryLLM: Boolean(llmEnable?.checked),
       secondaryLLMConnectionId: llmConnection?.value || "",
-      secondaryLLMModel: sanitizeSecondaryLLMModel(llmModel?.value),
+      secondaryLLMModel: sanitizeSecondaryLLMModel(modelCombobox?.getValue() ?? ""),
       secondaryLLMMessageCount: Math.max(1, Math.min(50, Math.floor(Number(llmMsgCount?.value) || 5))),
       secondaryLLMTemperature: Math.max(0, Math.min(2, Number(llmTemp?.value) || 0.7)),
       secondaryLLMStripHTML: Boolean(llmStrip?.checked)
@@ -18890,18 +18906,11 @@ function setup(ctx) {
   importButton?.addEventListener("click", () => {
     pickAndImport("Importing");
   });
-  const llmRefreshBtn = byId("sst-lumi-llm-refresh");
-  llmRefreshBtn?.addEventListener("click", () => {
-    ctx.sendToBackend({ type: "get_connections" });
-    setLLMStatus("Refreshing connections...");
-  });
   const llmConnectionSelect = byId("sst-lumi-llm-connection");
   llmConnectionSelect?.addEventListener("change", () => {
-    const selected = connections.find((c) => c.id === llmConnectionSelect.value);
-    const modelInput = byId("sst-lumi-llm-model");
-    if (modelInput) {
-      modelInput.placeholder = selected?.model ? `Default: ${selected.model}` : "Leave empty to use connection default";
-    }
+    ensureModelCombobox()?.update({
+      connection: buildConnectionRef(llmConnectionSelect.value)
+    });
   });
   ctx.permissions.getGranted().then((granted) => {
     grantedPermissions = granted;
@@ -18909,6 +18918,7 @@ function setup(ctx) {
   }).catch(() => {
     renderCapabilities(grantedPermissions, requestedPermissions, ephemeralPoolStatus);
   });
+  ensureModelCombobox();
   ctx.sendToBackend({ type: "get_config" });
   ctx.sendToBackend({ type: "get_connections" });
   updatePermissionGatedControls();
@@ -18928,6 +18938,10 @@ function setup(ctx) {
   scheduleConfigRetry();
   return () => {
     panelRoot = null;
+    if (modelCombobox) {
+      modelCombobox.destroy();
+      modelCombobox = null;
+    }
     backendUnsub();
     generationUnsub();
     messageUnsub();

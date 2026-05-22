@@ -1,5 +1,5 @@
 {
-  "version": "1.1.6",
+  "version": "1.1.7",
   "name": "Silly Sim Tracker",
   "identifier": "silly_sim_tracker",
   "author": "Prolix OCs",
@@ -26,5 +26,5 @@
     }
   ],
   "requested_capabilities": ["base64_decode"],
-  "minimum_lumiverse_version": "0.9.9"
+  "minimum_lumiverse_version": "1.0.0"
 }

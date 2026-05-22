@@ -1674,6 +1674,10 @@ function describeMissingModelGuidance(): string {
   return "Secondary LLM model is not configured. Open SimTracker settings → Secondary LLM and enter a real model id (e.g. `gpt-4o-mini`, `claude-haiku-4-5`, `deepseek-chat`). The provider rejected the request because the model field was empty or a placeholder.";
 }
 
+function describeRejectedModelGuidance(model: string): string {
+  return `The provider rejected the configured model id \`${model}\`. Open SimTracker settings → Secondary LLM and confirm the override matches a model this connection can serve, or clear the override to fall back to the connection's default.`;
+}
+
 async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: string): Promise<void> {
   if (secondaryGenerationInProgress) return;
   if (!config.useSecondaryLLM) return;
@@ -1858,12 +1862,14 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
     }, activeUserId || undefined);
   } catch (err) {
     const rawMessage = err instanceof Error ? err.message : String(err);
-    // If the upstream provider rejected the model field, hint at the real
-    // fix (which is in our settings, not theirs).
+    // Pre-flight already bailed on empty/placeholder models, so any
+    // upstream model-field rejection here means the user's configured id
+    // didn't satisfy the provider. Point at *that* fix instead of telling
+    // them to fill in a field they already filled in.
     const looksLikeModelError = /\bmodel\b/i.test(rawMessage)
       && /(missing|invalid|empty|required|not.*found)/i.test(rawMessage);
     const message = looksLikeModelError
-      ? `${rawMessage}\n\n${describeMissingModelGuidance()}`
+      ? `${rawMessage}\n\n${describeRejectedModelGuidance(trimmedModel)}`
       : rawMessage;
     spindle.log.error(`Secondary LLM generation failed: ${rawMessage}`);
     spindle.sendToFrontend({ type: "secondary_generation_error", message }, activeUserId || undefined);
