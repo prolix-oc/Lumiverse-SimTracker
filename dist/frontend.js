@@ -8822,7 +8822,7 @@ var pulse_thread_tracker_default = {
     .pt-bio-column {
         display: grid;
         gap: 12px;
-        grid-template-rows: 1fr 1fr;
+        grid-auto-rows: 1fr;
     }
 
     .pt-bio-zone {
@@ -9067,6 +9067,77 @@ var pulse_thread_tracker_default = {
     .pt-womb-meter-fill { background: linear-gradient(90deg, #f6d365, #ff7aa2); }
     .pt-metric-fill { background: linear-gradient(90deg, #fff8d6, #ffd86b); }
     .pt-fertility-fill { background: linear-gradient(90deg, #70a1ff, #ffd700); }
+
+    /* --- FEMALE: Breast &amp; Lactation Vessel --- */
+    .pt-breast-vessel {
+        width: 140px;
+        height: 160px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .pt-breast-svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+        overflow: visible;
+        filter: none;
+    }
+
+    .pt-breast-outline {
+        fill: none;
+        stroke: color-mix(in srgb, #ff7aa2 65%, white 30%);
+        stroke-width: 2.4;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        opacity: 0.95;
+        transition: stroke 600ms ease-out, filter 600ms ease-out;
+    }
+
+    .pt-breast-outline.lactating {
+        filter: drop-shadow(0 0 5px color-mix(in srgb, #ffd86b 55%, transparent));
+    }
+
+    .pt-breast-inner {
+        fill: rgba(255, 255, 255, 0.05);
+        stroke: rgba(255, 255, 255, 0.08);
+        stroke-width: 1.2;
+    }
+
+    .pt-nipple {
+        fill: color-mix(in srgb, #ff7aa2 80%, rgba(255,255,255,0.18));
+        stroke: color-mix(in srgb, #ff5c8a 80%, rgba(255,255,255,0.2));
+        stroke-width: 1;
+        transform-box: fill-box;
+        transform-origin: center;
+        transition: fill 400ms ease-out, filter 400ms ease-out;
+    }
+
+    .pt-nipple.engorged {
+        fill: color-mix(in srgb, #ff5c8a 92%, white 8%);
+        stroke: color-mix(in srgb, #ff5c8a 95%, rgba(255,255,255,0.25));
+        filter: drop-shadow(0 0 4px color-mix(in srgb, #ff5c8a 60%, transparent));
+        animation: nippleEngorged 2.4s ease-in-out infinite;
+    }
+
+    @keyframes nippleEngorged {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.18); }
+    }
+
+    .pt-milk-liquid {
+        fill: rgba(255, 248, 214, 0.95);
+        transition: y 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .pt-milk-surface {
+        fill: none;
+        stroke: rgba(255, 248, 214, 0.78);
+        stroke-width: 2;
+        stroke-linecap: round;
+        opacity: 0.88;
+    }
 
     /* --- MALE: Anal &amp; Prostate Vessel --- */
     .pt-anal-vessel {
@@ -9422,7 +9493,7 @@ var pulse_thread_tracker_default = {
     @media (max-width: 420px) {
         .pulse-tabbed-root { border-radius: calc(var(--pt-radius) - 6px); }
         .pt-bio-zone { grid-template-columns: 1fr; }
-        .pt-fertility-ring, .pt-penis-container, .pt-womb-vessel, .pt-anal-vessel, .pt-male-visuals { justify-self: center; }
+        .pt-fertility-ring, .pt-penis-container, .pt-womb-vessel, .pt-anal-vessel, .pt-male-visuals, .pt-breast-vessel { justify-self: center; }
         .pt-bio-zone.pt-bio-compact { grid-template-columns: auto 1fr; }
     }
 
@@ -9744,7 +9815,7 @@ var pulse_thread_tracker_default = {
             &lt;/div&gt;
 
             &lt;!-- Biological --&gt;
-            {{#if (or (hasFertilityTracking stats) (hasRefractoryTracking stats) (hasAnalTracking stats))}}
+            {{#if (or (hasFertilityTracking stats) (hasRefractoryTracking stats) (hasLactationTracking stats) (hasAnalTracking stats))}}
             &lt;div class=&quot;pt-bio-stack&quot;&gt;
                 {{#if (hasFertilityTracking stats)}}
                 &lt;div class=&quot;pt-bio-column&quot;&gt;
@@ -9851,7 +9922,7 @@ var pulse_thread_tracker_default = {
                 &lt;/div&gt;
                 {{/if}}
 
-                {{#if (or (hasRefractoryTracking stats) (hasAnalTracking stats))}}
+                {{#if (or (hasRefractoryTracking stats) (hasLactationTracking stats) (hasAnalTracking stats))}}
                 &lt;div class=&quot;pt-bio-column&quot;&gt;
                     {{#if (hasRefractoryTracking stats)}}
                     &lt;div class=&quot;pt-bio-zone&quot;&gt;
@@ -9918,6 +9989,76 @@ var pulse_thread_tracker_default = {
                                         {{#if (gt stats.refractory_minutes 60)}}~{{divideRoundUp stats.refractory_minutes 60}} hours{{else if (gt stats.refractory_minutes 0)}}~{{stats.refractory_minutes}} minutes{{else}}Ready{{/if}}
                                     &lt;/span&gt;
                                 &lt;/div&gt;
+                            &lt;/div&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                    {{/if}}
+
+                    {{#if (hasLactationTracking stats)}}
+                    &lt;div class=&quot;pt-bio-zone&quot;&gt;
+                        &lt;div class=&quot;pt-breast-vessel&quot;&gt;
+                            &lt;svg class=&quot;pt-breast-svg&quot; viewBox=&quot;0 0 100 120&quot; aria-hidden=&quot;true&quot; focusable=&quot;false&quot;&gt;
+                                &lt;defs&gt;
+                                    &lt;clipPath id=&quot;pt-breast-clip-{{@index}}&quot;&gt;
+                                        &lt;circle cx=&quot;32&quot; cy=&quot;60&quot; r=&quot;22&quot; /&gt;
+                                        &lt;circle cx=&quot;68&quot; cy=&quot;60&quot; r=&quot;22&quot; /&gt;
+                                    &lt;/clipPath&gt;
+                                    &lt;linearGradient id=&quot;pt-breast-depth-{{@index}}&quot; x1=&quot;0.5&quot; y1=&quot;0&quot; x2=&quot;0.5&quot; y2=&quot;1&quot;&gt;
+                                        &lt;stop offset=&quot;0%&quot; stop-color=&quot;#7a3a55&quot; stop-opacity=&quot;0.45&quot; /&gt;
+                                        &lt;stop offset=&quot;100%&quot; stop-color=&quot;#3a1528&quot; stop-opacity=&quot;0.65&quot; /&gt;
+                                    &lt;/linearGradient&gt;
+                                &lt;/defs&gt;
+
+                                &lt;!-- Inner cavity (depth shading inside each breast) --&gt;
+                                &lt;circle class=&quot;pt-breast-inner&quot; style=&quot;fill:url(#pt-breast-depth-{{@index}})&quot; cx=&quot;32&quot; cy=&quot;60&quot; r=&quot;22&quot; /&gt;
+                                &lt;circle class=&quot;pt-breast-inner&quot; style=&quot;fill:url(#pt-breast-depth-{{@index}})&quot; cx=&quot;68&quot; cy=&quot;60&quot; r=&quot;22&quot; /&gt;
+
+                                &lt;!-- Milk fill (rises with breast_fullness_pct) --&gt;
+                                &lt;g clip-path=&quot;url(#pt-breast-clip-{{@index}})&quot;&gt;
+                                    &lt;rect class=&quot;pt-milk-liquid&quot; x=&quot;0&quot; y=&quot;{{breastFillTop stats.breast_fullness_pct}}&quot; width=&quot;100&quot; height=&quot;{{breastFillHeight stats.breast_fullness_pct}}&quot; /&gt;
+                                    &lt;path class=&quot;pt-milk-surface&quot; d=&quot;M 12 {{breastFillTop stats.breast_fullness_pct}} C 30 {{add (breastFillTop stats.breast_fullness_pct) 3}} 70 {{add (breastFillTop stats.breast_fullness_pct) 3}} 88 {{breastFillTop stats.breast_fullness_pct}}&quot; /&gt;
+                                &lt;/g&gt;
+
+                                &lt;!-- Breast outlines on top --&gt;
+                                &lt;circle class=&quot;pt-breast-outline {{#if stats.lactating}}lactating{{/if}}&quot; cx=&quot;32&quot; cy=&quot;60&quot; r=&quot;22&quot; /&gt;
+                                &lt;circle class=&quot;pt-breast-outline {{#if stats.lactating}}lactating{{/if}}&quot; cx=&quot;68&quot; cy=&quot;60&quot; r=&quot;22&quot; /&gt;
+
+                                &lt;!-- Nipples --&gt;
+                                &lt;circle class=&quot;pt-nipple {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}&quot; cx=&quot;32&quot; cy=&quot;71&quot; r=&quot;2.8&quot; /&gt;
+                                &lt;circle class=&quot;pt-nipple {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}&quot; cx=&quot;68&quot; cy=&quot;71&quot; r=&quot;2.8&quot; /&gt;
+                            &lt;/svg&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;pt-bio-panel&quot;&gt;
+                            &lt;div class=&quot;pt-bio-title-row&quot;&gt;
+                                &lt;h4&gt;Lactation&lt;/h4&gt;
+                                {{#if stats.lactating}}
+                                    &lt;span class=&quot;pt-risk-badge risk-preg&quot;&gt;Lactating&lt;/span&gt;
+                                {{else if (gt stats.breast_fullness_pct 70)}}
+                                    &lt;span class=&quot;pt-risk-badge risk-med&quot;&gt;Engorged&lt;/span&gt;
+                                {{else if (gt stats.breast_fullness_pct 30)}}
+                                    &lt;span class=&quot;pt-risk-badge risk-low&quot;&gt;Building&lt;/span&gt;
+                                {{else}}
+                                    &lt;span class=&quot;pt-risk-badge risk-unknown&quot;&gt;Dry&lt;/span&gt;
+                                {{/if}}
+                            &lt;/div&gt;
+                            &lt;div class=&quot;pt-bio-grid&quot;&gt;
+                                &lt;div class=&quot;pt-bio-row&quot;&gt;
+                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Milk&lt;/span&gt;
+                                    &lt;span class=&quot;pt-bio-value&quot;&gt;
+                                        {{#if stats.milk_capacity_ml}}{{stats.milk_ml}} / {{stats.milk_capacity_ml}} ml{{else}}—{{/if}}
+                                    &lt;/span&gt;
+                                &lt;/div&gt;
+                                &lt;div class=&quot;pt-metric-bar&quot;&gt;&lt;div class=&quot;pt-metric-fill&quot; style=&quot;width: {{milkPercent stats}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+                                &lt;div class=&quot;pt-bio-row&quot;&gt;
+                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Fullness&lt;/span&gt;
+                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{clampPercent stats.breast_fullness_pct}}%&lt;/span&gt;
+                                &lt;/div&gt;
+                                &lt;div class=&quot;pt-metric-bar&quot;&gt;&lt;div class=&quot;pt-metric-fill&quot; style=&quot;width: {{clampPercent stats.breast_fullness_pct}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+                                &lt;div class=&quot;pt-bio-row&quot;&gt;
+                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Nipple&lt;/span&gt;
+                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{clampPercent stats.nipple_sensitivity_pct}}%&lt;/span&gt;
+                                &lt;/div&gt;
+                                &lt;div class=&quot;pt-metric-bar&quot;&gt;&lt;div class=&quot;pt-metric-fill&quot; style=&quot;width: {{clampPercent stats.nipple_sensitivity_pct}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
                             &lt;/div&gt;
                         &lt;/div&gt;
                     &lt;/div&gt;
@@ -10130,12 +10271,13 @@ TEMPLATE VARIABLES (tabbed mode):
     - {{stats.cycle_stage_id}}, {{stats.cycle_day}}, {{stats.womb_fullness_pct}}, {{stats.womb_receptivity_pct}}
     - {{stats.cervix_state_id}}, {{stats.breeding_count}}, {{stats.preg}}, {{stats.days_preg}}, {{stats.conception_date}}
     - {{stats.refractory_minutes}}, {{stats.refractory_total}}, {{stats.semen_ml}}, {{stats.semen_capacity_ml}}, {{stats.male_fertility_pct}}
+    - {{stats.breast_fullness_pct}}, {{stats.milk_ml}}, {{stats.milk_capacity_ml}}, {{stats.nipple_sensitivity_pct}}, {{stats.lactating}}
     - {{stats.anal_fullness_pct}}, {{stats.anal_tightness_pct}}, {{stats.prostate_stimulation_pct}}
     - {{stats.last_react}}, {{stats.internal_thought}}
     - {{stats.days_since_first_meeting}}, {{stats.inactive}}, {{stats.inactiveReason}}
 --&gt;
 `,
-  sysPrompt: '## NARRATIVE CHARACTER TRACKER (Pulse Thread)\n\n**Objective:** Emit one JSON/YAML tracker per turn. Include `worldData` with `current_date` (YYYY-MM-DD) and `current_time` (24h), plus a `characters` array containing every tracked character.\n\n---\n\n### CRITICAL RULES\n\n1. **Strict schema adherence.** Always generate fresh tracker data using the exact canonical schema below. Do not copy, reuse, or echo hard-coded example values from this prompt or from prior turns. Every field must be populated from the current narrative state or preserved from prior tracker values — never from the example template.\n2. **Array wrapping is mandatory.** Never emit a flat top-level map like `{ "CharacterName": { ... } }`. Always use `{ "characters": [ { ... }, { ... } ] }`, even for a single character.\n3. **`name` must be at the character object level.** You may nest stats under `"stats": { ... }`; the tracker flattens them. `name` must never appear inside `stats`.\n4. **No omitted fields.** Every character object must include every field below on every turn. Use `0`, `false`, or `""` for unknown/inapplicable values. Preserve prior values when known.\n5. **Output order:** Narrative → tracker tag → `sim` codeblock. Never omit the codeblock.\n6. **Never track the user.** Do not include `{{user}}`, the player, or any self-insert persona in the `characters` array. The tracker is for narrative characters and NPCs only.\n7. **Multi-character cap:** Track up to 4 active characters. Mark inactive ones with `"inactive": true`.\n8. **Numeric IDs, not strings.** Where a field is an enum (`cycle_stage_id`, `cervix_state_id`, `last_react`, `inactiveReason`), emit the integer. The renderer maps it to its display label.\n9. **Do not emit derived fields.** Stat deltas (`apChange`, `dpChange`, `tpChange`, `cpChange`), readable cycle/cervix labels, and relationship/desire descriptors are derived by the renderer. Do not include them.\n\n---\n\n### CANONICAL SCHEMA\n\n```json\n{\n  "worldData": {\n    "current_date": "YYYY-MM-DD",\n    "current_time": "HH:MM"\n  },\n  "characters": [\n    {\n      "name": "Character Name",\n      "ap": 0,\n      "dp": 0,\n      "tp": 0,\n      "cp": 0,\n      "sex": "female",\n      "cycle_stage_id": 0,\n      "cycle_day": 0,\n      "womb_fullness_pct": 0,\n      "womb_receptivity_pct": 0,\n      "cervix_state_id": 0,\n      "breeding_count": 0,\n      "preg": false,\n      "conceived": false,\n      "days_preg": 0,\n      "conception_date": "",\n      "refractory_minutes": 0,\n      "refractory_total": 0,\n      "semen_ml": 0,\n      "semen_capacity_ml": 0,\n      "male_fertility_pct": 0,\n      "anal_fullness_pct": 0,\n      "anal_tightness_pct": 0,\n      "prostate_stimulation_pct": 0,\n      "last_react": 0,\n      "internal_thought": "",\n      "days_since_first_meeting": 0,\n      "inactive": false,\n      "inactiveReason": 0,\n      "bg": "#808080"\n    }\n  ]\n}\n```\n\n---\n\n### STAT METERS (HARD CAPS)\n\n| Field | Range | Brackets |\n|---|---|---|\n| **ap** Affection | 0-200 | 0-30 Strangers / 31-60 Acquaintances / 61-90 Friends / 91-120 Romantic / 121-150 Steady / 151-180 Committed / 181-200 Devoted |\n| **dp** Desire | 0-150 | 0-25 Cold / 26-50 Warm / 51-75 Interested / 76-100 Aroused / 101-125 Needy / 126-150 Desperate |\n| **tp** Trust | 0-150 | Falls when lied to, cheated, or promises broken. Rises with kept promises and demonstrated reliability. |\n| **cp** Contempt | 0-150 | Rises when harmed. A rising CP can drag AP/DP/TP down. |\n\nMovement is +/- per turn, scaled to the magnitude of the moment. Do not include `apChange`/`dpChange`/`tpChange`/`cpChange` — the renderer computes deltas by diffing the current tracker against the previous tracker block automatically.\n\n---\n\n### REACTIONS & INACTIVITY ENUMS\n\n- `last_react` — most recent reaction toward the user this turn:\n  - `0` = Neutral\n  - `1` = Like / Approve\n  - `2` = Dislike / Disapprove\n- `inactiveReason` — when `inactive: true`, set the cause:\n  - `0` = Not inactive (default)\n  - `1` = Asleep\n  - `2` = Comatose\n  - `3` = Contempt / refusing engagement\n  - `4` = Incapacitated\n  - `5` = Death\n\n---\n\n### BIOLOGICAL TRACKING\n\n**`sex` gate:** lowercase one of `"female"`, `"male"`, `"futanari"`, `"other"`. Preserve from prior state unless the narrative explicitly changes biology.\n\n**General rule for all biology:** Preserve prior values across turns. Advance only when narrative time passes. Use `0` / `""` / `false` when genuinely inapplicable. Futanari characters output **both** female and male field groups.\n\n#### Female / Futanari — Fertility & Womb\n\nFor `sex: "female"` or `"futanari"`, always include and update:\n\n- `cycle_day` — Current day in the cycle, typically 1-28 (or established species length). Advance with narrative time.\n- `cycle_stage_id` — Integer enum for the current fertility phase:\n  - `0` = unknown / N/A\n  - `1` = menstruation (days 1-5)\n  - `2` = follicular (days 6-13)\n  - `3` = ovulation (days 14-16, peak fertility)\n  - `4` = luteal (days 17-28)\n  - `5` = pregnancy\n  - `6` = rut (heat / estrus surge — species-dependent)\n- `womb_fullness_pct` — 0-100. Estimate from narrative; preserve unless events change it (ejaculation, leakage, douching, menstruation, pregnancy progression).\n- `womb_receptivity_pct` — 0-100. High during ovulation/rut and heavy arousal; low during menstruation, contempt, or low arousal.\n- `cervix_state_id` — Integer enum, ordered from most closed to most open. Track narrative arousal and fertile-window biology together:\n  - `0` = unknown / N/A\n  - `1` = sealed — locked tight (pregnancy plug, post-coital seal, deep refractory)\n  - `2` = firm — closed, non-fertile baseline\n  - `3` = soft — relaxed, near-fertile or aroused\n  - `4` = open — parted, fertile window or active receptivity\n  - `5` = dilated — wide open, peak fertility paired with heavy arousal\n  - `6` = kissed — directly contacted or breached by a partner; deepest exposure\n- `breeding_count` — Times filled internally this cycle. Increment after each internal ejaculation; preserve between turns; reset only at the start of a new cycle.\n\n**Conception & Pregnancy (staged):**\n\nThe pipeline stages reproduction across two flags:\n\n- `conceived: true` — fertilization has happened but pregnancy isn\'t yet visibly evident. The character is silently carrying.\n- `preg: true` — pregnancy has been confirmed (test, narrative reveal, missed period, showing). Implies `cycle_stage_id: 5` and `cervix_state_id: 1` (sealed) unless labor begins.\n\n**Engine-enforced auto-conception:** when womb fullness exceeds 85% during a fertile window (ovulation, rut, or early luteal cycle_day ≤ 19) and the character is not already conceived/pregnant, the engine flips a coin to mark her `conceived: true` (with `conception_date` set to the current world date). At 100% fullness the coin is skipped and conception is automatic. **If the prior tracker block shows `conceived: true`, preserve it on every subsequent emission until pregnancy is confirmed — never revert it to `false`.**\n\nManual rules:\n\n- If pregnant: `preg: true`, `cycle_stage_id: 5`, advance `days_preg` daily, preserve `conception_date` (YYYY-MM-DD). Set `cervix_state_id: 1`.\n- If conceived but not yet pregnant: `conceived: true`, `preg: false`, `days_preg: 0`, `conception_date` set. The narrative may reveal pregnancy after several in-world days — at that point flip `preg: true` and start advancing `days_preg`.\n- If not pregnant and not conceived: `preg: false`, `conceived: false`, `days_preg: 0`, `conception_date: ""`.\n\n#### Male / Futanari — Refractory & Semen\n\nFor `sex: "male"` or `"futanari"`, populate these fields. Other characters may include them as `0`.\n\n- `refractory_minutes` — Minutes remaining until ready. `0` = ready.\n- `refractory_total` — Total minutes of the current refractory period. `0` when not in refractory.\n- `semen_ml` — Current volume, `0` to `semen_capacity_ml`. Drops after ejaculation; recovers with rest/arousal.\n- `semen_capacity_ml` — Maximum volume. Preserve unless biology changes.\n- `male_fertility_pct` — 0-100. Adjust for sperm count, magical fertility, infertility, rut, recovery, fatigue, etc.\n\nConvert all time to minutes. Decrement `refractory_minutes` toward `0` as narrative time passes.\n\n#### Anal Tracking — All Characters\n\nThe tracker renders an anal panel for every gendered character (`female`, `male`, `futanari`, etc.). The prostate graphic and prostate stat row only render for prostate-bearing characters (`male`, `futanari`, `intersex`, `hermaphrodite`, `both`); pure-female cards show fullness and tightness only.\n\n**Update these whenever anal play, anal sex, or prostate stimulation occurs in the narrative — otherwise the panel exists but never reflects events.**\n\n- `anal_fullness_pct` — 0-100. Volume currently inside the anal canal (semen, toys, fingers, etc.). Rises with insertion/ejaculation, falls with withdrawal, expulsion, or cleanup over time. Preserve between turns. Applies to all characters.\n- `anal_tightness_pct` — 0-100. Resistance of the sphincter. `100` = untouched / virgin tight; drops with stretching, sustained use, lubrication, and arousal. Recovers with rest. Preserve baseline per character. Applies to all characters.\n- `prostate_stimulation_pct` — 0-100. Active prostate stimulation level this moment. Rises with direct pressure / deep penetration / toys angled at the prostate; falls quickly when stimulation stops. **Leave `0` for pure-female characters** — the renderer hides the prostate panel/graphic for them automatically.\n\nIf no anal content has occurred for a character, leave all three at `0`. If anal content **has** occurred — even just penetration without ejaculation — `anal_tightness_pct` should drop from its baseline and (where applicable) `prostate_stimulation_pct` and `anal_fullness_pct` should reflect what\'s happening.\n\n#### Futanari / Dual-Biology\n\nOutput **all** female cycle fields, male reproductive fields, and anal fields. The tracker renders the combined panel.\n\n---\n\n### INTERNAL THOUGHT & META\n\n- `internal_thought` — One short first-person sentence capturing the character\'s current inner monologue. Refresh every turn; never leave stale.\n- `days_since_first_meeting` — Total in-world days since the character first met the user. Increment as narrative dates advance.\n- `inactive` / `inactiveReason` — Use when the character is asleep, comatose, dead, refusing engagement, or otherwise out of the scene.\n\n---\n\n### THEMING\n\nProvide `"bg"` as a hex color per character (e.g. `"#2d1b4e"`). Pick a color that matches the character\'s vibe; preserve across turns once chosen.\n',
+  sysPrompt: '## NARRATIVE CHARACTER TRACKER (Pulse Thread)\n\n**Objective:** Emit one JSON/YAML tracker per turn. Include `worldData` with `current_date` (YYYY-MM-DD) and `current_time` (24h), plus a `characters` array containing every tracked character.\n\n---\n\n### CRITICAL RULES\n\n1. **Strict schema adherence.** Always generate fresh tracker data using the exact canonical schema below. Do not copy, reuse, or echo hard-coded example values from this prompt or from prior turns. Every field must be populated from the current narrative state or preserved from prior tracker values — never from the example template.\n2. **Array wrapping is mandatory.** Never emit a flat top-level map like `{ "CharacterName": { ... } }`. Always use `{ "characters": [ { ... }, { ... } ] }`, even for a single character.\n3. **`name` must be at the character object level.** You may nest stats under `"stats": { ... }`; the tracker flattens them. `name` must never appear inside `stats`.\n4. **No omitted fields.** Every character object must include every field below on every turn. Use `0`, `false`, or `""` for unknown/inapplicable values. Preserve prior values when known.\n5. **Output order:** Narrative → tracker tag → `sim` codeblock. Never omit the codeblock.\n6. **Never track the user.** Do not include `{{user}}`, the player, or any self-insert persona in the `characters` array. The tracker is for narrative characters and NPCs only.\n7. **Multi-character cap:** Track up to 4 active characters. Mark inactive ones with `"inactive": true`.\n8. **Numeric IDs, not strings.** Where a field is an enum (`cycle_stage_id`, `cervix_state_id`, `last_react`, `inactiveReason`), emit the integer. The renderer maps it to its display label.\n9. **Do not emit derived fields.** Stat deltas (`apChange`, `dpChange`, `tpChange`, `cpChange`), readable cycle/cervix labels, and relationship/desire descriptors are derived by the renderer. Do not include them.\n\n---\n\n### CANONICAL SCHEMA\n\n```json\n{\n  "worldData": {\n    "current_date": "YYYY-MM-DD",\n    "current_time": "HH:MM"\n  },\n  "characters": [\n    {\n      "name": "Character Name",\n      "ap": 0,\n      "dp": 0,\n      "tp": 0,\n      "cp": 0,\n      "sex": "female",\n      "cycle_stage_id": 0,\n      "cycle_day": 0,\n      "womb_fullness_pct": 0,\n      "womb_receptivity_pct": 0,\n      "cervix_state_id": 0,\n      "breast_fullness_pct": 0,\n      "milk_ml": 0,\n      "milk_capacity_ml": 0,\n      "nipple_sensitivity_pct": 0,\n      "lactating": false,\n      "breeding_count": 0,\n      "preg": false,\n      "conceived": false,\n      "days_preg": 0,\n      "conception_date": "",\n      "refractory_minutes": 0,\n      "refractory_total": 0,\n      "semen_ml": 0,\n      "semen_capacity_ml": 0,\n      "male_fertility_pct": 0,\n      "anal_fullness_pct": 0,\n      "anal_tightness_pct": 0,\n      "prostate_stimulation_pct": 0,\n      "last_react": 0,\n      "internal_thought": "",\n      "days_since_first_meeting": 0,\n      "inactive": false,\n      "inactiveReason": 0,\n      "bg": "#808080"\n    }\n  ]\n}\n```\n\n---\n\n### STAT METERS (HARD CAPS)\n\n| Field | Range | Brackets |\n|---|---|---|\n| **ap** Affection | 0-200 | 0-30 Strangers / 31-60 Acquaintances / 61-90 Friends / 91-120 Romantic / 121-150 Steady / 151-180 Committed / 181-200 Devoted |\n| **dp** Desire | 0-150 | 0-25 Cold / 26-50 Warm / 51-75 Interested / 76-100 Aroused / 101-125 Needy / 126-150 Desperate |\n| **tp** Trust | 0-150 | Falls when lied to, cheated, or promises broken. Rises with kept promises and demonstrated reliability. |\n| **cp** Contempt | 0-150 | Rises when harmed. A rising CP can drag AP/DP/TP down. |\n\nMovement is +/- per turn, scaled to the magnitude of the moment. Do not include `apChange`/`dpChange`/`tpChange`/`cpChange` — the renderer computes deltas by diffing the current tracker against the previous tracker block automatically.\n\n---\n\n### REACTIONS & INACTIVITY ENUMS\n\n- `last_react` — most recent reaction toward the user this turn:\n  - `0` = Neutral\n  - `1` = Like / Approve\n  - `2` = Dislike / Disapprove\n- `inactiveReason` — when `inactive: true`, set the cause:\n  - `0` = Not inactive (default)\n  - `1` = Asleep\n  - `2` = Comatose\n  - `3` = Contempt / refusing engagement\n  - `4` = Incapacitated\n  - `5` = Death\n\n---\n\n### BIOLOGICAL TRACKING\n\n**`sex` gate:** lowercase one of `"female"`, `"male"`, `"futanari"`, `"other"`. Preserve from prior state unless the narrative explicitly changes biology.\n\n**General rule for all biology:** Preserve prior values across turns. Advance only when narrative time passes. Use `0` / `""` / `false` when genuinely inapplicable. Futanari characters output **both** female and male field groups.\n\n#### Female / Futanari — Fertility & Womb\n\nFor `sex: "female"` or `"futanari"`, always include and update:\n\n- `cycle_day` — Current day in the cycle, typically 1-28 (or established species length). Advance with narrative time.\n- `cycle_stage_id` — Integer enum for the current fertility phase:\n  - `0` = unknown / N/A\n  - `1` = menstruation (days 1-5)\n  - `2` = follicular (days 6-13)\n  - `3` = ovulation (days 14-16, peak fertility)\n  - `4` = luteal (days 17-28)\n  - `5` = pregnancy\n  - `6` = rut (heat / estrus surge — species-dependent)\n- `womb_fullness_pct` — 0-100. Estimate from narrative; preserve unless events change it (ejaculation, leakage, douching, menstruation, pregnancy progression).\n- `womb_receptivity_pct` — 0-100. High during ovulation/rut and heavy arousal; low during menstruation, contempt, or low arousal.\n- `cervix_state_id` — Integer enum, ordered from most closed to most open. Track narrative arousal and fertile-window biology together:\n  - `0` = unknown / N/A\n  - `1` = sealed — locked tight (pregnancy plug, post-coital seal, deep refractory)\n  - `2` = firm — closed, non-fertile baseline\n  - `3` = soft — relaxed, near-fertile or aroused\n  - `4` = open — parted, fertile window or active receptivity\n  - `5` = dilated — wide open, peak fertility paired with heavy arousal\n  - `6` = kissed — directly contacted or breached by a partner; deepest exposure\n- `breeding_count` — Times filled internally this cycle. Increment after each internal ejaculation; preserve between turns; reset only at the start of a new cycle.\n\n**Conception & Pregnancy (staged):**\n\nThe pipeline stages reproduction across two flags:\n\n- `conceived: true` — fertilization has happened but pregnancy isn\'t yet visibly evident. The character is silently carrying.\n- `preg: true` — pregnancy has been confirmed (test, narrative reveal, missed period, showing). Implies `cycle_stage_id: 5` and `cervix_state_id: 1` (sealed) unless labor begins.\n\n**Engine-enforced auto-conception:** when womb fullness exceeds 85% during a fertile window (ovulation, rut, or early luteal cycle_day ≤ 19) and the character is not already conceived/pregnant, the engine flips a coin to mark her `conceived: true` (with `conception_date` set to the current world date). At 100% fullness the coin is skipped and conception is automatic. **If the prior tracker block shows `conceived: true`, preserve it on every subsequent emission until pregnancy is confirmed — never revert it to `false`.**\n\nManual rules:\n\n- If pregnant: `preg: true`, `cycle_stage_id: 5`, advance `days_preg` daily, preserve `conception_date` (YYYY-MM-DD). Set `cervix_state_id: 1`.\n- If conceived but not yet pregnant: `conceived: true`, `preg: false`, `days_preg: 0`, `conception_date` set. The narrative may reveal pregnancy after several in-world days — at that point flip `preg: true` and start advancing `days_preg`.\n- If not pregnant and not conceived: `preg: false`, `conceived: false`, `days_preg: 0`, `conception_date: ""`.\n\n#### Female / Futanari — Breast & Lactation\n\nThe tracker renders a breast/lactation panel for every female-aligned character (`female`, `futanari`, `intersex`, `hermaphrodite`, `both`). It is the female-side counterpart to the male semen panel — tracking reproductive-fluid storage and the lactation lifecycle. Update these whenever pregnancy, postpartum care, breast play, or lactation occurs in the narrative.\n\n- `breast_fullness_pct` — 0-100. Engorgement level. Rises during pregnancy (especially second/third trimester), during arousal (mild), and as milk accumulates between feedings/pumping. Drops after nursing, pumping, or expressing. Preserve baseline per character (small breasts may peak lower than large breasts narratively, but the percentage is relative to *that character\'s* capacity).\n- `milk_ml` — Current milk volume stored (0 to `milk_capacity_ml`). Rises with lactation production over narrative time. Drops to a low level after feeding/pumping. `0` when not lactating.\n- `milk_capacity_ml` — Maximum milk storage capacity. Preserve once established. Typical human range ~50-300 ml per breast; tracker treats both breasts together (so 100-600 ml is a reasonable range). `0` when not lactating.\n- `nipple_sensitivity_pct` — 0-100. Active sensitivity. Rises with arousal, pregnancy hormones, nursing latch, cold, or direct stimulation. Falls quickly when stimulation stops. `0` when not relevant.\n- `lactating` — boolean. `true` once milk production has actually begun (mid-to-late pregnancy onward, or any other established lactation state); `false` for non-lactating characters.\n\nIf the character is not pregnant, not postpartum, and not narratively lactating, leave all five at `0` / `false`. The panel still renders with empty values for consistency. During pregnancy, expect `breast_fullness_pct` to climb, `lactating` to flip true around mid-pregnancy or at parturition, and `milk_ml` / `milk_capacity_ml` to populate as lactation establishes.\n\n#### Male / Futanari — Refractory & Semen\n\nFor `sex: "male"` or `"futanari"`, populate these fields. Other characters may include them as `0`.\n\n- `refractory_minutes` — Minutes remaining until ready. `0` = ready.\n- `refractory_total` — Total minutes of the current refractory period. `0` when not in refractory.\n- `semen_ml` — Current volume, `0` to `semen_capacity_ml`. Drops after ejaculation; recovers with rest/arousal.\n- `semen_capacity_ml` — Maximum volume. Preserve unless biology changes.\n- `male_fertility_pct` — 0-100. Adjust for sperm count, magical fertility, infertility, rut, recovery, fatigue, etc.\n\nConvert all time to minutes. Decrement `refractory_minutes` toward `0` as narrative time passes.\n\n#### Anal Tracking — All Characters\n\nThe tracker renders an anal panel for every gendered character (`female`, `male`, `futanari`, etc.). The prostate graphic and prostate stat row only render for prostate-bearing characters (`male`, `futanari`, `intersex`, `hermaphrodite`, `both`); pure-female cards show fullness and tightness only.\n\n**Update these whenever anal play, anal sex, or prostate stimulation occurs in the narrative — otherwise the panel exists but never reflects events.**\n\n- `anal_fullness_pct` — 0-100. Volume currently inside the anal canal (semen, toys, fingers, etc.). Rises with insertion/ejaculation, falls with withdrawal, expulsion, or cleanup over time. Preserve between turns. Applies to all characters.\n- `anal_tightness_pct` — 0-100. Resistance of the sphincter. `100` = untouched / virgin tight; drops with stretching, sustained use, lubrication, and arousal. Recovers with rest. Preserve baseline per character. Applies to all characters.\n- `prostate_stimulation_pct` — 0-100. Active prostate stimulation level this moment. Rises with direct pressure / deep penetration / toys angled at the prostate; falls quickly when stimulation stops. **Leave `0` for pure-female characters** — the renderer hides the prostate panel/graphic for them automatically.\n\nIf no anal content has occurred for a character, leave all three at `0`. If anal content **has** occurred — even just penetration without ejaculation — `anal_tightness_pct` should drop from its baseline and (where applicable) `prostate_stimulation_pct` and `anal_fullness_pct` should reflect what\'s happening.\n\n#### Futanari / Dual-Biology\n\nOutput **all** female cycle fields, lactation fields, male reproductive fields, and anal fields. The tracker renders all applicable panels in a compressed multi-row column.\n\n---\n\n### INTERNAL THOUGHT & META\n\n- `internal_thought` — One short first-person sentence capturing the character\'s current inner monologue. Refresh every turn; never leave stale.\n- `days_since_first_meeting` — Total in-world days since the character first met the user. Increment as narrative dates advance.\n- `inactive` / `inactiveReason` — Use when the character is asleep, comatose, dead, refusing engagement, or otherwise out of the scene.\n\n---\n\n### THEMING\n\nProvide `"bg"` as a hex color per character (e.g. `"#2d1b4e"`). Pick a color that matches the character\'s vibe; preserve across turns once chosen.\n',
   customFields: [
     {
       key: "ap",
@@ -10176,6 +10318,26 @@ TEMPLATE VARIABLES (tabbed mode):
     {
       key: "cervix_state_id",
       description: "[number] Cervix openness enum (most closed → most open): 0=unknown, 1=sealed, 2=firm, 3=soft, 4=open, 5=dilated, 6=kissed. Renderer maps to a display label."
+    },
+    {
+      key: "breast_fullness_pct",
+      description: "[number] Breast engorgement (0-100). Rises with pregnancy, arousal (mild), and milk accumulation. Drops after nursing/pumping. Preserve baseline."
+    },
+    {
+      key: "milk_ml",
+      description: "[number] Stored milk volume in ml (0 to milk_capacity_ml). Rises with lactation production over time; drops sharply after feeding/pumping. 0 when not lactating."
+    },
+    {
+      key: "milk_capacity_ml",
+      description: "[number] Maximum milk storage capacity in ml. Preserve once established. Typical combined-breast range ~100-600 ml. 0 when not lactating."
+    },
+    {
+      key: "nipple_sensitivity_pct",
+      description: "[number] Active nipple sensitivity (0-100). Rises with arousal, pregnancy hormones, nursing latch, cold, or direct stimulation. Falls quickly when stimulation stops."
+    },
+    {
+      key: "lactating",
+      description: "[boolean] Active milk production. Flips true mid-to-late pregnancy onward, or any other established lactation state."
     },
     {
       key: "breeding_count",
@@ -16854,6 +17016,27 @@ function hasProstateTracking(stats) {
   const sex = sexValue(record);
   return ["male", "futanari", "futa", "both", "intersex", "hermaphrodite"].includes(sex) || Number(record.prostate_stimulation_pct) > 0;
 }
+function hasLactationTracking(stats) {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats))
+    return false;
+  const record = stats;
+  const sex = sexValue(record);
+  return ["female", "futanari", "futa", "both", "intersex", "hermaphrodite"].includes(sex) || record.lactating === true || Number(record.milk_ml) > 0 || Number(record.milk_capacity_ml) > 0 || Number(record.breast_fullness_pct) > 0 || Number(record.nipple_sensitivity_pct) > 0;
+}
+function milkPercent(stats) {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats))
+    return 0;
+  const record = stats;
+  return percentOf(record.milk_ml, record.milk_capacity_ml);
+}
+function breastFillTop(value) {
+  const pct = clampPercent(value);
+  return 82 - pct / 100 * 44;
+}
+function breastFillHeight(value) {
+  const pct = clampPercent(value);
+  return pct / 100 * 44;
+}
 function isConceived(stats) {
   if (!stats || typeof stats !== "object" || Array.isArray(stats))
     return false;
@@ -17379,6 +17562,10 @@ function registerTemplateHelpers() {
   import_handlebars2.default.registerHelper("wombFillHeight", wombFillHeight);
   import_handlebars2.default.registerHelper("hasAnalTracking", hasAnalTracking);
   import_handlebars2.default.registerHelper("hasProstateTracking", hasProstateTracking);
+  import_handlebars2.default.registerHelper("hasLactationTracking", hasLactationTracking);
+  import_handlebars2.default.registerHelper("milkPercent", milkPercent);
+  import_handlebars2.default.registerHelper("breastFillTop", breastFillTop);
+  import_handlebars2.default.registerHelper("breastFillHeight", breastFillHeight);
   import_handlebars2.default.registerHelper("analFillTop", analFillTop);
   import_handlebars2.default.registerHelper("analFillHeight", analFillHeight);
   import_handlebars2.default.registerHelper("semenFillTop", semenFillTop);

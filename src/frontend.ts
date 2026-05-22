@@ -193,6 +193,37 @@ function hasProstateTracking(stats: unknown): boolean {
   );
 }
 
+function hasLactationTracking(stats: unknown): boolean {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return false;
+  const record = stats as Record<string, unknown>;
+  const sex = sexValue(record);
+  return (
+    ["female", "futanari", "futa", "both", "intersex", "hermaphrodite"].includes(sex) ||
+    record.lactating === true ||
+    Number(record.milk_ml) > 0 ||
+    Number(record.milk_capacity_ml) > 0 ||
+    Number(record.breast_fullness_pct) > 0 ||
+    Number(record.nipple_sensitivity_pct) > 0
+  );
+}
+
+function milkPercent(stats: unknown): number {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return 0;
+  const record = stats as Record<string, unknown>;
+  return percentOf(record.milk_ml, record.milk_capacity_ml);
+}
+
+function breastFillTop(value: unknown): number {
+  const pct = clampPercent(value);
+  // Breast interior spans y≈38 (top) to y≈82 (bottom) → height 44
+  return 82 - (pct / 100) * 44;
+}
+
+function breastFillHeight(value: unknown): number {
+  const pct = clampPercent(value);
+  return (pct / 100) * 44;
+}
+
 function isConceived(stats: unknown): boolean {
   if (!stats || typeof stats !== "object" || Array.isArray(stats)) return false;
   const record = stats as Record<string, unknown>;
@@ -756,6 +787,10 @@ function registerTemplateHelpers(): void {
   Handlebars.registerHelper("wombFillHeight", wombFillHeight);
   Handlebars.registerHelper("hasAnalTracking", hasAnalTracking);
   Handlebars.registerHelper("hasProstateTracking", hasProstateTracking);
+  Handlebars.registerHelper("hasLactationTracking", hasLactationTracking);
+  Handlebars.registerHelper("milkPercent", milkPercent);
+  Handlebars.registerHelper("breastFillTop", breastFillTop);
+  Handlebars.registerHelper("breastFillHeight", breastFillHeight);
   Handlebars.registerHelper("analFillTop", analFillTop);
   Handlebars.registerHelper("analFillHeight", analFillHeight);
   Handlebars.registerHelper("semenFillTop", semenFillTop);

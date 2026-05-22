@@ -190,6 +190,42 @@ Handlebars.registerHelper("hasProstateTracking", function (stats) {
   );
 });
 
+Handlebars.registerHelper("hasLactationTracking", function (stats) {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return false;
+  const sex = sexValue(stats);
+  return (
+    sex === "female" ||
+    sex === "futanari" ||
+    sex === "futa" ||
+    sex === "both" ||
+    sex === "intersex" ||
+    sex === "hermaphrodite" ||
+    stats.lactating === true ||
+    Number(stats.milk_ml) > 0 ||
+    Number(stats.milk_capacity_ml) > 0 ||
+    Number(stats.breast_fullness_pct) > 0 ||
+    Number(stats.nipple_sensitivity_pct) > 0
+  );
+});
+
+Handlebars.registerHelper("milkPercent", function (stats) {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return 0;
+  const capacity = Number(stats.milk_capacity_ml) || 0;
+  if (capacity <= 0) return 0;
+  const pct = ((Number(stats.milk_ml) || 0) / capacity) * 100;
+  return Math.round(Math.max(0, Math.min(100, pct)));
+});
+
+Handlebars.registerHelper("breastFillTop", function (value) {
+  const pct = Math.max(0, Math.min(100, Number(value) || 0));
+  return 82 - (pct / 100) * 44;
+});
+
+Handlebars.registerHelper("breastFillHeight", function (value) {
+  const pct = Math.max(0, Math.min(100, Number(value) || 0));
+  return (pct / 100) * 44;
+});
+
 Handlebars.registerHelper("gt", function (a, b) {
   return a > b;
 });
