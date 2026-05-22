@@ -10472,15 +10472,31 @@ var pulse_thread_tracker_default = {
         fill: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 22%, rgba(255,255,255,0.08));
         stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 48%, rgba(255,255,255,0.12));
         stroke-width: 1.2;
+        /* Anchor SVG transforms to the circle&#039;s own center so the conception
+           pulse breathes in place instead of translating toward (0,0). */
+        transform-box: fill-box;
+        transform-origin: center;
+        transition: filter 600ms ease-out, fill 600ms ease-out, stroke 600ms ease-out;
     }
 
     .pt-womb-ovary.pulse {
-        animation: ovaryPulse 1.5s ease-in-out infinite;
+        fill: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 40%, rgba(255,255,255,0.16));
+        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 72%, rgba(255,255,255,0.22));
+        filter: drop-shadow(0 0 4px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 55%, transparent));
+        animation: ovaryPulse 2.4s ease-in-out infinite;
     }
 
     @keyframes ovaryPulse {
-        0%, 100% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.18); opacity: 0.75; }
+        0%, 100% {
+            transform: scale(1);
+            opacity: 1;
+            filter: drop-shadow(0 0 3px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 45%, transparent));
+        }
+        50% {
+            transform: scale(1.06);
+            opacity: 0.96;
+            filter: drop-shadow(0 0 7px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 70%, transparent));
+        }
     }
 
     .pt-womb-seed {
