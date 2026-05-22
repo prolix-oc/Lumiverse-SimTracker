@@ -359,6 +359,21 @@ function sanitizeStr(value: unknown, fallback: string): string {
   return typeof value === "string" ? value.trim() : fallback;
 }
 
+/**
+ * Coerce known placeholder model strings (Spindle's connection-profile UI
+ * seeds the field with literal "string", and users sometimes paste an
+ * unfilled example) to empty so they fall the secondary-LLM pre-flight
+ * check instead of silently 400ing at the provider.
+ */
+function sanitizeSecondaryLLMModel(value: unknown, fallback: string): string {
+  const raw = sanitizeStr(value, fallback);
+  const lowered = raw.toLowerCase();
+  if (lowered === "string" || lowered === "your-model-here" || lowered === "model" || lowered === "null" || lowered === "undefined") {
+    return "";
+  }
+  return raw;
+}
+
 function sanitizeMessageCount(value: unknown): number {
   if (typeof value !== "number" || Number.isNaN(value)) return DEFAULT_CONFIG.secondaryLLMMessageCount;
   return Math.max(1, Math.min(50, Math.floor(value)));
@@ -1267,7 +1282,7 @@ async function loadConfig(): Promise<void> {
       inlinePacks: sanitizeInlinePacks(parsed.inlinePacks),
       useSecondaryLLM: sanitizeBool(parsed.useSecondaryLLM, DEFAULT_CONFIG.useSecondaryLLM),
       secondaryLLMConnectionId: sanitizeStr(parsed.secondaryLLMConnectionId, DEFAULT_CONFIG.secondaryLLMConnectionId),
-      secondaryLLMModel: sanitizeStr(parsed.secondaryLLMModel, DEFAULT_CONFIG.secondaryLLMModel),
+      secondaryLLMModel: sanitizeSecondaryLLMModel(parsed.secondaryLLMModel, DEFAULT_CONFIG.secondaryLLMModel),
       secondaryLLMMessageCount: sanitizeMessageCount(parsed.secondaryLLMMessageCount),
       secondaryLLMTemperature: sanitizeTemperature(parsed.secondaryLLMTemperature),
       secondaryLLMStripHTML: sanitizeBool(parsed.secondaryLLMStripHTML, DEFAULT_CONFIG.secondaryLLMStripHTML),
@@ -1649,6 +1664,16 @@ function stripStructuralHTML(text: string): string {
   return stripped.replace(/\s+/g, " ").trim();
 }
 
+// Provider placeholder values that look like a real model field but aren't.
+// Spindle's connection-profile UI seeds the model textbox with "string" as a
+// schema placeholder; if the user enables the secondary LLM without filling
+// that in, the request hits the provider with model:"string" and 400s.
+const SECONDARY_LLM_MODEL_PLACEHOLDERS = new Set(["", "string", "model", "your-model-here", "null", "undefined"]);
+
+function describeMissingModelGuidance(): string {
+  return "Secondary LLM model is not configured. Open SimTracker settings → Secondary LLM and enter a real model id (e.g. `gpt-4o-mini`, `claude-haiku-4-5`, `deepseek-chat`). The provider rejected the request because the model field was empty or a placeholder.";
+}
+
 async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: string): Promise<void> {
   if (secondaryGenerationInProgress) return;
   if (!config.useSecondaryLLM) return;
@@ -1658,6 +1683,21 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
   }
   if (!hasPermission("chat_mutation")) {
     spindle.log.warn("Secondary LLM generation requires 'chat_mutation' permission");
+    return;
+  }
+
+  // ── Pre-flight: validate model & connection ───────────────────────────
+  // The provider call requires a non-empty, non-placeholder model id. If the
+  // user enabled the sidecar without filling this in we bail early with a
+  // clear error rather than emitting a 400 from the upstream API.
+  const trimmedModel = (config.secondaryLLMModel || "").trim();
+  if (SECONDARY_LLM_MODEL_PLACEHOLDERS.has(trimmedModel.toLowerCase())) {
+    const guidance = describeMissingModelGuidance();
+    spindle.log.warn(guidance);
+    spindle.sendToFrontend(
+      { type: "secondary_generation_error", message: guidance },
+      activeUserId || undefined,
+    );
     return;
   }
 
@@ -1696,12 +1736,16 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
     // latest value. The side-channel history is the primary source
     // (survives `removeFromMessage`) with a full-chat scan as a fallback
     // in case events were missed or the extension was reloaded.
-    const historyLimit = Math.max(1, Math.min(10, config.retainTrackerCount || 3));
-    let historicalTrackers = getRecentChatTrackers(chatId, historyLimit, targetMessageId).map(
-      (entry) => entry.payload,
-    );
+    //
+    // Honour the user's "Retain N trackers" setting exactly: 0 means no
+    // prior context, anything ≥1 caps at 10 to keep the prompt bounded.
+    const retainSetting = Number.isFinite(config.retainTrackerCount) ? config.retainTrackerCount : 3;
+    const historyLimit = Math.max(0, Math.min(10, retainSetting));
+    let historicalTrackers = historyLimit === 0
+      ? []
+      : getRecentChatTrackers(chatId, historyLimit, targetMessageId).map((entry) => entry.payload);
 
-    if (historicalTrackers.length === 0) {
+    if (historyLimit > 0 && historicalTrackers.length === 0) {
       // Fallback: scan the entire chat (not just the recentMessages window)
       // for tracker blocks embedded in message content.
       const nonSystem = messages.filter((m) => m.role !== "system");
@@ -1749,14 +1793,16 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
       { role: "user", content: conversationText },
     ];
 
+    // Model has been validated above; always emit it so the connection's
+    // placeholder default never reaches the provider.
     const parameters: Record<string, unknown> = {
+      model: trimmedModel,
       temperature: config.secondaryLLMTemperature,
     };
-    if (config.secondaryLLMModel) {
-      parameters.model = config.secondaryLLMModel;
-    }
 
-    spindle.log.info("Starting secondary LLM generation...");
+    spindle.log.info(
+      `Starting secondary LLM generation (model=${trimmedModel}, history=${historicalTrackers.length}, messages=${cleanedMessages.length})`,
+    );
     const result = await spindle.generate.raw({
       type: "raw",
       messages: llmMessages,
@@ -1811,10 +1857,17 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
       content: updatedContent,
     }, activeUserId || undefined);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    spindle.log.error(`Secondary LLM generation failed: ${message}`);
+    const rawMessage = err instanceof Error ? err.message : String(err);
+    // If the upstream provider rejected the model field, hint at the real
+    // fix (which is in our settings, not theirs).
+    const looksLikeModelError = /\bmodel\b/i.test(rawMessage)
+      && /(missing|invalid|empty|required|not.*found)/i.test(rawMessage);
+    const message = looksLikeModelError
+      ? `${rawMessage}\n\n${describeMissingModelGuidance()}`
+      : rawMessage;
+    spindle.log.error(`Secondary LLM generation failed: ${rawMessage}`);
     spindle.sendToFrontend({ type: "secondary_generation_error", message }, activeUserId || undefined);
-    await trackEvent("sst.secondary_generation.failed", { error: message }, { level: "error" });
+    await trackEvent("sst.secondary_generation.failed", { error: rawMessage }, { level: "error" });
   } finally {
     secondaryGenerationInProgress = false;
   }
@@ -2425,7 +2478,7 @@ spindle.onFrontendMessage(async (payload: unknown, userId: string) => {
       inlinePacks: sanitizeInlinePacks(incoming?.inlinePacks ?? config.inlinePacks),
       useSecondaryLLM: sanitizeBool(incoming?.useSecondaryLLM ?? config.useSecondaryLLM, config.useSecondaryLLM),
       secondaryLLMConnectionId: sanitizeStr(incoming?.secondaryLLMConnectionId ?? config.secondaryLLMConnectionId, config.secondaryLLMConnectionId),
-      secondaryLLMModel: sanitizeStr(incoming?.secondaryLLMModel ?? config.secondaryLLMModel, config.secondaryLLMModel),
+      secondaryLLMModel: sanitizeSecondaryLLMModel(incoming?.secondaryLLMModel ?? config.secondaryLLMModel, config.secondaryLLMModel),
       secondaryLLMMessageCount: sanitizeMessageCount(incoming?.secondaryLLMMessageCount ?? config.secondaryLLMMessageCount),
       secondaryLLMTemperature: sanitizeTemperature(incoming?.secondaryLLMTemperature ?? config.secondaryLLMTemperature),
       secondaryLLMStripHTML: sanitizeBool(incoming?.secondaryLLMStripHTML ?? config.secondaryLLMStripHTML, config.secondaryLLMStripHTML),

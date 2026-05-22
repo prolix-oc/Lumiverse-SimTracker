@@ -398,6 +398,17 @@ function sanitizeRetainCount(value: string): number {
   return Math.max(0, Math.min(20, Math.floor(num)));
 }
 
+// Mirror backend.ts sanitizeSecondaryLLMModel — coerce known placeholder
+// strings to "" so the field doesn't silently 400 the provider with
+// model:"string" when the user enables the sidecar without filling it in.
+const SECONDARY_LLM_MODEL_PLACEHOLDERS = new Set(["", "string", "model", "your-model-here", "null", "undefined"]);
+
+function sanitizeSecondaryLLMModel(value: unknown): string {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  return SECONDARY_LLM_MODEL_PLACEHOLDERS.has(trimmed.toLowerCase()) ? "" : trimmed;
+}
+
 function getAllPresets(config: TrackerConfig): TemplatePreset[] {
   return [...BUILTIN_PRESETS, ...runtimeSeededPresets, ...config.userPresets];
 }
@@ -1915,7 +1926,7 @@ export function setup(ctx: SpindleFrontendContext) {
       retainTrackerCount: sanitizeRetainCount(retainInput?.value || "3"),
       useSecondaryLLM: Boolean(llmEnable?.checked),
       secondaryLLMConnectionId: llmConnection?.value || "",
-      secondaryLLMModel: llmModel?.value?.trim() || "",
+      secondaryLLMModel: sanitizeSecondaryLLMModel(llmModel?.value),
       secondaryLLMMessageCount: Math.max(1, Math.min(50, Math.floor(Number(llmMsgCount?.value) || 5))),
       secondaryLLMTemperature: Math.max(0, Math.min(2, Number(llmTemp?.value) || 0.7)),
       secondaryLLMStripHTML: Boolean(llmStrip?.checked),

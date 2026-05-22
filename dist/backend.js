@@ -11442,8 +11442,10 @@ var pulse_thread_tracker_default = {
                                     &lt;/linearGradient&gt;
                                 &lt;/defs&gt;
                                 
+                                {{#if (hasProstateTracking stats)}}
                                 &lt;!-- Prostate (anterior wall, nestled inside curve) --&gt;
                                 &lt;path class=&quot;pt-prostate {{#if (gt stats.prostate_stimulation_pct 50)}}glow{{/if}}&quot; d=&quot;M 28 65 C 18 60, 16 75, 22 85 C 28 95, 32 88, 30 75 Z&quot; /&gt;
+                                {{/if}}
 
                                 &lt;!-- Outer glow / Outline --&gt;
                                 &lt;path class=&quot;pt-anal-outline&quot; d=&quot;M 40 15 C 32 30, 24 50, 28 80 C 30 95, 42 105, 45 106 C 48 107, 52 107, 55 106 C 58 105, 70 95, 72 80 C 76 50, 68 30, 60 15 C 55 20, 45 20, 40 15 Z&quot; /&gt;
@@ -11482,11 +11484,13 @@ var pulse_thread_tracker_default = {
                                     &lt;span class=&quot;pt-bio-value&quot;&gt;{{clampPercent stats.anal_tightness_pct}}%&lt;/span&gt;
                                 &lt;/div&gt;
                                 &lt;div class=&quot;pt-anal-meter&quot;&gt;&lt;div class=&quot;pt-anal-meter-fill&quot; style=&quot;width: {{clampPercent stats.anal_tightness_pct}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+                                {{#if (hasProstateTracking stats)}}
                                 &lt;div class=&quot;pt-bio-row&quot;&gt;
                                     &lt;span class=&quot;pt-bio-key&quot;&gt;Prostate&lt;/span&gt;
                                     &lt;span class=&quot;pt-bio-value&quot;&gt;{{clampPercent stats.prostate_stimulation_pct}}%&lt;/span&gt;
                                 &lt;/div&gt;
                                 &lt;div class=&quot;pt-anal-meter&quot;&gt;&lt;div class=&quot;pt-anal-meter-fill&quot; style=&quot;width: {{clampPercent stats.prostate_stimulation_pct}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+                                {{/if}}
                             &lt;/div&gt;
                         &lt;/div&gt;
                     &lt;/div&gt;
@@ -11625,15 +11629,17 @@ TEMPLATE VARIABLES (tabbed mode):
   - {{darkerBgColor}}: Darker variant
   - {{stats}}: Flattened stats object containing:
     - {{stats.ap}}, {{stats.dp}}, {{stats.tp}}, {{stats.cp}}
+    - {{stats.apChange}}, {{stats.dpChange}}, {{stats.tpChange}}, {{stats.cpChange}} \u2014 derived by the renderer from the prior tracker block; never emitted by the LLM
     - {{stats.sex}}: &#039;female&#039;, &#039;male&#039;, &#039;futanari&#039;, &#039;intersex&#039;, &#039;hermaphrodite&#039;, &#039;both&#039;, or &#039;other&#039;
-    - {{stats.cycle_stage_id}}, {{stats.cycle_day}}, {{stats.womb_fullness_pct}}, {{stats.days_preg}}
-    - {{stats.cervix_state_id}}, {{stats.breeding_count}}, {{stats.conceived}}, {{stats.preg}}
+    - {{stats.cycle_stage_id}}, {{stats.cycle_day}}, {{stats.womb_fullness_pct}}, {{stats.womb_receptivity_pct}}
+    - {{stats.cervix_state_id}}, {{stats.breeding_count}}, {{stats.preg}}, {{stats.days_preg}}, {{stats.conception_date}}
     - {{stats.refractory_minutes}}, {{stats.refractory_total}}, {{stats.semen_ml}}, {{stats.semen_capacity_ml}}, {{stats.male_fertility_pct}}
+    - {{stats.anal_fullness_pct}}, {{stats.anal_tightness_pct}}, {{stats.prostate_stimulation_pct}}
     - {{stats.last_react}}, {{stats.internal_thought}}
-    - {{stats.days_since_first_meeting}}, {{stats.inactive}}
+    - {{stats.days_since_first_meeting}}, {{stats.inactive}}, {{stats.inactiveReason}}
 --&gt;
 `,
-  sysPrompt: '## NARRATIVE CHARACTER TRACKER (Pulse Thread)\n\n**Objective:** Emit one JSON/YAML tracker per turn. Include `worldData` with `current_date` (YYYY-MM-DD) and `current_time` (24h), plus a `characters` array containing every tracked character.\n\n---\n\n### CRITICAL RULES\n\n1. **Strict schema adherence.** Always generate fresh tracker data using the exact canonical schema below. Do not copy, reuse, or echo any hard-coded example values from this prompt or from prior turns. Every field must be populated from the current narrative state or from preserved prior tracker values \u2014 never from the example template.\n2. **Array wrapping is mandatory.** Never emit a flat top-level map like `{ "CharacterName": { ... } }`. Always use `{ "characters": [ { ... }, { ... } ] }`, even for one character.\n3. **`name` must be at the character object level.** You may nest stats under `"stats": { ... }`; the tracker flattens them. `name` must not be inside `stats`.\n4. **No omitted fields.** Every character object must include every field below on every turn. Use `0`, `false`, or `""` for unknown/inapplicable values. Preserve prior values when known.\n5. **Output order:** Narrative \u2192 Tracker tag \u2192 `sim` codeblock. Never omit the codeblock.\n6. **Never track the user.** Do not include `{{user}}`, the player, or any self-insert persona in the `characters` array. The tracker is for narrative characters and NPCs only.\n7. **Multi-character cap:** Track up to 4 active characters. Mark inactive ones `"inactive": true`.\n\n---\n\n### CANONICAL SCHEMA\n\n```json\n{\n  "worldData": {\n    "current_date": "YYYY-MM-DD",\n    "current_time": "HH:MM"\n  },\n  "characters": [\n    {\n      "name": "Character Name",\n      "ap": 0,\n      "dp": 0,\n      "tp": 0,\n      "cp": 0,\n      "apChange": 0,\n      "dpChange": 0,\n      "tpChange": 0,\n      "cpChange": 0,\n      "relationshipStatus": "",\n      "desireStatus": "",\n      "sex": "female",\n      "cycle_stage_id": 0,\n      "cycle_stage": "",\n      "cycle_day": 0,\n      "womb_fullness_pct": 0,\n      "womb_receptivity_pct": 0,\n      "cervix_state": "",\n      "breeding_count": 0,\n      "preg": false,\n      "days_preg": 0,\n      "conception_date": "",\n      "refractory_minutes": 0,\n      "refractory_total": 0,\n      "semen_ml": 0,\n      "semen_capacity_ml": 0,\n      "male_fertility_pct": 0,\n      "last_react": 0,\n      "internal_thought": "",\n      "days_since_first_meeting": 0,\n      "inactive": false,\n      "inactiveReason": 0,\n      "bg": "#808080"\n    }\n  ]\n}\n```\n\n---\n\n### STAT METERS (HARD CAPS)\n\nTrack message-to-message changes in `apChange`, `dpChange`, `tpChange`, `cpChange` (+/- integer, 0 for none).\n\n| Field | Range | Brackets |\n|---|---|---|\n| **ap** Affection | 0-200 | 0-30 Strangers / 31-60 Acquaintances / 61-90 Friends / 91-120 Romantic / 121-150 Steady / 151-180 Committed / 181-200 Devoted |\n| **dp** Desire | 0-150 | 0-25 Cold / 26-50 Warm / 51-75 Interested / 76-100 Aroused / 101-125 Needy / 126-150 Desperate |\n| **tp** Trust | 0-150 | Falls when lied to, cheated, or promises broken. |\n| **cp** Contempt | 0-150 | Rises when harmed. CP rise can lower AP/DP/TP. |\n\n---\n\n### BIOLOGICAL TRACKING\n\n**`sex` gate:** `"female"`, `"male"`, `"futanari"`, or `"other"` (lowercase). Preserve from prior state unless the narrative explicitly changes biology.\n\n**General rule for all biology:** Preserve prior values. Advance only when narrative time passes. Use `0`/`""`/`false` when genuinely inapplicable.\n\n#### Female / Futanari \u2014 Fertility & Womb\nFor `sex: "female"` or `"futanari"`, always include and update these fields:\n\n- `cycle_day`: 1-28 (or established species length). Advance with narrative time.\n- `cycle_stage_id` \u2192 `cycle_stage` mapping:\n  - `1` = `"menstruation"` (days 1-5)\n  - `2` = `"follicular"` (days 6-13)\n  - `3` = `"ovulation"` (days 14-16, peak fertility)\n  - `4` = `"luteal"` (days 17-28)\n  - `5` = `"pregnancy"`\n- `womb_fullness_pct`: 0-100. Estimate from narrative; preserve unless events change it.\n- `womb_receptivity_pct`: 0-100. High during ovulation/rut, low during menstruation or low arousal.\n- `cervix_state`: `"soft"`, `"firm"`, `"open"`, `"dilated"`, `"sealed"`. Soft/open during fertile/high-arousal windows.\n- `breeding_count`: Times filled this cycle. Increment after internal ejaculation; preserve between turns.\n\nIf pregnant: `preg: true`, `cycle_stage_id: 5`, `cycle_stage: "pregnancy"`, track `days_preg`, preserve `conception_date` (YYYY-MM-DD) when known.\n\nIf not pregnant: `preg: false`, `days_preg: 0`.\n\nIf unprotected vaginal sex occurs during ovulation or rut, evaluate conception risk narratively. Update `preg`, `cycle_stage`, `days_preg`, and `conception_date` when conception is confirmed or narratively certain.\n\n#### Male / Futanari \u2014 Refractory & Semen\nFor `sex: "male"` or `"futanari"`, populate these fields. Female/other characters still include them with neutral values (`0`) unless explicitly male.\n\n- `refractory_minutes`: Minutes remaining until ready (0 = ready).\n- `refractory_total`: Total minutes of this refractory period.\n- `semen_ml`: Current volume (0 to `semen_capacity_ml`). Adjust after ejaculation, rest, or arousal.\n- `semen_capacity_ml`: Maximum volume. Preserve unless biology changes.\n- `male_fertility_pct`: 0-100. Update for sperm count, magical fertility, infertility, rut, recovery, etc.\n\nConvert all time to minutes. Decrement `refractory_minutes` toward 0 as narrative time passes.\n\n#### Futanari / Dual-Biology\nOutput **both** female cycle fields and male reproductive fields. The tracker renders a mixed panel.\n\n---\n\n### THEMING\n\nProvide `"bg"` as a hex color per character. Example: `"#808080"`.\n',
+  sysPrompt: '## NARRATIVE CHARACTER TRACKER (Pulse Thread)\n\n**Objective:** Emit one JSON/YAML tracker per turn. Include `worldData` with `current_date` (YYYY-MM-DD) and `current_time` (24h), plus a `characters` array containing every tracked character.\n\n---\n\n### CRITICAL RULES\n\n1. **Strict schema adherence.** Always generate fresh tracker data using the exact canonical schema below. Do not copy, reuse, or echo hard-coded example values from this prompt or from prior turns. Every field must be populated from the current narrative state or preserved from prior tracker values \u2014 never from the example template.\n2. **Array wrapping is mandatory.** Never emit a flat top-level map like `{ "CharacterName": { ... } }`. Always use `{ "characters": [ { ... }, { ... } ] }`, even for a single character.\n3. **`name` must be at the character object level.** You may nest stats under `"stats": { ... }`; the tracker flattens them. `name` must never appear inside `stats`.\n4. **No omitted fields.** Every character object must include every field below on every turn. Use `0`, `false`, or `""` for unknown/inapplicable values. Preserve prior values when known.\n5. **Output order:** Narrative \u2192 tracker tag \u2192 `sim` codeblock. Never omit the codeblock.\n6. **Never track the user.** Do not include `{{user}}`, the player, or any self-insert persona in the `characters` array. The tracker is for narrative characters and NPCs only.\n7. **Multi-character cap:** Track up to 4 active characters. Mark inactive ones with `"inactive": true`.\n8. **Numeric IDs, not strings.** Where a field is an enum (`cycle_stage_id`, `cervix_state_id`, `last_react`, `inactiveReason`), emit the integer. The renderer maps it to its display label.\n9. **Do not emit derived fields.** Stat deltas (`apChange`, `dpChange`, `tpChange`, `cpChange`), readable cycle/cervix labels, and relationship/desire descriptors are derived by the renderer. Do not include them.\n\n---\n\n### CANONICAL SCHEMA\n\n```json\n{\n  "worldData": {\n    "current_date": "YYYY-MM-DD",\n    "current_time": "HH:MM"\n  },\n  "characters": [\n    {\n      "name": "Character Name",\n      "ap": 0,\n      "dp": 0,\n      "tp": 0,\n      "cp": 0,\n      "sex": "female",\n      "cycle_stage_id": 0,\n      "cycle_day": 0,\n      "womb_fullness_pct": 0,\n      "womb_receptivity_pct": 0,\n      "cervix_state_id": 0,\n      "breeding_count": 0,\n      "preg": false,\n      "conceived": false,\n      "days_preg": 0,\n      "conception_date": "",\n      "refractory_minutes": 0,\n      "refractory_total": 0,\n      "semen_ml": 0,\n      "semen_capacity_ml": 0,\n      "male_fertility_pct": 0,\n      "anal_fullness_pct": 0,\n      "anal_tightness_pct": 0,\n      "prostate_stimulation_pct": 0,\n      "last_react": 0,\n      "internal_thought": "",\n      "days_since_first_meeting": 0,\n      "inactive": false,\n      "inactiveReason": 0,\n      "bg": "#808080"\n    }\n  ]\n}\n```\n\n---\n\n### STAT METERS (HARD CAPS)\n\n| Field | Range | Brackets |\n|---|---|---|\n| **ap** Affection | 0-200 | 0-30 Strangers / 31-60 Acquaintances / 61-90 Friends / 91-120 Romantic / 121-150 Steady / 151-180 Committed / 181-200 Devoted |\n| **dp** Desire | 0-150 | 0-25 Cold / 26-50 Warm / 51-75 Interested / 76-100 Aroused / 101-125 Needy / 126-150 Desperate |\n| **tp** Trust | 0-150 | Falls when lied to, cheated, or promises broken. Rises with kept promises and demonstrated reliability. |\n| **cp** Contempt | 0-150 | Rises when harmed. A rising CP can drag AP/DP/TP down. |\n\nMovement is +/- per turn, scaled to the magnitude of the moment. Do not include `apChange`/`dpChange`/`tpChange`/`cpChange` \u2014 the renderer computes deltas by diffing the current tracker against the previous tracker block automatically.\n\n---\n\n### REACTIONS & INACTIVITY ENUMS\n\n- `last_react` \u2014 most recent reaction toward the user this turn:\n  - `0` = Neutral\n  - `1` = Like / Approve\n  - `2` = Dislike / Disapprove\n- `inactiveReason` \u2014 when `inactive: true`, set the cause:\n  - `0` = Not inactive (default)\n  - `1` = Asleep\n  - `2` = Comatose\n  - `3` = Contempt / refusing engagement\n  - `4` = Incapacitated\n  - `5` = Death\n\n---\n\n### BIOLOGICAL TRACKING\n\n**`sex` gate:** lowercase one of `"female"`, `"male"`, `"futanari"`, `"other"`. Preserve from prior state unless the narrative explicitly changes biology.\n\n**General rule for all biology:** Preserve prior values across turns. Advance only when narrative time passes. Use `0` / `""` / `false` when genuinely inapplicable. Futanari characters output **both** female and male field groups.\n\n#### Female / Futanari \u2014 Fertility & Womb\n\nFor `sex: "female"` or `"futanari"`, always include and update:\n\n- `cycle_day` \u2014 Current day in the cycle, typically 1-28 (or established species length). Advance with narrative time.\n- `cycle_stage_id` \u2014 Integer enum for the current fertility phase:\n  - `0` = unknown / N/A\n  - `1` = menstruation (days 1-5)\n  - `2` = follicular (days 6-13)\n  - `3` = ovulation (days 14-16, peak fertility)\n  - `4` = luteal (days 17-28)\n  - `5` = pregnancy\n  - `6` = rut (heat / estrus surge \u2014 species-dependent)\n- `womb_fullness_pct` \u2014 0-100. Estimate from narrative; preserve unless events change it (ejaculation, leakage, douching, menstruation, pregnancy progression).\n- `womb_receptivity_pct` \u2014 0-100. High during ovulation/rut and heavy arousal; low during menstruation, contempt, or low arousal.\n- `cervix_state_id` \u2014 Integer enum, ordered from most closed to most open. Track narrative arousal and fertile-window biology together:\n  - `0` = unknown / N/A\n  - `1` = sealed \u2014 locked tight (pregnancy plug, post-coital seal, deep refractory)\n  - `2` = firm \u2014 closed, non-fertile baseline\n  - `3` = soft \u2014 relaxed, near-fertile or aroused\n  - `4` = open \u2014 parted, fertile window or active receptivity\n  - `5` = dilated \u2014 wide open, peak fertility paired with heavy arousal\n  - `6` = kissed \u2014 directly contacted or breached by a partner; deepest exposure\n- `breeding_count` \u2014 Times filled internally this cycle. Increment after each internal ejaculation; preserve between turns; reset only at the start of a new cycle.\n\n**Conception & Pregnancy (staged):**\n\nThe pipeline stages reproduction across two flags:\n\n- `conceived: true` \u2014 fertilization has happened but pregnancy isn\'t yet visibly evident. The character is silently carrying.\n- `preg: true` \u2014 pregnancy has been confirmed (test, narrative reveal, missed period, showing). Implies `cycle_stage_id: 5` and `cervix_state_id: 1` (sealed) unless labor begins.\n\n**Engine-enforced auto-conception:** when womb fullness exceeds 85% during a fertile window (ovulation, rut, or early luteal cycle_day \u2264 19) and the character is not already conceived/pregnant, the engine flips a coin to mark her `conceived: true` (with `conception_date` set to the current world date). At 100% fullness the coin is skipped and conception is automatic. **If the prior tracker block shows `conceived: true`, preserve it on every subsequent emission until pregnancy is confirmed \u2014 never revert it to `false`.**\n\nManual rules:\n\n- If pregnant: `preg: true`, `cycle_stage_id: 5`, advance `days_preg` daily, preserve `conception_date` (YYYY-MM-DD). Set `cervix_state_id: 1`.\n- If conceived but not yet pregnant: `conceived: true`, `preg: false`, `days_preg: 0`, `conception_date` set. The narrative may reveal pregnancy after several in-world days \u2014 at that point flip `preg: true` and start advancing `days_preg`.\n- If not pregnant and not conceived: `preg: false`, `conceived: false`, `days_preg: 0`, `conception_date: ""`.\n\n#### Male / Futanari \u2014 Refractory & Semen\n\nFor `sex: "male"` or `"futanari"`, populate these fields. Other characters may include them as `0`.\n\n- `refractory_minutes` \u2014 Minutes remaining until ready. `0` = ready.\n- `refractory_total` \u2014 Total minutes of the current refractory period. `0` when not in refractory.\n- `semen_ml` \u2014 Current volume, `0` to `semen_capacity_ml`. Drops after ejaculation; recovers with rest/arousal.\n- `semen_capacity_ml` \u2014 Maximum volume. Preserve unless biology changes.\n- `male_fertility_pct` \u2014 0-100. Adjust for sperm count, magical fertility, infertility, rut, recovery, fatigue, etc.\n\nConvert all time to minutes. Decrement `refractory_minutes` toward `0` as narrative time passes.\n\n#### Anal Tracking \u2014 All Characters\n\nThe tracker renders an anal panel for every gendered character (`female`, `male`, `futanari`, etc.). The prostate graphic and prostate stat row only render for prostate-bearing characters (`male`, `futanari`, `intersex`, `hermaphrodite`, `both`); pure-female cards show fullness and tightness only.\n\n**Update these whenever anal play, anal sex, or prostate stimulation occurs in the narrative \u2014 otherwise the panel exists but never reflects events.**\n\n- `anal_fullness_pct` \u2014 0-100. Volume currently inside the anal canal (semen, toys, fingers, etc.). Rises with insertion/ejaculation, falls with withdrawal, expulsion, or cleanup over time. Preserve between turns. Applies to all characters.\n- `anal_tightness_pct` \u2014 0-100. Resistance of the sphincter. `100` = untouched / virgin tight; drops with stretching, sustained use, lubrication, and arousal. Recovers with rest. Preserve baseline per character. Applies to all characters.\n- `prostate_stimulation_pct` \u2014 0-100. Active prostate stimulation level this moment. Rises with direct pressure / deep penetration / toys angled at the prostate; falls quickly when stimulation stops. **Leave `0` for pure-female characters** \u2014 the renderer hides the prostate panel/graphic for them automatically.\n\nIf no anal content has occurred for a character, leave all three at `0`. If anal content **has** occurred \u2014 even just penetration without ejaculation \u2014 `anal_tightness_pct` should drop from its baseline and (where applicable) `prostate_stimulation_pct` and `anal_fullness_pct` should reflect what\'s happening.\n\n#### Futanari / Dual-Biology\n\nOutput **all** female cycle fields, male reproductive fields, and anal fields. The tracker renders the combined panel.\n\n---\n\n### INTERNAL THOUGHT & META\n\n- `internal_thought` \u2014 One short first-person sentence capturing the character\'s current inner monologue. Refresh every turn; never leave stale.\n- `days_since_first_meeting` \u2014 Total in-world days since the character first met the user. Increment as narrative dates advance.\n- `inactive` / `inactiveReason` \u2014 Use when the character is asleep, comatose, dead, refusing engagement, or otherwise out of the scene.\n\n---\n\n### THEMING\n\nProvide `"bg"` as a hex color per character (e.g. `"#2d1b4e"`). Pick a color that matches the character\'s vibe; preserve across turns once chosen.\n',
   customFields: [
     {
       key: "ap",
@@ -11652,116 +11658,104 @@ TEMPLATE VARIABLES (tabbed mode):
       description: "[number] Contempt Points (0-150)"
     },
     {
-      key: "apChange",
-      description: "[number] Change in AP since last message (+/- integer, 0 for none)"
-    },
-    {
-      key: "dpChange",
-      description: "[number] Change in DP since last message (+/- integer, 0 for none)"
-    },
-    {
-      key: "tpChange",
-      description: "[number] Change in TP since last message (+/- integer, 0 for none)"
-    },
-    {
-      key: "cpChange",
-      description: "[number] Change in CP since last message (+/- integer, 0 for none)"
-    },
-    {
-      key: "relationshipStatus",
-      description: "[string] Relationship status text"
-    },
-    {
-      key: "desireStatus",
-      description: "[string] Desire status text"
-    },
-    {
       key: "sex",
-      description: "[string] Character sex, lowercase: 'female', 'male', 'futanari', or 'other' \u2014 primary gate for biological modules; preserve from prior state unless explicitly changed"
+      description: "[string] Character sex (lowercase): 'female', 'male', 'futanari', or 'other'. Primary gate for biological panels; preserve from prior state unless explicitly changed."
     },
     {
       key: "cycle_stage_id",
-      description: "[number] Canonical fertility stage enum: 1=menstruation, 2=follicular, 3=ovulation, 4=luteal, 5=pregnancy; preserve and advance for fertile characters each turn"
-    },
-    {
-      key: "cycle_stage",
-      description: "[string] Readable fertility/biological stage label matching cycle_stage_id: 'pregnancy', 'ovulation', 'menstruation', 'follicular', 'luteal', 'rut', or empty"
+      description: "[number] Fertility stage enum: 0=unknown, 1=menstruation, 2=follicular, 3=ovulation, 4=luteal, 5=pregnancy, 6=rut. Preserve and advance with narrative time. Renderer maps to a display label."
     },
     {
       key: "cycle_day",
-      description: "[number] Current cycle day, usually 1-28, used for fertility ring positioning; preserve and advance when narrative time passes"
+      description: "[number] Current cycle day (1-28 or species-specific length). Used for fertility ring positioning; preserve and advance when narrative time passes."
     },
     {
       key: "womb_fullness_pct",
-      description: "[number] Required for all characters. Current womb fullness percentage (0-100); use 0 when not applicable"
-    },
-    {
-      key: "preg",
-      description: "[boolean] Pregnancy status (true/false); true also implies cycle_stage 'pregnancy'"
-    },
-    {
-      key: "days_preg",
-      description: "[number] Days pregnant (0 if not applicable); advance with narrative date/time once conception is known"
-    },
-    {
-      key: "conception_date",
-      description: "[string] Date of conception (YYYY-MM-DD), preserved when known"
-    },
-    {
-      key: "refractory_minutes",
-      description: "[number] Required for all characters. Minutes remaining in refractory period (0 = ready/not applicable)"
-    },
-    {
-      key: "refractory_total",
-      description: "[number] Required for all characters. Total minutes of current refractory period (0 when not applicable)"
-    },
-    {
-      key: "semen_ml",
-      description: "[number] Required for all characters. Current semen volume available in milliliters; use 0 when not applicable"
-    },
-    {
-      key: "semen_capacity_ml",
-      description: "[number] Required for all characters. Maximum semen capacity in milliliters; use 0 when not applicable"
-    },
-    {
-      key: "male_fertility_pct",
-      description: "[number] Required for all characters. Current sperm count/fertility level (0-100); use 0 when not applicable"
+      description: "[number] Womb fullness (0-100). Reflects internal contents; preserve unless narrative events change it. Use 0 when not applicable."
     },
     {
       key: "womb_receptivity_pct",
-      description: "[number] Required for all characters. Current womb receptivity/primed state (0-100); use 0 when not applicable"
+      description: "[number] Womb receptivity / primed state (0-100). High during ovulation/rut and heavy arousal; low during menstruation or low arousal. Use 0 when not applicable."
     },
     {
-      key: "cervix_state",
-      description: "[string] Required for all characters. Cervix firmness/openness state such as 'soft', 'firm', 'open', 'dilated', 'sealed'; use empty when not applicable"
+      key: "cervix_state_id",
+      description: "[number] Cervix openness enum (most closed \u2192 most open): 0=unknown, 1=sealed, 2=firm, 3=soft, 4=open, 5=dilated, 6=kissed. Renderer maps to a display label."
     },
     {
       key: "breeding_count",
-      description: "[number] Required for all characters. Times filled this cycle (0 or higher); use 0 when not applicable"
+      description: "[number] Internal ejaculations this cycle. Increment after each internal finish; preserve between turns; reset at the start of a new cycle."
     },
     {
-      key: "bg",
-      description: "[string] Hex color for card background (e.g., #2d1b4e)"
+      key: "preg",
+      description: "[boolean] Visible pregnancy status. When true, also set cycle_stage_id=5 and cervix_state_id=1 (unless labor)."
+    },
+    {
+      key: "conceived",
+      description: "[boolean] Silent fertilization flag \u2014 set true by the engine's conception gate when womb_fullness_pct exceeds 85% during a fertile window (auto at 100%). Preserve true once set until pregnancy is narratively confirmed and preg flips to true."
+    },
+    {
+      key: "days_preg",
+      description: "[number] Days pregnant. 0 when not pregnant. Advance with narrative date/time."
+    },
+    {
+      key: "conception_date",
+      description: "[string] Date of conception (YYYY-MM-DD). Preserve once known; empty otherwise."
+    },
+    {
+      key: "refractory_minutes",
+      description: "[number] Minutes remaining until ready. 0 = ready / not applicable. Decrement as narrative time passes."
+    },
+    {
+      key: "refractory_total",
+      description: "[number] Total minutes of the current refractory period. 0 when not in refractory."
+    },
+    {
+      key: "semen_ml",
+      description: "[number] Current semen volume in ml (0 to semen_capacity_ml). Drops after ejaculation; recovers with rest/arousal. 0 when not applicable."
+    },
+    {
+      key: "semen_capacity_ml",
+      description: "[number] Maximum semen capacity in ml. Preserve unless biology changes. 0 when not applicable."
+    },
+    {
+      key: "male_fertility_pct",
+      description: "[number] Sperm count / fertility level (0-100). Adjust for biological state, rut, recovery, fatigue, magic. 0 when not applicable."
+    },
+    {
+      key: "anal_fullness_pct",
+      description: "[number] Volume inside the anal canal (0-100). Rises with insertion/ejaculation, falls with withdrawal/expulsion/cleanup. Preserve between turns. 0 when no anal content."
+    },
+    {
+      key: "anal_tightness_pct",
+      description: "[number] Sphincter resistance (0-100). 100 = untouched/virgin tight; drops with stretching, sustained use, lubrication, arousal. Recovers with rest. Preserve baseline per character."
+    },
+    {
+      key: "prostate_stimulation_pct",
+      description: "[number] Active prostate stimulation level (0-100). Rises with direct pressure / deep penetration / prostate-angled toys; falls quickly when stimulation stops. 0 for characters without a prostate."
     },
     {
       key: "last_react",
-      description: "[number] Reaction enum (0=Neutral, 1=Like/Approve, 2=Dislike/Disapprove)"
+      description: "[number] Most recent reaction toward the user: 0=Neutral, 1=Like/Approve, 2=Dislike/Disapprove."
     },
     {
       key: "internal_thought",
-      description: "[string] Character's current internal thoughts/feelings"
+      description: "[string] One short first-person sentence capturing the character's current inner monologue. Refresh every turn."
     },
     {
       key: "days_since_first_meeting",
-      description: "[number] Total days since first meeting"
+      description: "[number] Total in-world days since first meeting. Increment as narrative dates advance."
     },
     {
       key: "inactive",
-      description: "[boolean] Character inactivity flag (true/false)"
+      description: "[boolean] Character inactivity flag. Pair with inactiveReason when true."
     },
     {
       key: "inactiveReason",
-      description: "[number] Inactivity reason (0=Not inactive, 1=Asleep, 2=Comatose, 3=Contempt/anger, 4=Incapacitated, 5=Death)"
+      description: "[number] Inactivity cause: 0=Not inactive, 1=Asleep, 2=Comatose, 3=Contempt/anger, 4=Incapacitated, 5=Death."
+    },
+    {
+      key: "bg",
+      description: "[string] Hex color for card background (e.g., #2d1b4e). Preserve across turns once chosen."
     }
   ],
   extSettings: {
@@ -11878,8 +11872,9 @@ var chatTrackerHistory = new Map;
 var rehydratedChats = new Set;
 var conceptionNotified = new Set;
 var CONCEPTION_CONFIG = {
-  threshold: 80,
-  autoAt: 100
+  threshold: 85,
+  autoAt: 100,
+  earlyLutealMaxDay: 19
 };
 var runtime = {
   grantedPermissions: new Set,
@@ -12108,6 +12103,14 @@ function sanitizeBool(value, fallback) {
 function sanitizeStr(value, fallback) {
   return typeof value === "string" ? value.trim() : fallback;
 }
+function sanitizeSecondaryLLMModel(value, fallback) {
+  const raw = sanitizeStr(value, fallback);
+  const lowered = raw.toLowerCase();
+  if (lowered === "string" || lowered === "your-model-here" || lowered === "model" || lowered === "null" || lowered === "undefined") {
+    return "";
+  }
+  return raw;
+}
 function sanitizeMessageCount(value) {
   if (typeof value !== "number" || Number.isNaN(value))
     return DEFAULT_CONFIG.secondaryLLMMessageCount;
@@ -12270,10 +12273,25 @@ function isFemaleOrFuta(stats) {
   const sex = String(stats.sex || "").toLowerCase();
   return ["female", "futanari", "futa", "both", "intersex", "hermaphrodite"].includes(sex);
 }
-function isOvulating(stats) {
+function isInFertileWindow(stats) {
   const stage = String(stats.cycle_stage || "").toLowerCase();
   const stageId = Number(stats.cycle_stage_id || 0);
-  return stage === "ovulation" || stageId === 3;
+  if (stage === "ovulation" || stageId === 3)
+    return true;
+  if (stage === "rut" || stageId === 6)
+    return true;
+  if (stage === "luteal" || stageId === 4) {
+    const day = Number(stats.cycle_day || 0);
+    return day > 0 && day <= CONCEPTION_CONFIG.earlyLutealMaxDay;
+  }
+  return false;
+}
+function extractCurrentDate(payload) {
+  const world = payload.worldData;
+  const date = world?.current_date;
+  if (typeof date === "string" && date.trim())
+    return date.trim();
+  return new Date().toISOString().slice(0, 10);
 }
 function isAlreadyConceivedOrPregnant(stats) {
   return stats.preg === true || stats.conceived === true || stats.conception_date === true;
@@ -12289,20 +12307,22 @@ function checkConceptionTriggers(chatId, payload) {
   for (const stats of characters) {
     if (!isFemaleOrFuta(stats))
       continue;
-    if (!isOvulating(stats))
-      continue;
     if (isAlreadyConceivedOrPregnant(stats)) {
       const key2 = `${chatId}::${stats.name}`;
       if (conceptionNotified.has(key2))
         conceptionNotified.delete(key2);
       continue;
     }
+    if (!isInFertileWindow(stats))
+      continue;
     const fullness = Number(stats.womb_fullness_pct);
     if (!Number.isFinite(fullness) || fullness <= CONCEPTION_CONFIG.threshold)
       continue;
     const key = `${chatId}::${stats.name}`;
-    if (conceptionNotified.has(key))
+    if (conceptionNotified.has(key)) {
+      triggered.push(String(stats.name || "Unknown"));
       continue;
+    }
     const shouldTrigger = fullness >= CONCEPTION_CONFIG.autoAt || coinFlip();
     if (shouldTrigger) {
       conceptionNotified.add(key);
@@ -12311,12 +12331,64 @@ function checkConceptionTriggers(chatId, payload) {
   }
   return triggered;
 }
+function planForcedConception(chatId, names, conceptionDate) {
+  if (!chatId || names.length === 0)
+    return null;
+  const history = chatTrackerHistory.get(chatId);
+  if (!history || history.length === 0)
+    return null;
+  const latest = history[history.length - 1];
+  const parsed = parseTrackerPayload(latest.payload);
+  if (!parsed)
+    return null;
+  const characters = getCharactersFromPayload(parsed);
+  let mutated = false;
+  for (const char of characters) {
+    if (typeof char.name !== "string" || !names.includes(char.name))
+      continue;
+    if (char.preg === true || char.conceived === true)
+      continue;
+    char.conceived = true;
+    if (typeof char.conception_date !== "string" || !char.conception_date.trim()) {
+      char.conception_date = conceptionDate;
+    }
+    mutated = true;
+  }
+  if (!mutated)
+    return null;
+  const newPayload = JSON.stringify(parsed, null, 2);
+  return { messageId: latest.messageId, oldPayload: latest.payload, newPayload };
+}
+function commitForcedConception(chatId, plan) {
+  const history = chatTrackerHistory.get(chatId);
+  if (!history)
+    return;
+  const idx = history.findIndex((entry) => entry.messageId === plan.messageId);
+  if (idx === -1)
+    return;
+  history[idx] = { ...history[idx], payload: plan.newPayload };
+}
+function rewriteTrackerInMessages(messages, oldPayload, newPayload) {
+  const oldTrim = oldPayload.trim();
+  if (!oldTrim || oldTrim === newPayload.trim())
+    return;
+  for (let i = 0;i < messages.length; i += 1) {
+    const msg = messages[i];
+    if (!msg || typeof msg.content !== "string")
+      continue;
+    const found = extractTrackerPayloadFromMessage(msg.content);
+    if (!found || found.trim() !== oldTrim)
+      continue;
+    messages[i] = { ...msg, content: msg.content.replace(oldPayload, newPayload) };
+  }
+}
 function buildConceptionDirective(names) {
   if (names.length === 0)
     return "";
   const subject = names.length === 1 ? names[0] : names.join(", ");
   const verb = names.length === 1 ? "has" : "have";
-  return `CONCEPTION DIRECTIVE: ${subject} ${verb} conceived. Update the next tracker to mark ${names.length === 1 ? "her" : "them"} as "conceived": true (and set "conception_date" to today's date). Do NOT set "preg": true yet; that transition happens later.`;
+  const pronoun = names.length === 1 ? "her" : "them";
+  return `CONCEPTION DIRECTIVE: ${subject} ${verb} conceived. The prior tracker has been updated in-place to reflect this \u2014 \`conceived: true\` with \`conception_date\` set. PRESERVE this state on the next tracker emission; do not revert ${pronoun} to \`conceived: false\`. Do NOT set \`preg: true\` yet; that transition happens later as the narrative reveals the pregnancy.`;
 }
 function parseTrackerPayload(raw) {
   const cleaned = raw.trim().replace(/([\s:[,{])\+(\d+(?:\.\d+)?)([\s,}\]\n\r]|$)/g, "$1$2$3");
@@ -12695,7 +12767,7 @@ async function loadConfig() {
       inlinePacks: sanitizeInlinePacks(parsed.inlinePacks),
       useSecondaryLLM: sanitizeBool(parsed.useSecondaryLLM, DEFAULT_CONFIG.useSecondaryLLM),
       secondaryLLMConnectionId: sanitizeStr(parsed.secondaryLLMConnectionId, DEFAULT_CONFIG.secondaryLLMConnectionId),
-      secondaryLLMModel: sanitizeStr(parsed.secondaryLLMModel, DEFAULT_CONFIG.secondaryLLMModel),
+      secondaryLLMModel: sanitizeSecondaryLLMModel(parsed.secondaryLLMModel, DEFAULT_CONFIG.secondaryLLMModel),
       secondaryLLMMessageCount: sanitizeMessageCount(parsed.secondaryLLMMessageCount),
       secondaryLLMTemperature: sanitizeTemperature(parsed.secondaryLLMTemperature),
       secondaryLLMStripHTML: sanitizeBool(parsed.secondaryLLMStripHTML, DEFAULT_CONFIG.secondaryLLMStripHTML)
@@ -12985,6 +13057,10 @@ function stripStructuralHTML(text) {
   }
   return stripped.replace(/\s+/g, " ").trim();
 }
+var SECONDARY_LLM_MODEL_PLACEHOLDERS = new Set(["", "string", "model", "your-model-here", "null", "undefined"]);
+function describeMissingModelGuidance() {
+  return "Secondary LLM model is not configured. Open SimTracker settings \u2192 Secondary LLM and enter a real model id (e.g. `gpt-4o-mini`, `claude-haiku-4-5`, `deepseek-chat`). The provider rejected the request because the model field was empty or a placeholder.";
+}
 async function generateTrackerWithSecondaryLLM(chatId, targetMessageId) {
   if (secondaryGenerationInProgress)
     return;
@@ -12996,6 +13072,13 @@ async function generateTrackerWithSecondaryLLM(chatId, targetMessageId) {
   }
   if (!hasPermission("chat_mutation")) {
     spindle.log.warn("Secondary LLM generation requires 'chat_mutation' permission");
+    return;
+  }
+  const trimmedModel = (config.secondaryLLMModel || "").trim();
+  if (SECONDARY_LLM_MODEL_PLACEHOLDERS.has(trimmedModel.toLowerCase())) {
+    const guidance = describeMissingModelGuidance();
+    spindle.log.warn(guidance);
+    spindle.sendToFrontend({ type: "secondary_generation_error", message: guidance }, activeUserId || undefined);
     return;
   }
   secondaryGenerationInProgress = true;
@@ -13018,9 +13101,10 @@ async function generateTrackerWithSecondaryLLM(chatId, targetMessageId) {
     const identifier = config.codeBlockIdentifier;
     const messageCount = config.secondaryLLMMessageCount;
     const recentMessages = messages.filter((m) => m.role !== "system").slice(-messageCount);
-    const historyLimit = Math.max(1, Math.min(10, config.retainTrackerCount || 3));
-    let historicalTrackers = getRecentChatTrackers(chatId, historyLimit, targetMessageId).map((entry) => entry.payload);
-    if (historicalTrackers.length === 0) {
+    const retainSetting = Number.isFinite(config.retainTrackerCount) ? config.retainTrackerCount : 3;
+    const historyLimit = Math.max(0, Math.min(10, retainSetting));
+    let historicalTrackers = historyLimit === 0 ? [] : getRecentChatTrackers(chatId, historyLimit, targetMessageId).map((entry) => entry.payload);
+    if (historyLimit > 0 && historicalTrackers.length === 0) {
       const nonSystem = messages.filter((m) => m.role !== "system");
       const targetIdx = nonSystem.findIndex((m) => m.id === targetMessageId);
       const scanEnd = targetIdx >= 0 ? targetIdx : nonSystem.length;
@@ -13079,12 +13163,10 @@ Based on the above conversation${hasHistory ? " and the previous tracker state(s
       { role: "user", content: conversationText }
     ];
     const parameters = {
+      model: trimmedModel,
       temperature: config.secondaryLLMTemperature
     };
-    if (config.secondaryLLMModel) {
-      parameters.model = config.secondaryLLMModel;
-    }
-    spindle.log.info("Starting secondary LLM generation...");
+    spindle.log.info(`Starting secondary LLM generation (model=${trimmedModel}, history=${historicalTrackers.length}, messages=${cleanedMessages.length})`);
     const result = await spindle.generate.raw({
       type: "raw",
       messages: llmMessages,
@@ -13129,10 +13211,14 @@ ${trackerBlock}`;
       content: updatedContent
     }, activeUserId || undefined);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    spindle.log.error(`Secondary LLM generation failed: ${message}`);
+    const rawMessage = err instanceof Error ? err.message : String(err);
+    const looksLikeModelError = /\bmodel\b/i.test(rawMessage) && /(missing|invalid|empty|required|not.*found)/i.test(rawMessage);
+    const message = looksLikeModelError ? `${rawMessage}
+
+${describeMissingModelGuidance()}` : rawMessage;
+    spindle.log.error(`Secondary LLM generation failed: ${rawMessage}`);
     spindle.sendToFrontend({ type: "secondary_generation_error", message }, activeUserId || undefined);
-    await trackEvent("sst.secondary_generation.failed", { error: message }, { level: "error" });
+    await trackEvent("sst.secondary_generation.failed", { error: rawMessage }, { level: "error" });
   } finally {
     secondaryGenerationInProgress = false;
   }
@@ -13388,6 +13474,17 @@ function tryRegisterInterceptor() {
         return retained;
       await rehydrateChatTrackerHistory(chatId);
       const needed = keepNewest - currentCount;
+      const preMutationLatest = getRecentChatTrackers(chatId, 1);
+      const latestPayload = preMutationLatest.length > 0 ? parseTrackerPayload(preMutationLatest[preMutationLatest.length - 1].payload) : null;
+      const conceptionNames = latestPayload ? checkConceptionTriggers(chatId, latestPayload) : [];
+      if (latestPayload && conceptionNames.length > 0) {
+        const plan = planForcedConception(chatId, conceptionNames, extractCurrentDate(latestPayload));
+        if (plan) {
+          commitForcedConception(chatId, plan);
+          rewriteTrackerInMessages(retained, plan.oldPayload, plan.newPayload);
+        }
+      }
+      const conceptionDirective = buildConceptionDirective(conceptionNames);
       const history = getRecentChatTrackers(chatId, keepNewest);
       if (history.length === 0)
         return retained;
@@ -13403,9 +13500,6 @@ function tryRegisterInterceptor() {
       if (toInject.length === 0)
         return retained;
       const block = buildTrackerInjectionBlock(toInject);
-      const latestPayload = parseTrackerPayload(history[history.length - 1].payload);
-      const conceptionNames = latestPayload ? checkConceptionTriggers(chatId, latestPayload) : [];
-      const conceptionDirective = buildConceptionDirective(conceptionNames);
       let lastAssistantIdx = -1;
       for (let i = retained.length - 1;i >= 0; i -= 1) {
         const m = retained[i];
@@ -13613,7 +13707,7 @@ spindle.onFrontendMessage(async (payload, userId) => {
       inlinePacks: sanitizeInlinePacks(incoming?.inlinePacks ?? config.inlinePacks),
       useSecondaryLLM: sanitizeBool(incoming?.useSecondaryLLM ?? config.useSecondaryLLM, config.useSecondaryLLM),
       secondaryLLMConnectionId: sanitizeStr(incoming?.secondaryLLMConnectionId ?? config.secondaryLLMConnectionId, config.secondaryLLMConnectionId),
-      secondaryLLMModel: sanitizeStr(incoming?.secondaryLLMModel ?? config.secondaryLLMModel, config.secondaryLLMModel),
+      secondaryLLMModel: sanitizeSecondaryLLMModel(incoming?.secondaryLLMModel ?? config.secondaryLLMModel, config.secondaryLLMModel),
       secondaryLLMMessageCount: sanitizeMessageCount(incoming?.secondaryLLMMessageCount ?? config.secondaryLLMMessageCount),
       secondaryLLMTemperature: sanitizeTemperature(incoming?.secondaryLLMTemperature ?? config.secondaryLLMTemperature),
       secondaryLLMStripHTML: sanitizeBool(incoming?.secondaryLLMStripHTML ?? config.secondaryLLMStripHTML, config.secondaryLLMStripHTML)
