@@ -13,6 +13,7 @@
     "chats",
     "event_tracking",
     "generation",
+    "generation_parameters",
     "app_manipulation"
   ],
   "entry_backend": "dist/backend.js",

@@ -13339,6 +13339,12 @@ async function generateTrackerWithSecondaryLLM(chatId, targetMessageId) {
     spindle.log.warn("Secondary LLM generation requires 'chat_mutation' permission");
     return;
   }
+  if (!hasPermission("generation_parameters")) {
+    const guidance = "Secondary LLM generation requires the 'generation_parameters' permission so the configured model id reaches the provider. Grant it in SimTracker's permission prompt and try again.";
+    spindle.log.warn(guidance);
+    spindle.sendToFrontend({ type: "secondary_generation_error", message: guidance }, activeUserId || undefined);
+    return;
+  }
   const trimmedModel = (config.secondaryLLMModel || "").trim();
   if (SECONDARY_LLM_MODEL_PLACEHOLDERS.has(trimmedModel.toLowerCase())) {
     const guidance = describeMissingModelGuidance();

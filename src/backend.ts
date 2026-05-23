@@ -1689,6 +1689,19 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
     spindle.log.warn("Secondary LLM generation requires 'chat_mutation' permission");
     return;
   }
+  // Without `generation_parameters`, Spindle silently strips `parameters`
+  // from the outgoing request — including our model override. The provider
+  // then receives the connection's stored model (often the seed `"string"`)
+  // and 400s. Bail loudly here so the user knows to grant the permission.
+  if (!hasPermission("generation_parameters")) {
+    const guidance = "Secondary LLM generation requires the 'generation_parameters' permission so the configured model id reaches the provider. Grant it in SimTracker's permission prompt and try again.";
+    spindle.log.warn(guidance);
+    spindle.sendToFrontend(
+      { type: "secondary_generation_error", message: guidance },
+      activeUserId || undefined,
+    );
+    return;
+  }
 
   // ── Pre-flight: validate model & connection ───────────────────────────
   // The provider call requires a non-empty, non-placeholder model id. If the

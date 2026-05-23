@@ -18144,7 +18144,8 @@ function setup(ctx) {
     if (llmSection) {
       const genGranted = hasPermission("generation");
       const mutGranted = hasPermission("chat_mutation");
-      const llmAvailable = genGranted && mutGranted;
+      const paramsGranted = hasPermission("generation_parameters");
+      const llmAvailable = genGranted && mutGranted && paramsGranted;
       llmSection.classList.toggle("sst-disabled", !llmAvailable);
       if (llmEnable)
         llmEnable.disabled = !llmAvailable;
@@ -18154,6 +18155,8 @@ function setup(ctx) {
           missing.push("generation");
         if (!mutGranted)
           missing.push("chat_mutation");
+        if (!paramsGranted)
+          missing.push("generation_parameters");
         setLLMStatus(`Requires permission: ${missing.join(", ")}`, "error");
       }
     }
