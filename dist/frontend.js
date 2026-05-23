@@ -17440,6 +17440,9 @@ var PANEL_CSS = `
   .sst-lumi-llm-controls label { font-size: 11px; color: var(--lumiverse-text-muted); display: grid; gap: 5px; }
   .sst-lumi-llm-controls input[type="text"], .sst-lumi-llm-controls input[type="number"], .sst-lumi-llm-controls select { font-size: 12px; padding: 6px 8px; border: 1px solid var(--lumiverse-border); border-radius: 8px; background: var(--lumiverse-fill-subtle); color: var(--lumiverse-text); }
   .sst-lumi-llm-model-mount { width: 100%; }
+  .sst-tracker-generating { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 0; padding: 4px 10px; font-size: 11px; line-height: 1.4; color: var(--lumiverse-text-muted); background: color-mix(in srgb, var(--lumiverse-accent, #7c6aef) 12%, transparent); border: 1px solid color-mix(in srgb, var(--lumiverse-accent, #7c6aef) 30%, transparent); border-radius: 999px; }
+  .sst-tracker-generating::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--lumiverse-accent, #7c6aef); animation: sst-tracker-generating-pulse 1.2s ease-in-out infinite; }
+  @keyframes sst-tracker-generating-pulse { 0%, 100% { opacity: 0.35; transform: scale(0.85); } 50% { opacity: 1; transform: scale(1.1); } }
   .sst-lumi-llm-regenerate { font-size: 11px; padding: 5px 10px; border: 1px solid var(--lumiverse-border); border-radius: 8px; background: var(--lumiverse-fill-subtle); color: var(--lumiverse-text); cursor: pointer; width: fit-content; }
   .sst-lumi-llm-regenerate:disabled { opacity: 0.5; cursor: not-allowed; }
   .sst-lumi-llm-status { font-size: 11px; color: var(--lumiverse-text-muted); min-height: 16px; }
@@ -18063,6 +18066,7 @@ function setup(ctx) {
   const trackerMessageIds = new Set;
   const trackerMessageMounts = new Map;
   const trackerMessageRenders = new Map;
+  const trackerGeneratingIndicators = new Map;
   let stopTrackerObserver = null;
   const inlineProcessor = createInlineTemplateProcessor({
     getConfig: () => ({
@@ -18422,6 +18426,29 @@ function setup(ctx) {
         defaultChecked.checked = true;
     }
   };
+  const showGeneratingIndicator = (messageId) => {
+    const existing = trackerGeneratingIndicators.get(messageId);
+    if (existing && existing.isConnected)
+      return;
+    const messageNode = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (!messageNode)
+      return;
+    const bubbleNode = messageNode.querySelector(':scope > div[class*="bubble"]') || messageNode.querySelector('div[class*="bubble"]') || messageNode;
+    const host = `<div class="sst-tracker-generating" data-sst-generating-id="${messageId}" role="status" aria-live="polite">Generating tracker…</div>`;
+    const mount = ctx.dom.inject(bubbleNode, host, "beforeend");
+    trackerGeneratingIndicators.set(messageId, mount);
+  };
+  const hideGeneratingIndicator = (messageId) => {
+    const mount = trackerGeneratingIndicators.get(messageId);
+    if (mount)
+      mount.remove();
+    trackerGeneratingIndicators.delete(messageId);
+  };
+  const hideAllGeneratingIndicators = () => {
+    for (const [, mount] of trackerGeneratingIndicators)
+      mount.remove();
+    trackerGeneratingIndicators.clear();
+  };
   const sameRenderInputs = (a, data, preset, previousData, mode) => {
     if (!a)
       return false;
@@ -18449,6 +18476,7 @@ function setup(ctx) {
       restoreFormControlState(existingMount);
       return;
     }
+    hideGeneratingIndicator(messageId);
     clearMessageTrackerRender(messageId);
     const messageNode = document.querySelector(`[data-message-id="${messageId}"]`);
     if (!messageNode)
@@ -18491,14 +18519,13 @@ function setup(ctx) {
     renderTracker(parsed, raw, preset, previousTrackerData, (html) => {
       injectIntoPanelBody(html);
     });
-    const effectiveMessageId = messageId || latestTrackerMessageId;
     if (mountMode === "side_left" || mountMode === "side_right") {
       renderTrackerInSidebar(parsed, preset, previousTrackerData, mountMode);
-      if (effectiveMessageId)
-        clearMessageTrackerRender(effectiveMessageId);
-    } else if (effectiveMessageId) {
+      if (messageId)
+        clearMessageTrackerRender(messageId);
+    } else if (messageId) {
       clearSideTrackerRender();
-      renderTrackerIntoMessage(effectiveMessageId, parsed, preset, previousTrackerData, mountMode);
+      renderTrackerIntoMessage(messageId, parsed, preset, previousTrackerData, mountMode);
       pruneNonLatestMessageTrackers();
     }
     previousTrackerData = parsed;
@@ -18571,12 +18598,17 @@ function setup(ctx) {
     if (obj?.type === "secondary_generation_started") {
       setLLMStatus("Generating tracker data...", "generating");
       setStatus("Secondary LLM generating...");
+      const startedId = typeof obj.messageId === "string" ? obj.messageId : null;
+      if (startedId)
+        showGeneratingIndicator(startedId);
       return;
     }
     if (obj?.type === "secondary_generation_complete") {
       setLLMStatus("Generation complete");
       const content = typeof obj.content === "string" ? obj.content : null;
       const messageId = typeof obj.messageId === "string" ? obj.messageId : null;
+      if (messageId)
+        hideGeneratingIndicator(messageId);
       if (content)
         handleContent(content, messageId);
       return;
@@ -18584,6 +18616,9 @@ function setup(ctx) {
     if (obj?.type === "secondary_generation_error") {
       const msg = typeof obj.message === "string" ? obj.message : "Generation failed";
       setLLMStatus(msg, "error");
+      const errorId = typeof obj.messageId === "string" ? obj.messageId : null;
+      if (errorId)
+        hideGeneratingIndicator(errorId);
       return;
     }
     if (obj?.type === "tracker_history_latest") {
@@ -18640,9 +18675,9 @@ function setup(ctx) {
     renderCapabilities(grantedPermissions, requestedPermissions, ephemeralPoolStatus);
     updatePermissionGatedControls();
     if (latestContent) {
-      handleContent(latestContent);
+      handleContent(latestContent, latestTrackerMessageId);
     } else if (latestTrackerRaw) {
-      handleTrackerPayload(latestTrackerRaw, latestTrackerSourceContent || latestTrackerRaw);
+      handleTrackerPayload(latestTrackerRaw, latestTrackerSourceContent || latestTrackerRaw, latestTrackerMessageId);
     } else if (pendingTrackerPayload) {
       const pending = pendingTrackerPayload;
       pendingTrackerPayload = null;
@@ -18734,6 +18769,7 @@ function setup(ctx) {
       trackerMessageIds.delete(context.messageId);
       clearMessageTrackerRender(context.messageId);
     }
+    hideGeneratingIndicator(context.messageId);
     inlineProcessor.clearMessage(context.messageId);
     if (latestTrackerMessageId === context.messageId) {
       latestTrackerMessageId = null;
@@ -18863,6 +18899,7 @@ function setup(ctx) {
       mount.remove();
     trackerMessageMounts.clear();
     trackerMessageRenders.clear();
+    hideAllGeneratingIndicators();
     clearSideTrackerRender();
     inlineProcessor.destroy();
   };
@@ -18904,9 +18941,9 @@ function setup(ctx) {
       identifierInput.value = String(preset.extSettings.codeBlockIdentifier);
     }
     if (latestContent) {
-      handleContent(latestContent);
+      handleContent(latestContent, latestTrackerMessageId);
     } else if (latestTrackerRaw) {
-      handleTrackerPayload(latestTrackerRaw, latestTrackerSourceContent || latestTrackerRaw);
+      handleTrackerPayload(latestTrackerRaw, latestTrackerSourceContent || latestTrackerRaw, latestTrackerMessageId);
     }
     inlineProcessor.processAll();
     setStatus(`Previewing template: ${preset.templateName}`);
@@ -19053,6 +19090,7 @@ function setup(ctx) {
       mount.remove();
     trackerMessageMounts.clear();
     trackerMessageRenders.clear();
+    hideAllGeneratingIndicators();
     if (stopTrackerObserver) {
       stopTrackerObserver();
       stopTrackerObserver = null;

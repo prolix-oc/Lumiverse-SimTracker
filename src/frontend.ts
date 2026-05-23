@@ -602,6 +602,9 @@ const PANEL_CSS = `
   .sst-lumi-llm-controls label { font-size: 11px; color: var(--lumiverse-text-muted); display: grid; gap: 5px; }
   .sst-lumi-llm-controls input[type="text"], .sst-lumi-llm-controls input[type="number"], .sst-lumi-llm-controls select { font-size: 12px; padding: 6px 8px; border: 1px solid var(--lumiverse-border); border-radius: 8px; background: var(--lumiverse-fill-subtle); color: var(--lumiverse-text); }
   .sst-lumi-llm-model-mount { width: 100%; }
+  .sst-tracker-generating { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 0; padding: 4px 10px; font-size: 11px; line-height: 1.4; color: var(--lumiverse-text-muted); background: color-mix(in srgb, var(--lumiverse-accent, #7c6aef) 12%, transparent); border: 1px solid color-mix(in srgb, var(--lumiverse-accent, #7c6aef) 30%, transparent); border-radius: 999px; }
+  .sst-tracker-generating::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--lumiverse-accent, #7c6aef); animation: sst-tracker-generating-pulse 1.2s ease-in-out infinite; }
+  @keyframes sst-tracker-generating-pulse { 0%, 100% { opacity: 0.35; transform: scale(0.85); } 50% { opacity: 1; transform: scale(1.1); } }
   .sst-lumi-llm-regenerate { font-size: 11px; padding: 5px 10px; border: 1px solid var(--lumiverse-border); border-radius: 8px; background: var(--lumiverse-fill-subtle); color: var(--lumiverse-text); cursor: pointer; width: fit-content; }
   .sst-lumi-llm-regenerate:disabled { opacity: 0.5; cursor: not-allowed; }
   .sst-lumi-llm-status { font-size: 11px; color: var(--lumiverse-text-muted); min-height: 16px; }
@@ -1325,6 +1328,7 @@ export function setup(ctx: SpindleFrontendContext) {
     mode: TrackerMountMode;
   };
   const trackerMessageRenders = new Map<string, TrackerRenderInputs>();
+  const trackerGeneratingIndicators = new Map<string, Element>();
   let stopTrackerObserver: (() => void) | null = null;
   const inlineProcessor = createInlineTemplateProcessor({
     getConfig: () => ({
@@ -1714,6 +1718,34 @@ export function setup(ctx: SpindleFrontendContext) {
     }
   };
 
+  const showGeneratingIndicator = (messageId: string) => {
+    // Tag interceptor flag `removeFromMessage` already strips the existing
+    // tracker tag from the bubble before we inject, so the indicator slots
+    // into the same vertical space the new tracker will land in.
+    const existing = trackerGeneratingIndicators.get(messageId);
+    if (existing && existing.isConnected) return;
+    const messageNode = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (!messageNode) return;
+    const bubbleNode =
+      (messageNode.querySelector(':scope > div[class*="bubble"]') as Element | null)
+      || (messageNode.querySelector('div[class*="bubble"]') as Element | null)
+      || (messageNode as Element);
+    const host = `<div class="sst-tracker-generating" data-sst-generating-id="${messageId}" role="status" aria-live="polite">Generating tracker…</div>`;
+    const mount = ctx.dom.inject(bubbleNode, host, "beforeend");
+    trackerGeneratingIndicators.set(messageId, mount);
+  };
+
+  const hideGeneratingIndicator = (messageId: string) => {
+    const mount = trackerGeneratingIndicators.get(messageId);
+    if (mount) mount.remove();
+    trackerGeneratingIndicators.delete(messageId);
+  };
+
+  const hideAllGeneratingIndicators = () => {
+    for (const [, mount] of trackerGeneratingIndicators) mount.remove();
+    trackerGeneratingIndicators.clear();
+  };
+
   // Cheap deep-equality stable enough for tracker payloads (plain JSON shape).
   // Used to short-circuit re-renders when the parsed data hasn't changed —
   // critical during streaming because the tag interceptor fires per chunk.
@@ -1761,7 +1793,9 @@ export function setup(ctx: SpindleFrontendContext) {
     }
 
     // Cold path: first mount, preset switch, mount lost to virtualization,
-    // or mode change — fall through to a clean clear+inject.
+    // or mode change — fall through to a clean clear+inject. Also drop any
+    // in-progress pill, since the real tracker is about to land here.
+    hideGeneratingIndicator(messageId);
     clearMessageTrackerRender(messageId);
     const messageNode = document.querySelector(`[data-message-id="${messageId}"]`);
     if (!messageNode) return;
@@ -1807,13 +1841,22 @@ export function setup(ctx: SpindleFrontendContext) {
     renderTracker(parsed, raw, preset, previousTrackerData, (html) => {
       injectIntoPanelBody(html);
     });
-    const effectiveMessageId = messageId || latestTrackerMessageId;
+    // In-message rendering MUST use the messageId for *this* payload. The
+    // previous `messageId || latestTrackerMessageId` fallback was unsafe:
+    // Lumiverse's tag interceptor declares `messageId` optional, so when it
+    // fires for a brand-new message without one, the new payload was
+    // mounted into the *previous* message's bubble (the still-cached
+    // latestTrackerMessageId). Users saw this as "the new tracker brings
+    // me to the last message" — especially with identical character sets,
+    // where the stale mount visually matched the new data.
+    // Re-applications of an already-mounted tracker (config reload,
+    // template switch) must now pass the messageId explicitly.
     if (mountMode === "side_left" || mountMode === "side_right") {
       renderTrackerInSidebar(parsed, preset, previousTrackerData, mountMode);
-      if (effectiveMessageId) clearMessageTrackerRender(effectiveMessageId);
-    } else if (effectiveMessageId) {
+      if (messageId) clearMessageTrackerRender(messageId);
+    } else if (messageId) {
       clearSideTrackerRender();
-      renderTrackerIntoMessage(effectiveMessageId, parsed, preset, previousTrackerData, mountMode);
+      renderTrackerIntoMessage(messageId, parsed, preset, previousTrackerData, mountMode);
       pruneNonLatestMessageTrackers();
     }
 
@@ -1892,18 +1935,23 @@ export function setup(ctx: SpindleFrontendContext) {
     if (obj?.type === "secondary_generation_started") {
       setLLMStatus("Generating tracker data...", "generating");
       setStatus("Secondary LLM generating...");
+      const startedId = typeof obj.messageId === "string" ? obj.messageId : null;
+      if (startedId) showGeneratingIndicator(startedId);
       return;
     }
     if (obj?.type === "secondary_generation_complete") {
       setLLMStatus("Generation complete");
       const content = typeof obj.content === "string" ? obj.content : null;
       const messageId = typeof obj.messageId === "string" ? obj.messageId : null;
+      if (messageId) hideGeneratingIndicator(messageId);
       if (content) handleContent(content, messageId);
       return;
     }
     if (obj?.type === "secondary_generation_error") {
       const msg = typeof obj.message === "string" ? obj.message : "Generation failed";
       setLLMStatus(msg, "error");
+      const errorId = typeof obj.messageId === "string" ? obj.messageId : null;
+      if (errorId) hideGeneratingIndicator(errorId);
       return;
     }
     if (obj?.type === "tracker_history_latest") {
@@ -1976,9 +2024,9 @@ export function setup(ctx: SpindleFrontendContext) {
     renderCapabilities(grantedPermissions, requestedPermissions, ephemeralPoolStatus);
     updatePermissionGatedControls();
     if (latestContent) {
-      handleContent(latestContent);
+      handleContent(latestContent, latestTrackerMessageId);
     } else if (latestTrackerRaw) {
-      handleTrackerPayload(latestTrackerRaw, latestTrackerSourceContent || latestTrackerRaw);
+      handleTrackerPayload(latestTrackerRaw, latestTrackerSourceContent || latestTrackerRaw, latestTrackerMessageId);
     } else if (pendingTrackerPayload) {
       const pending = pendingTrackerPayload;
       pendingTrackerPayload = null;
@@ -2073,6 +2121,7 @@ export function setup(ctx: SpindleFrontendContext) {
       trackerMessageIds.delete(context.messageId);
       clearMessageTrackerRender(context.messageId);
     }
+    hideGeneratingIndicator(context.messageId);
     inlineProcessor.clearMessage(context.messageId);
     if (latestTrackerMessageId === context.messageId) {
       latestTrackerMessageId = null;
@@ -2203,6 +2252,7 @@ export function setup(ctx: SpindleFrontendContext) {
     for (const mount of trackerMessageMounts.values()) mount.remove();
     trackerMessageMounts.clear();
     trackerMessageRenders.clear();
+    hideAllGeneratingIndicators();
     clearSideTrackerRender();
     inlineProcessor.destroy();
   };
@@ -2256,9 +2306,9 @@ export function setup(ctx: SpindleFrontendContext) {
       identifierInput.value = String(preset.extSettings.codeBlockIdentifier);
     }
     if (latestContent) {
-      handleContent(latestContent);
+      handleContent(latestContent, latestTrackerMessageId);
     } else if (latestTrackerRaw) {
-      handleTrackerPayload(latestTrackerRaw, latestTrackerSourceContent || latestTrackerRaw);
+      handleTrackerPayload(latestTrackerRaw, latestTrackerSourceContent || latestTrackerRaw, latestTrackerMessageId);
     }
     inlineProcessor.processAll();
     setStatus(`Previewing template: ${preset.templateName}`);
@@ -2419,6 +2469,7 @@ export function setup(ctx: SpindleFrontendContext) {
     for (const mount of trackerMessageMounts.values()) mount.remove();
     trackerMessageMounts.clear();
     trackerMessageRenders.clear();
+    hideAllGeneratingIndicators();
     if (stopTrackerObserver) {
       stopTrackerObserver();
       stopTrackerObserver = null;

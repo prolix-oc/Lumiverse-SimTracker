@@ -1646,8 +1646,34 @@ function pushMacroValues(): void {
 }
 
 // ── Secondary LLM Generation ─────────────────────────────────────────
+//
+// We run at most one secondary generation at a time per backend, serialized
+// through a Promise chain. Earlier versions used a `secondaryGenerationInProgress`
+// flag that caused `GENERATION_ENDED` to *drop* subsequent requests if a
+// previous secondary was still in flight — the visible symptom was "the last
+// message sometimes doesn't get a tracker" when the user replied faster than
+// the sidecar could finish.
+let secondaryGenerationChain: Promise<void> = Promise.resolve();
+const queuedSecondaryJobs = new Set<string>();
 
-let secondaryGenerationInProgress = false;
+function enqueueSecondaryGeneration(chatId: string, messageId: string): Promise<void> {
+  const key = `${chatId}::${messageId}`;
+  // Drop duplicate requests for the same (chat, message) while one is queued.
+  // The in-flight job's pre-flight `extractTrackerPayloadFromMessage` check
+  // would no-op anyway once the first run finishes, so this is just hygiene.
+  if (queuedSecondaryJobs.has(key)) return secondaryGenerationChain;
+  queuedSecondaryJobs.add(key);
+  secondaryGenerationChain = secondaryGenerationChain
+    .catch(() => undefined)
+    .then(() => generateTrackerWithSecondaryLLM(chatId, messageId))
+    .catch((err) => {
+      spindle.log.error(`Queued secondary LLM generation failed: ${err instanceof Error ? err.message : String(err)}`);
+    })
+    .finally(() => {
+      queuedSecondaryJobs.delete(key);
+    });
+  return secondaryGenerationChain;
+}
 
 function stripStructuralHTML(text: string): string {
   if (!text) return text;
@@ -1679,7 +1705,6 @@ function describeRejectedModelGuidance(model: string): string {
 }
 
 async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: string): Promise<void> {
-  if (secondaryGenerationInProgress) return;
   if (!config.useSecondaryLLM) return;
   if (!hasPermission("generation")) {
     spindle.log.warn("Secondary LLM generation requires 'generation' permission");
@@ -1697,7 +1722,7 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
     const guidance = "Secondary LLM generation requires the 'generation_parameters' permission so the configured model id reaches the provider. Grant it in SimTracker's permission prompt and try again.";
     spindle.log.warn(guidance);
     spindle.sendToFrontend(
-      { type: "secondary_generation_error", message: guidance },
+      { type: "secondary_generation_error", message: guidance, chatId, messageId: targetMessageId },
       activeUserId || undefined,
     );
     return;
@@ -1712,14 +1737,16 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
     const guidance = describeMissingModelGuidance();
     spindle.log.warn(guidance);
     spindle.sendToFrontend(
-      { type: "secondary_generation_error", message: guidance },
+      { type: "secondary_generation_error", message: guidance, chatId, messageId: targetMessageId },
       activeUserId || undefined,
     );
     return;
   }
 
-  secondaryGenerationInProgress = true;
-  spindle.sendToFrontend({ type: "secondary_generation_started" }, activeUserId || undefined);
+  spindle.sendToFrontend(
+    { type: "secondary_generation_started", chatId, messageId: targetMessageId },
+    activeUserId || undefined,
+  );
 
   try {
     // Ensure the side-channel history is primed for this chat before we
@@ -1839,7 +1866,10 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
     const generatedText = typeof resultObj.content === "string" ? resultObj.content : "";
     if (!generatedText) {
       spindle.log.warn("Secondary LLM returned empty response");
-      spindle.sendToFrontend({ type: "secondary_generation_error", message: "Empty response from LLM" }, activeUserId || undefined);
+      spindle.sendToFrontend(
+        { type: "secondary_generation_error", message: "Empty response from LLM", chatId, messageId: targetMessageId },
+        activeUserId || undefined,
+      );
       return;
     }
 
@@ -1852,7 +1882,10 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
     const parsed = parseTrackerPayload(sanitized);
     if (!parsed) {
       spindle.log.warn("Secondary LLM response could not be parsed as valid tracker data");
-      spindle.sendToFrontend({ type: "secondary_generation_error", message: "LLM response was not valid tracker data" }, activeUserId || undefined);
+      spindle.sendToFrontend(
+        { type: "secondary_generation_error", message: "LLM response was not valid tracker data", chatId, messageId: targetMessageId },
+        activeUserId || undefined,
+      );
       return;
     }
 
@@ -1877,6 +1910,7 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
 
     spindle.sendToFrontend({
       type: "secondary_generation_complete",
+      chatId,
       messageId: targetMessageId,
       content: updatedContent,
     }, activeUserId || undefined);
@@ -1892,10 +1926,11 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
       ? `${rawMessage}\n\n${describeRejectedModelGuidance(trimmedModel)}`
       : rawMessage;
     spindle.log.error(`Secondary LLM generation failed: ${rawMessage}`);
-    spindle.sendToFrontend({ type: "secondary_generation_error", message }, activeUserId || undefined);
+    spindle.sendToFrontend(
+      { type: "secondary_generation_error", message, chatId, messageId: targetMessageId },
+      activeUserId || undefined,
+    );
     await trackEvent("sst.secondary_generation.failed", { error: rawMessage }, { level: "error" });
-  } finally {
-    secondaryGenerationInProgress = false;
   }
 }
 
@@ -1957,7 +1992,7 @@ spindle.on("GENERATION_ENDED", (payload: unknown, userId?: string) => {
       void rehydrateChatTrackerHistory(ctx.chatId);
     }
 
-    if (!config.useSecondaryLLM || secondaryGenerationInProgress) return;
+    if (!config.useSecondaryLLM) return;
     if (!hasPermission("generation") || !hasPermission("chat_mutation")) return;
     if (!ctx.chatId) return;
 
@@ -1981,7 +2016,10 @@ spindle.on("GENERATION_ENDED", (payload: unknown, userId?: string) => {
       return;
     }
 
-    await generateTrackerWithSecondaryLLM(ctx.chatId, latestAssistant.id);
+    // Enqueue serially — never drop a request because a previous secondary
+    // is still in flight, which is what caused "last message sometimes has
+    // no tracker" when users replied faster than the sidecar completed.
+    void enqueueSecondaryGeneration(ctx.chatId, latestAssistant.id);
   })();
 });
 
@@ -2564,7 +2602,7 @@ spindle.onFrontendMessage(async (payload: unknown, userId: string) => {
     const chatId = typeof message.chatId === "string" ? message.chatId : null;
     const messageId = typeof message.messageId === "string" ? message.messageId : null;
     if (chatId && messageId) {
-      await generateTrackerWithSecondaryLLM(chatId, messageId);
+      void enqueueSecondaryGeneration(chatId, messageId);
     }
     return;
   }
@@ -2616,7 +2654,7 @@ spindle.onFrontendMessage(async (payload: unknown, userId: string) => {
       spindle.log.info(`Regenerate: message ${target.id} in chat ${chatId} has no tracker yet — generating fresh`);
     }
 
-    await generateTrackerWithSecondaryLLM(chatId, target.id);
+    void enqueueSecondaryGeneration(chatId, target.id);
     return;
   }
 
