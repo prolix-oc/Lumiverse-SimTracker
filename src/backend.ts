@@ -1818,7 +1818,7 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
     };
 
     spindle.log.info(
-      `Starting secondary LLM generation (model=${trimmedModel}, history=${historicalTrackers.length}, messages=${cleanedMessages.length})`,
+      `Secondary LLM request → chat=${chatId} target=${targetMessageId} connection=${config.secondaryLLMConnectionId || "(default)"} model=${trimmedModel} temperature=${config.secondaryLLMTemperature} history=${historicalTrackers.length} contextMessages=${cleanedMessages.length}`,
     );
     const result = await spindle.generate.raw({
       type: "raw",
@@ -2545,6 +2545,53 @@ spindle.onFrontendMessage(async (payload: unknown, userId: string) => {
     if (chatId && messageId) {
       await generateTrackerWithSecondaryLLM(chatId, messageId);
     }
+    return;
+  }
+
+  if (message.type === "regenerate_secondary_tracker") {
+    const chatId = typeof message.chatId === "string" ? message.chatId : null;
+    const hintedMessageId = typeof message.messageId === "string" ? message.messageId : null;
+    if (!chatId) return;
+    if (!hasPermission("chat_mutation")) {
+      spindle.sendToFrontend(
+        { type: "secondary_generation_error", message: "Regenerate requires 'chat_mutation' permission" },
+        userId,
+      );
+      return;
+    }
+
+    const messages = await spindle.chat.getMessages(chatId);
+    let target = hintedMessageId ? messages.find((m) => m.id === hintedMessageId) || null : null;
+    // If no hint, or the hinted message no longer carries a tracker, find the
+    // most recent assistant message that does. This makes the "regenerate"
+    // affordance resilient to stale frontend state after a swipe/edit.
+    if (!target || target.role !== "assistant" || !extractTrackerPayloadFromMessage(target.content)) {
+      target = null;
+      for (let i = messages.length - 1; i >= 0; i -= 1) {
+        const candidate = messages[i];
+        if (candidate.role === "assistant" && extractTrackerPayloadFromMessage(candidate.content)) {
+          target = candidate;
+          break;
+        }
+      }
+    }
+    if (!target) {
+      spindle.sendToFrontend(
+        { type: "secondary_generation_error", message: "No assistant message with a tracker block was found in this chat." },
+        userId,
+      );
+      return;
+    }
+
+    const tagRe = buildTrackerTagRegex(sanitizeTagName(config.trackerTagName), "gi");
+    const fenceRe = buildTrackerFenceRegex(config.codeBlockIdentifier, "gi");
+    const stripped = target.content.replace(tagRe, "").replace(fenceRe, "").replace(/\n{3,}/g, "\n\n").trimEnd();
+
+    spindle.log.info(`Regenerate: stripping tracker from message ${target.id} in chat ${chatId}`);
+    await spindle.chat.updateMessage(chatId, target.id, { content: stripped });
+    forgetChatTracker(chatId, target.id);
+
+    await generateTrackerWithSecondaryLLM(chatId, target.id);
     return;
   }
 

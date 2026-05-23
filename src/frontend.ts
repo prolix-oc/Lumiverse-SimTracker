@@ -549,6 +549,7 @@ const PANEL_HTML = `
         <label>Context Messages<input id="sst-lumi-llm-msgcount" type="number" min="1" max="50" value="5" /></label>
         <label>Temperature<input id="sst-lumi-llm-temp" type="number" min="0" max="2" step="0.1" value="0.7" /></label>
         <label class="sst-lumi-checkbox"><input id="sst-lumi-llm-strip" type="checkbox" checked />Strip structural HTML from context</label>
+        <button id="sst-lumi-llm-regenerate" type="button" class="sst-lumi-llm-regenerate" disabled>Regenerate Last Tracker</button>
         <div id="sst-lumi-llm-status" class="sst-lumi-llm-status"></div>
       </div>
     </details>
@@ -601,6 +602,8 @@ const PANEL_CSS = `
   .sst-lumi-llm-controls label { font-size: 11px; color: var(--lumiverse-text-muted); display: grid; gap: 5px; }
   .sst-lumi-llm-controls input[type="text"], .sst-lumi-llm-controls input[type="number"], .sst-lumi-llm-controls select { font-size: 12px; padding: 6px 8px; border: 1px solid var(--lumiverse-border); border-radius: 8px; background: var(--lumiverse-fill-subtle); color: var(--lumiverse-text); }
   .sst-lumi-llm-model-mount { width: 100%; }
+  .sst-lumi-llm-regenerate { font-size: 11px; padding: 5px 10px; border: 1px solid var(--lumiverse-border); border-radius: 8px; background: var(--lumiverse-fill-subtle); color: var(--lumiverse-text); cursor: pointer; width: fit-content; }
+  .sst-lumi-llm-regenerate:disabled { opacity: 0.5; cursor: not-allowed; }
   .sst-lumi-llm-status { font-size: 11px; color: var(--lumiverse-text-muted); min-height: 16px; }
   .sst-lumi-llm-status.sst-generating { color: var(--lumiverse-accent, #7c6aef); }
   .sst-lumi-llm-status.sst-error { color: #ff6b6b; }
@@ -1413,6 +1416,18 @@ export function setup(ctx: SpindleFrontendContext) {
 
   const hasPermission = (name: string): boolean => grantedPermissions.includes(name);
 
+  const updateRegenerateButton = () => {
+    const btn = byId<HTMLButtonElement>("sst-lumi-llm-regenerate");
+    if (!btn) return;
+    const llmAvailable =
+      hasPermission("generation") && hasPermission("chat_mutation") && hasPermission("generation_parameters");
+    const hasTarget = Boolean(latestTrackerMessageId);
+    btn.disabled = !(config.useSecondaryLLM && llmAvailable && hasTarget);
+    btn.title = btn.disabled
+      ? "Regenerate becomes available once a tracker is rendered for the latest assistant message"
+      : "Strip the existing tracker block and ask the secondary LLM to produce a fresh one";
+  };
+
   const updatePermissionGatedControls = () => {
     const llmSection = byId<HTMLDetailsElement>("sst-lumi-llm-section");
     const llmEnable = byId<HTMLInputElement>("sst-lumi-llm-enable");
@@ -1431,6 +1446,7 @@ export function setup(ctx: SpindleFrontendContext) {
         setLLMStatus(`Requires permission: ${missing.join(", ")}`, "error");
       }
     }
+    updateRegenerateButton();
   };
 
   const applyTagInterceptor = () => {
@@ -1492,6 +1508,7 @@ export function setup(ctx: SpindleFrontendContext) {
     if (llmStrip) llmStrip.checked = config.secondaryLLMStripHTML;
     populateConnectionDropdown();
     ensureModelCombobox()?.update({ value: config.secondaryLLMModel });
+    updateRegenerateButton();
     renderInlinePacksList();
   };
 
@@ -1574,6 +1591,7 @@ export function setup(ctx: SpindleFrontendContext) {
       trackerMessageRenders.delete(id);
     }
     if (latestId) latestTrackerMessageId = latestId;
+    updateRegenerateButton();
   };
 
   const clearSideTrackerRender = () => {
@@ -1728,6 +1746,7 @@ export function setup(ctx: SpindleFrontendContext) {
     if (messageId) {
       trackerMessageIds.add(messageId);
       latestTrackerMessageId = messageId;
+      updateRegenerateButton();
     }
     const preset = getPresetById(config, config.templateId);
     const mountMode = resolveTrackerMountMode(preset);
@@ -1769,6 +1788,7 @@ export function setup(ctx: SpindleFrontendContext) {
         if (latestTrackerMessageId === messageId) {
           latestTrackerMessageId = null;
           wasLatest = true;
+          updateRegenerateButton();
         }
       }
       if (wasLatest) {
@@ -2106,6 +2126,7 @@ export function setup(ctx: SpindleFrontendContext) {
     latestTrackerSourceContent = null;
     latestContent = null;
     trackerMessageIds.clear();
+    updateRegenerateButton();
     for (const mount of trackerMessageMounts.values()) mount.remove();
     trackerMessageMounts.clear();
     trackerMessageRenders.clear();
@@ -2238,6 +2259,20 @@ export function setup(ctx: SpindleFrontendContext) {
   llmConnectionSelect?.addEventListener("change", () => {
     ensureModelCombobox()?.update({
       connection: buildConnectionRef(llmConnectionSelect.value),
+    });
+  });
+
+  const llmRegenerateBtn = byId<HTMLButtonElement>("sst-lumi-llm-regenerate");
+  llmRegenerateBtn?.addEventListener("click", () => {
+    if (!currentChatId || !latestTrackerMessageId) {
+      setLLMStatus("No tracker available to regenerate", "error");
+      return;
+    }
+    setLLMStatus("Regenerating tracker...", "generating");
+    ctx.sendToBackend({
+      type: "regenerate_secondary_tracker",
+      chatId: currentChatId,
+      messageId: latestTrackerMessageId,
     });
   });
 
