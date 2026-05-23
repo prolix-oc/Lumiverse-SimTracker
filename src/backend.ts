@@ -2561,23 +2561,23 @@ spindle.onFrontendMessage(async (payload: unknown, userId: string) => {
     }
 
     const messages = await spindle.chat.getMessages(chatId);
-    let target = hintedMessageId ? messages.find((m) => m.id === hintedMessageId) || null : null;
-    // If no hint, or the hinted message no longer carries a tracker, find the
-    // most recent assistant message that does. This makes the "regenerate"
-    // affordance resilient to stale frontend state after a swipe/edit.
-    if (!target || target.role !== "assistant" || !extractTrackerPayloadFromMessage(target.content)) {
-      target = null;
+    let target = hintedMessageId
+      ? messages.find((m) => m.id === hintedMessageId && m.role === "assistant") || null
+      : null;
+    // Fall back to the most recent assistant message — whether or not it
+    // already carries a tracker — so the user can ask for a fresh generation
+    // even on a message that's never been processed yet.
+    if (!target) {
       for (let i = messages.length - 1; i >= 0; i -= 1) {
-        const candidate = messages[i];
-        if (candidate.role === "assistant" && extractTrackerPayloadFromMessage(candidate.content)) {
-          target = candidate;
+        if (messages[i].role === "assistant") {
+          target = messages[i];
           break;
         }
       }
     }
     if (!target) {
       spindle.sendToFrontend(
-        { type: "secondary_generation_error", message: "No assistant message with a tracker block was found in this chat." },
+        { type: "secondary_generation_error", message: "No assistant message was found in this chat to regenerate." },
         userId,
       );
       return;
@@ -2585,11 +2585,15 @@ spindle.onFrontendMessage(async (payload: unknown, userId: string) => {
 
     const tagRe = buildTrackerTagRegex(sanitizeTagName(config.trackerTagName), "gi");
     const fenceRe = buildTrackerFenceRegex(config.codeBlockIdentifier, "gi");
-    const stripped = target.content.replace(tagRe, "").replace(fenceRe, "").replace(/\n{3,}/g, "\n\n").trimEnd();
-
-    spindle.log.info(`Regenerate: stripping tracker from message ${target.id} in chat ${chatId}`);
-    await spindle.chat.updateMessage(chatId, target.id, { content: stripped });
-    forgetChatTracker(chatId, target.id);
+    const hadTracker = extractTrackerPayloadFromMessage(target.content) !== null;
+    if (hadTracker) {
+      const stripped = target.content.replace(tagRe, "").replace(fenceRe, "").replace(/\n{3,}/g, "\n\n").trimEnd();
+      spindle.log.info(`Regenerate: stripping existing tracker from message ${target.id} in chat ${chatId}`);
+      await spindle.chat.updateMessage(chatId, target.id, { content: stripped });
+      forgetChatTracker(chatId, target.id);
+    } else {
+      spindle.log.info(`Regenerate: message ${target.id} in chat ${chatId} has no tracker yet — generating fresh`);
+    }
 
     await generateTrackerWithSecondaryLLM(chatId, target.id);
     return;

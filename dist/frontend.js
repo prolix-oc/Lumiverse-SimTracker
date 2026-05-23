@@ -18078,6 +18078,7 @@ function setup(ctx) {
   let ephemeralPoolStatus = null;
   let connections = [];
   let modelCombobox = null;
+  let currentChatId = null;
   const removePanelStyle = ctx.dom.addStyle(PANEL_CSS);
   const mountRoot = ctx.ui.mount("settings_extensions");
   const stalePanels = document.querySelectorAll("#sst-lumi-panel");
@@ -18146,9 +18147,8 @@ function setup(ctx) {
     if (!btn)
       return;
     const llmAvailable = hasPermission("generation") && hasPermission("chat_mutation") && hasPermission("generation_parameters");
-    const hasTarget = Boolean(latestTrackerMessageId);
-    btn.disabled = !(config.useSecondaryLLM && llmAvailable && hasTarget);
-    btn.title = btn.disabled ? "Regenerate becomes available once a tracker is rendered for the latest assistant message" : "Strip the existing tracker block and ask the secondary LLM to produce a fresh one";
+    btn.disabled = !(config.useSecondaryLLM && llmAvailable && currentChatId);
+    btn.title = btn.disabled ? "Regenerate becomes available once a chat is open and the secondary LLM is enabled" : latestTrackerMessageId ? "Strip the existing tracker block and ask the secondary LLM to produce a fresh one" : "Run the secondary LLM against the latest assistant message";
   };
   const updatePermissionGatedControls = () => {
     const llmSection = byId("sst-lumi-llm-section");
@@ -18640,11 +18640,11 @@ function setup(ctx) {
     const nested = obj.message;
     return typeof nested?.chatId === "string" ? nested.chatId : typeof nested?.chat_id === "string" ? nested.chat_id : null;
   };
-  let currentChatId = null;
   const handleChatSwitch = (chatId) => {
     if (!chatId || chatId === currentChatId)
       return;
     currentChatId = chatId;
+    updateRegenerateButton();
     resetChatState();
     renderEmpty("When a message includes a tracker tag, cards will appear here.");
     if (!rehydratedChatIds.has(chatId)) {
@@ -18935,15 +18935,15 @@ function setup(ctx) {
   });
   const llmRegenerateBtn = byId("sst-lumi-llm-regenerate");
   llmRegenerateBtn?.addEventListener("click", () => {
-    if (!currentChatId || !latestTrackerMessageId) {
-      setLLMStatus("No tracker available to regenerate", "error");
+    if (!currentChatId) {
+      setLLMStatus("Open a chat first to regenerate", "error");
       return;
     }
     setLLMStatus("Regenerating tracker...", "generating");
     ctx.sendToBackend({
       type: "regenerate_secondary_tracker",
       chatId: currentChatId,
-      messageId: latestTrackerMessageId
+      messageId: latestTrackerMessageId ?? undefined
     });
   });
   ctx.permissions.getGranted().then((granted) => {
