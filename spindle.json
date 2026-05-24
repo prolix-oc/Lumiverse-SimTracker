@@ -27,5 +27,5 @@
     }
   ],
   "requested_capabilities": ["base64_decode"],
-  "minimum_lumiverse_version": "1.0.0"
+  "minimum_lumiverse_version": "1.0.1"
 }

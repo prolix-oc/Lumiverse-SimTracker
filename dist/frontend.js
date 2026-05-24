@@ -18067,7 +18067,6 @@ function setup(ctx) {
   const trackerMessageMounts = new Map;
   const trackerMessageRenders = new Map;
   const trackerGeneratingIndicators = new Map;
-  let stopTrackerObserver = null;
   const inlineProcessor = createInlineTemplateProcessor({
     getConfig: () => ({
       enableInlineTemplates: config.enableInlineTemplates,
@@ -18300,26 +18299,23 @@ function setup(ctx) {
   const clearMessageTrackerRender = (messageId) => {
     const mount = trackerMessageMounts.get(messageId);
     if (mount) {
-      mount.remove();
+      ctx.dom.uninject(mount);
       trackerMessageMounts.delete(messageId);
     }
     trackerMessageRenders.delete(messageId);
   };
   const pruneNonLatestMessageTrackers = () => {
-    const allHosts = document.querySelectorAll("[data-sst-message-tracker-id]");
-    if (allHosts.length <= 1)
+    const latestId = ctx.messages.getLatestMessageId();
+    if (!latestId)
       return;
-    const latestHost = allHosts[allHosts.length - 1];
-    const latestId = latestHost.getAttribute("data-sst-message-tracker-id");
     for (const [id, mount] of trackerMessageMounts) {
       if (id === latestId)
         continue;
-      mount.remove();
+      ctx.dom.uninject(mount);
       trackerMessageMounts.delete(id);
       trackerMessageRenders.delete(id);
     }
-    if (latestId)
-      latestTrackerMessageId = latestId;
+    latestTrackerMessageId = latestId;
     updateRegenerateButton();
   };
   const clearSideTrackerRender = () => {
@@ -18430,7 +18426,7 @@ function setup(ctx) {
     const existing = trackerGeneratingIndicators.get(messageId);
     if (existing && existing.isConnected)
       return;
-    const messageNode = document.querySelector(`[data-message-id="${messageId}"]`);
+    const messageNode = ctx.dom.findMessageElement(messageId);
     if (!messageNode)
       return;
     const bubbleNode = messageNode.querySelector(':scope > div[class*="bubble"]') || messageNode.querySelector('div[class*="bubble"]') || messageNode;
@@ -18441,12 +18437,12 @@ function setup(ctx) {
   const hideGeneratingIndicator = (messageId) => {
     const mount = trackerGeneratingIndicators.get(messageId);
     if (mount)
-      mount.remove();
+      ctx.dom.uninject(mount);
     trackerGeneratingIndicators.delete(messageId);
   };
   const hideAllGeneratingIndicators = () => {
     for (const [, mount] of trackerGeneratingIndicators)
-      mount.remove();
+      ctx.dom.uninject(mount);
     trackerGeneratingIndicators.clear();
   };
   const sameRenderInputs = (a, data, preset, previousData, mode) => {
@@ -18478,7 +18474,7 @@ function setup(ctx) {
     }
     hideGeneratingIndicator(messageId);
     clearMessageTrackerRender(messageId);
-    const messageNode = document.querySelector(`[data-message-id="${messageId}"]`);
+    const messageNode = ctx.dom.findMessageElement(messageId);
     if (!messageNode)
       return;
     const bubbleNode = messageNode.querySelector(':scope > div[class*="bubble"]') || messageNode.querySelector('div[class*="bubble"]') || messageNode;
@@ -18794,99 +18790,6 @@ function setup(ctx) {
         handleTrackerPayload(raw, raw, msgId);
     }
   };
-  const observeTrackerHosts = () => {
-    const pending = new Set;
-    let scheduled = false;
-    const flush = () => {
-      scheduled = false;
-      for (const id of pending) {
-        const inputs = trackerMessageRenders.get(id);
-        if (!inputs)
-          continue;
-        const messageNode = document.querySelector(`[data-message-id="${id}"]`);
-        if (!messageNode)
-          continue;
-        const existingHost = document.querySelector(`[data-sst-message-tracker-id="${id}"]`);
-        if (existingHost && existingHost.isConnected) {
-          restoreFormControlState(existingHost);
-          continue;
-        }
-        const tracked = trackerMessageMounts.get(id);
-        if (tracked && !tracked.isConnected)
-          trackerMessageMounts.delete(id);
-        renderTrackerIntoMessage(id, inputs.data, inputs.preset, inputs.previousData, inputs.mode);
-      }
-      pending.clear();
-    };
-    const schedule = () => {
-      if (scheduled)
-        return;
-      scheduled = true;
-      queueMicrotask(flush);
-    };
-    const collectMessageIdsInNode = (node) => {
-      const ids = [];
-      if (!(node instanceof Element))
-        return ids;
-      if (node.hasAttribute("data-message-id")) {
-        const id = node.getAttribute("data-message-id");
-        if (id)
-          ids.push(id);
-      }
-      const nested = node.querySelectorAll?.("[data-message-id]");
-      if (nested) {
-        for (let i = 0;i < nested.length; i += 1) {
-          const id = nested[i].getAttribute("data-message-id");
-          if (id)
-            ids.push(id);
-        }
-      }
-      return ids;
-    };
-    const isOurHost = (node) => node instanceof Element && node.hasAttribute?.("data-sst-message-tracker-id");
-    const observer = new MutationObserver((mutations) => {
-      for (const m of mutations) {
-        if (m.target instanceof Element && m.target.closest?.("[data-sst-message-tracker-id]"))
-          continue;
-        if (m.type === "childList") {
-          for (const node of Array.from(m.addedNodes)) {
-            if (isOurHost(node))
-              continue;
-            for (const id of collectMessageIdsInNode(node)) {
-              if (trackerMessageRenders.has(id))
-                pending.add(id);
-            }
-          }
-          for (const node of Array.from(m.removedNodes)) {
-            if (isOurHost(node)) {
-              const id = node.getAttribute("data-sst-message-tracker-id");
-              if (id && trackerMessageRenders.has(id))
-                pending.add(id);
-            }
-          }
-          if (m.target instanceof Element) {
-            const msgHost = m.target.closest?.("[data-message-id]");
-            const id = msgHost?.getAttribute?.("data-message-id");
-            if (id && trackerMessageRenders.has(id))
-              pending.add(id);
-          }
-        } else if (m.type === "attributes" && m.target instanceof Element && m.attributeName === "data-message-id") {
-          const id = m.target.getAttribute("data-message-id");
-          if (id && trackerMessageRenders.has(id))
-            pending.add(id);
-        }
-      }
-      if (pending.size > 0)
-        schedule();
-    });
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["data-message-id"]
-    });
-    return () => observer.disconnect();
-  };
   const resetChatState = () => {
     previousTrackerData = null;
     latestTrackerMessageId = null;
@@ -18896,7 +18799,7 @@ function setup(ctx) {
     trackerMessageIds.clear();
     updateRegenerateButton();
     for (const mount of trackerMessageMounts.values())
-      mount.remove();
+      ctx.dom.uninject(mount);
     trackerMessageMounts.clear();
     trackerMessageRenders.clear();
     hideAllGeneratingIndicators();
@@ -18918,7 +18821,6 @@ function setup(ctx) {
     handleChatSwitch(chatId);
   });
   const stopInlineObserver = inlineProcessor.observeDocument();
-  stopTrackerObserver = observeTrackerHosts();
   const permissionUnsub = ctx.events.on("PERMISSION_CHANGED", (detail) => {
     if (!detail || typeof detail !== "object")
       return;
@@ -19087,14 +18989,10 @@ function setup(ctx) {
       removeTagInterceptor();
     clearSideTrackerRender();
     for (const mount of trackerMessageMounts.values())
-      mount.remove();
+      ctx.dom.uninject(mount);
     trackerMessageMounts.clear();
     trackerMessageRenders.clear();
     hideAllGeneratingIndicators();
-    if (stopTrackerObserver) {
-      stopTrackerObserver();
-      stopTrackerObserver = null;
-    }
     inlineProcessor.destroy();
     removePanelStyle();
     ctx.dom.cleanup();
