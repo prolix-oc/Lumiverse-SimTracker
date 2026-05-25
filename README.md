@@ -1,75 +1,80 @@
 # Silly Sim Tracker
 
-A powerful Lumiverse extension that dynamically renders visually appealing tracker cards based on JSON data embedded in character messages. Perfect for dating sims, RPGs, or any scenario where you need to track character stats, relationships, and story progression.
+A Lumiverse extension that renders visually rich tracker cards from structured data embedded in character messages. Built for dating sims, RPGs, slice-of-life roleplay, or any scenario where you want to track character stats, relationships, biology, and story progression at a glance.
 
 ![Silly Sim Tracker Demo](screenshots/2char.png)
 
 ## Installation
 
-1. **Copy the Extension Link**
-   - Copy the repo URL (`https://github.com/prolix-oc/Lumiverse-SimTracker`) and keep it in your clipboard
-
-2. **Install in Lumiverse**
-   - Open the extensions tab (Puzzle piece icon)
-   - Click on "Install"
-   - Paste URL into repo URL field.
-   - Press "Install"
-
-3. **Verify Installation**
-   - The extension should now appear in your Lumiverse extensions list
-   - You can access the configuration panel through the Extensions drawer
+1. **Copy the repo URL**: `https://github.com/prolix-oc/Lumiverse-SimTracker`
+2. **Open Lumiverse → Extensions** (puzzle-piece icon).
+3. **Click Install**, paste the URL, and confirm.
+4. The extension appears in your installed list, and a configuration panel is available from the Extensions drawer.
 
 ## Features
 
-### Core Functionality
-- **Dynamic Tracker Cards**: Automatically generates beautiful, responsive tracker cards from JSON data in character messages
-- **Flexible Data Structure**: Supports both simple and complex data formats with automatic migration tools
-- **Real-time Rendering**: Cards update instantly as new messages are received
-- **Multi-Character Support**: Display stats for multiple characters in a single message
+### Core
+- **Dynamic tracker cards** rendered from tracker data emitted by the LLM in each turn.
+- **Multi-character support** — display stats for several characters per message, with tabbed and non-tabbed layouts.
+- **Real-time rendering** — cards update as new messages stream in.
+- **Flexible data shapes** — both JSON and YAML are accepted; the parser normalizes both into the canonical character-array form.
 
-### Customization Options
-- **Customizable Templates**: Choose from built-in templates or create your own custom HTML templates
-- **Flexible Styling**: Adjust colors, layouts, and visual elements to match your preferences
-- **Configurable Code Blocks**: Set your own identifier for sim data blocks (default: "sim")
-- **Thought Bubble Display**: Toggle visibility of character internal thoughts
-- **Card Color Customization**: Set default background colors with automatic dark variants
+### Customization
+- **Multiple built-in templates** — Bento Style, Pulse Thread, Dating Sim (multiple positions/layouts), Omni-Tracker RPG Edition, Tactical HUD, and more.
+- **Custom fields** — define your own data fields and the system prompt automatically describes them to the LLM.
+- **Card color customization** — per-character background colors with automatic dark variants.
+- **Optional thought bubbles** — toggle the per-character `internal_thought` display.
+- **Inline data hiding** — keep the visual cards while stripping the raw tracker tag from chat display.
 
-### Advanced Features
-- **JSON Format Migration**: Convert legacy data formats to the improved structure with one click
-- **Slash Command Support**: Use `/sst-convert` to migrate all data in the current chat
-- **Macro Integration**: Includes `{{sim_tracker}}` and `{{last_sim_stats}}` macros for prompt engineering
-- **Data Hiding**: Option to hide raw JSON code blocks while keeping the visual cards
-- **Custom Fields Definition**: Define your own data fields for use in templates and prompts
-- **YAML/JSON Format Switching**: Choose between JSON and YAML formats for your tracker blocks with automatic parsing of both formats
+### Wire format
+The canonical format is an **XML tag** in the assistant's reply:
 
-### Template System
-- **Handlebars.js Templates**: Powerful templating engine for creating rich, dynamic cards
-- **Built-in Helpers**: Custom helpers like `eq` and `gt` for conditional logic in templates
-- **Responsive Design**: Cards automatically adapt to mobile and desktop layouts
-- **Visual Indicators**: Color-coded change indicators for stat modifications
-- **Status Icons**: Automatic emoji-based status indicators for health, reactions, and inactivity
-- **Positionable Templates**: Templates can define their display position (Above, Bottom, Left, Right, or Macro replacement)
-- **Multiple Built-in Templates**: Choose from different designs including sleek sidebar templates and tabbed interfaces
-- **Tabbed Interface**: Navigate between multiple character cards using tabs with smooth slide animations
-
-### Data Structure
-Supports both legacy and modern JSON formats:
-
-**Legacy Format**:
-```json
+```xml
+<tracker type="sim">
 {
-  "current_date": "2025-08-10",
-  "current_time": "14:30",
-  "Alice": {
-    "ap": 75,
-    "dp": 60,
-    "tp": 80,
-    "cp": 20
-  }
+  "worldData": { "current_date": "2025-08-10", "current_time": "14:30" },
+  "characters": [
+    { "name": "Alice", "ap": 75, "dp": 60, "tp": 80, "cp": 20 }
+  ]
 }
+</tracker>
 ```
 
-**Modern Format** (recommended):
+The `type` attribute matches your configured code-block identifier (default: `sim`). YAML is accepted inside the tag as well as JSON. The backend tolerates and migrates older formats (legacy flat maps like `{ "Alice": { ... } }` and hidden-div wrappers) automatically.
+
+### Slash commands
+- `/sst-add` — insert a tracker tag into the latest assistant message.
+- `/sst-convert` — convert any tracker block in the current chat to the canonical XML-tag form.
+- `/sst-regen` — re-generate the tracker block on the latest message via the secondary LLM.
+
+### Macros
+- `{{sim_tracker}}` — expands to the active preset's system prompt at send time.
+- `{{last_sim_stats}}` — expands to the most recent tracker payload from this chat's history (survives message deletion via a backend side-channel).
+
+### Templates & positioning
+Templates can declare their preferred mount position with an HTML comment at the top:
+
+```html
+<!-- POSITION: LEFT -->
+```
+
+Recognized values:
+- `TOP` — above the message body.
+- `BOTTOM` — below the message body (default).
+- `LEFT` — fixed left sidebar.
+- `RIGHT` — fixed right sidebar.
+
+If a template doesn't declare a position, the position from the settings panel is used. Side-mounted templates render in a vertically-centered container that adapts to viewport size.
+
+### Handlebars + DOM helpers
+Templates are Handlebars. Built-in helpers cover comparison, math, string formatting, color manipulation, and **DOM measurement** (so a template can size itself to viewport or sidebar width). See `docs/template-guide-handlebars-helpers.md` and `docs/template-guide-dom-helpers.md`.
+
+### Inline template packs
+"Packs" are lightweight inline-display bundles applied globally on top of the active template — useful for one-off message decorations independent of the main tracker. Importable as JSON. See `docs/template-guide-inline-packs.md`.
+
+## Data structure
+
+### Modern (recommended)
 ```json
 {
   "worldData": {
@@ -77,18 +82,12 @@ Supports both legacy and modern JSON formats:
     "current_time": "14:30"
   },
   "characters": [
-    {
-      "name": "Alice",
-      "ap": 75,
-      "dp": 60,
-      "tp": 80,
-      "cp": 20
-    }
+    { "name": "Alice", "ap": 75, "dp": 60, "tp": 80, "cp": 20 }
   ]
 }
 ```
 
-**YAML Format** (alternative):
+### YAML (equivalent)
 ```yaml
 worldData:
   current_date: "2025-08-10"
@@ -101,125 +100,86 @@ characters:
     cp: 20
 ```
 
-## Usage Examples
-
-### Single Character Card
-![Single Character Demo](screenshots/single-char.png)
-
-### Multi-Character Cards
-![Multi-Character Demo](screenshots/2char.png)
-
-### Inactive Character Display
-![Inactive Character Demo](screenshots/2char-1inactive.png)
+### Legacy flat-map (still parsed)
+```json
+{
+  "current_date": "2025-08-10",
+  "current_time": "14:30",
+  "Alice": { "ap": 75, "dp": 60, "tp": 80, "cp": 20 }
+}
+```
+Legacy data is auto-normalized to the modern shape on parse. Use `/sst-convert` to rewrite chat history in place.
 
 ## Configuration
 
-The extension offers extensive configuration options through the Lumiverse settings panel:
+Settings live in the Lumiverse extension panel:
 
-1. **Enable/Disable**: Master switch to turn the extension on or off
-2. **Code Block Identifier**: Customize the keyword used to identify sim data blocks
-3. **Default Card Color**: Set the background color for cards
-4. **Thought Bubble Visibility**: Toggle display of character thoughts
-5. **Template Selection**: Choose from built-in templates or load custom ones
-6. **Template Position**: Choose where cards should be displayed (can be overridden by templates)
-7. **Custom Fields**: Define your own data fields for tracking
-8. **Data Hiding**: Hide raw JSON code blocks from chat display
-9. **System Prompt**: Customize the base prompt for sim tracking
+1. **Template** — pick from the bundled presets or any imported user preset.
+2. **Tracker tag** — name of the XML tag the parser looks for (default `tracker`).
+3. **Identifier** — value of the `type` attribute / code-block fence (default `sim`).
+4. **Preferred format** — JSON or YAML (parser accepts both regardless).
+5. **Default card color** — base background color for cards; per-character `bg` overrides.
+6. **Thought bubbles** — show/hide `internal_thought`.
+7. **Hide raw tracker blocks** — strip the source tag from chat display.
+8. **Custom fields** — declare additional fields surfaced to the LLM in the system prompt.
+9. **System prompt** — the preset's prompt (editable per-template).
+10. **Inline template packs** — import / enable per-pack global decorations.
 
-### Default Settings
+### Built-in templates
 
-For first-time users, the extension comes with a comprehensive set of default settings:
+| Preset | Style | Position |
+|---|---|---|
+| Bento Style Tracker (default) | Card grid | Bottom |
+| Dating Sim Tracker (variants) | Card / sidebar | Top / Bottom / Left / Right / Tabbed |
+| Pulse Thread Tracker | Compact narrative panel with fertility/biology gauges | Bottom |
+| Omni-Tracker: RPG Edition | RPG-style stat sidebar | Right (sidebar, tabbed) |
+| Tactical Combat HUD | HUD-style combat panel | Right (sidebar, tabbed) |
+| Wide Style Tracker | Wide card | Bottom |
+| Disposition Tracker | Disposition-focused sidebar | Right (sidebar, tabbed) |
+| Message Replacement (Macro) | Inline replacement via `{{sim_tracker_positioned}}` macro in the message | Inline |
 
-- **Code Block Identifier**: "sim"
-- **Default Card Color**: #6a5acd (a pleasant purple)
-- **Template**: Dating Sim Tracker (built-in)
-- **Default Fields**: A rich set of fields for tracking character relationships including:
-  - Affection Points (AP)
-  - Desire Points (DP)
-  - Trust Points (TP)
-  - Contempt Points (CP)
-  - Change tracking for each stat
-  - Relationship and desire status text
-  - Pregnancy tracking
-  - Health status
-  - Background color customization
-  - Reaction tracking
-  - Internal thoughts
-  - Day counter
-  - Inactivity tracking with reasons
+Additional presets are seeded into Lumiverse storage on first install and appear in the template dropdown alongside built-ins.
 
-These defaults provide a solid foundation for most dating sim scenarios, but can be fully customized to suit your specific needs.
+## Preset import / export
 
-### Template Positioning
+The settings panel exposes:
 
-Templates can define their preferred position using HTML comments. The positioning options are:
+- **Export Preset** — bundles the current template HTML, prompt, custom fields, and settings into a JSON file you can share.
+- **Import Preset** — loads a preset JSON, saves it as a user preset, and selects it.
+- **Import Inline Pack** — installs an inline-display pack from JSON.
 
-- **TOP**: Display the tracker above the message content (inside the message block)
-- **BOTTOM**: Display the tracker below the message content (default)
-- **LEFT**: Display the tracker in a fixed sidebar on the left side of the screen
-- **RIGHT**: Display the tracker in a fixed sidebar on the right side of the screen
-- **MACRO**: Replace a specific macro (`{{sim_tracker_positioned}}`) in the message content
+User-imported presets live alongside built-ins in the template dropdown and persist via Spindle storage.
 
-To set a position in your template, add a comment like this at the top of your template file:
-```html
-<!-- POSITION: LEFT -->
+## Authoring custom templates
+
+The `template-helper.js` script extracts/assembles template bundles for development:
+
+```bash
+# Extract a bundled template into editable parts
+node template-helper.js extract tracker-card-templates/pulse-thread-tracker.json
+
+# Edit extracted/pulse-thread-tracker/{template.html,prompt.md,fields.json,settings.json}
+
+# Reassemble back into a single JSON
+node template-helper.js assemble extracted/pulse-thread-tracker/assemble-config.json \
+  --out tracker-card-templates/pulse-thread-tracker.json
 ```
 
-If no position is specified in the template, the extension will use the position selected in the settings panel.
+See the guides in `docs/`:
+- `template-guide-handlebars-helpers.md` — every Handlebars helper available.
+- `template-guide-dom-helpers.md` — viewport/sidebar measurement helpers.
+- `template-guide-positioned-cards.md` — top/bottom/macro-positioned card templates.
+- `template-guide-non-tabbed-sidebar.md` — single-character sidebar templates.
+- `template-guide-tabbed-sidebar.md` — multi-character tabbed sidebar templates.
+- `template-guide-inline-packs.md` — inline-display packs.
 
-The LEFT and RIGHT positioning options now use a vertically-stretched container that centers the tracker cards vertically while maintaining their natural width, providing a more consistent and visually appealing layout.
+## Build
 
-### Positioning Examples
+This repo ships pre-built `dist/backend.js` and `dist/frontend.js`. To rebuild:
 
-1. **TOP Positioning**: The tracker will appear at the top of the message block, above the reasoning details.
-2. **MACRO Positioning**: The tracker will replace the `{{sim_tracker_positioned}}` macro wherever it appears in your message.
+```bash
+bun install
+bun run build
+```
 
-These positioning options give you fine-grained control over where your tracker cards appear in relation to your messages.
-
-### Built-in Templates
-
-The extension includes several built-in templates for different use cases:
-
-1. **Default Template**: A clean, responsive design that works well in most situations
-2. **Sidebar Templates**: Sleek designs optimized for display in sidebars with progress bars and glass-morphism effects
-   - **Right Sidebar**: Positioned on the right side of the screen
-   - **Left Sidebar**: Positioned on the left side of the screen
-3. **Tabbed Interface Templates**: Alternative sidebar designs with tabbed navigation for multiple characters
-   - **Right Sidebar with Tabs**: Tabbed interface on the right side of the screen
-   - **Left Sidebar with Tabs**: Tabbed interface on the left side of the screen
-4. **Positionable Template**: A template that demonstrates the macro positioning feature
-
-To use a built-in template, simply select it from the template selection dropdown in the settings panel.
-
-## Template Preset Import/Export
-
-The extension now supports importing and exporting template presets, making it easy to share your custom tracker setups with others or back up your configurations.
-
-### Exporting a Preset
-
-1. Configure your template and settings as desired
-2. In the extension settings panel, click the "Export Preset" button
-3. In the export dialog, you can:
-   - Set a name and author for your template
-   - Choose the template position
-   - Select which components to include (System Prompt, Custom Fields, Extension Settings)
-4. Click "Export" to download a JSON file containing your preset
-5. The preset is also saved locally for future use
-
-### Importing a Preset
-
-1. Obtain a preset JSON file (either one you exported or one shared by another user)
-2. In the extension settings panel, click the "Import Preset" button
-3. Select the preset JSON file from your computer
-4. The extension will automatically apply all settings from the preset
-5. The preset is also saved locally for future use
-
-### Managing Presets
-
-1. In the extension settings panel, click the "Manage Presets" button
-2. In the modal that appears, you can:
-   - See a list of all your saved presets
-   - Apply any preset with the "Apply" button
-   - Delete any preset with the "Delete" button
-
-This feature allows for easy sharing of custom tracker designs and configurations within the community, as well as convenient management of your own templates.
+See `AGENTS.md` for the full development reference.

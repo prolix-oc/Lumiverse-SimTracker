@@ -1,6 +1,6 @@
 # Handlebars Helpers Reference
 
-This guide documents all Handlebars helpers available in SillySimTracker templates. These helpers extend Handlebars with custom functions for comparisons, math, color manipulation, string formatting, and DOM measurements.
+This guide documents all Handlebars helpers available in Silly Sim Tracker templates. These helpers extend Handlebars with custom functions for comparisons, math, color manipulation, string formatting, and DOM measurements.
 
 ---
 

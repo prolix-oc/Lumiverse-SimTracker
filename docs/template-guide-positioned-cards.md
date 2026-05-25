@@ -1,6 +1,6 @@
 # Template Creation Guide: Positioned Card Templates
 
-This guide explains how to create positioned card templates for the SillySimTracker extension, using the "Dating Sim Tracker (Top of Message)" template as a reference.
+This guide explains how to create positioned card templates for the Silly Sim Tracker extension, using the "Dating Sim Tracker (Top of Message)" template as a reference.
 
 ## Overview
 

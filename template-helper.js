@@ -63,12 +63,15 @@ if (CMD === 'extract') {
   fs.mkdirSync(dest, { recursive: true });
 
   const html = data.htmlTemplate || '';
-  const unescaped = html
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'");
+  const isEscaped = /&lt;(?:!--|style|div|script|section|article|span)\b/i.test(html);
+  const unescaped = isEscaped
+    ? html
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#039;/g, "'")
+    : html;
 
   fs.writeFileSync(path.join(dest, 'template.html'), unescaped, 'utf-8');
   fs.writeFileSync(path.join(dest, 'prompt.md'), data.sysPrompt || '', 'utf-8');
@@ -131,19 +134,12 @@ else if (CMD === 'assemble') {
   const fieldsContent = config.fieldsFile ? JSON.parse(readFile(config.fieldsFile)) : [];
   const settingsContent = config.settingsFile ? JSON.parse(readFile(config.settingsFile)) : {};
 
-  const escapedHtml = htmlContent
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-
   const output = {
     templateName: config.templateName || 'Untitled Tracker',
     templateAuthor: config.templateAuthor || 'Unknown',
     templatePosition: config.templatePosition || 'BOTTOM',
     tabsType: config.tabsType || undefined,
-    htmlTemplate: escapedHtml,
+    htmlTemplate: htmlContent,
     sysPrompt: promptContent,
     customFields: fieldsContent,
     extSettings: settingsContent,

@@ -9316,18 +9316,18 @@ var rpg_sidebar_preset_default = {
   templateAuthor: "Prolix OCs",
   templatePosition: "RIGHT",
   tabsType: "toggle",
-  htmlTemplate: `&lt;!-- TEMPLATE NAME: Omni-Tracker: RPG Edition --&gt;
-&lt;!-- AUTHOR: Prolix OCs --&gt;
-&lt;!-- POSITION: RIGHT --&gt;
-&lt;!-- TABS_TYPE: toggle --&gt;
+  htmlTemplate: `<!-- TEMPLATE NAME: Omni-Tracker: RPG Edition -->
+<!-- AUTHOR: Prolix OCs -->
+<!-- POSITION: RIGHT -->
+<!-- TABS_TYPE: toggle -->
 
-&lt;!-- CARD_TEMPLATE_START --&gt;
-&lt;style&gt;
+<!-- CARD_TEMPLATE_START -->
+<style>
     /* =========================================
-       1. CORE VARIABLES &amp; THEME
+       1. CORE VARIABLES & THEME
        ========================================= */
     .sim-tracker-container {
-        --sst-font-stack: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Helvetica, Arial, sans-serif;
+        --sst-font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         --sst-bg-deep: #050505;
 
         /* Glass System */
@@ -9487,7 +9487,7 @@ var rpg_sidebar_preset_default = {
     }
 
     /* =========================================
-       5. WIDGETS &amp; MODULES
+       5. WIDGETS & MODULES
        ========================================= */
     .widget {
         background: rgba(255,255,255,0.02);
@@ -9501,7 +9501,7 @@ var rpg_sidebar_preset_default = {
         color: var(--sst-txt-muted); font-weight: 700; display: flex; justify-content: space-between;
     }
 
-    /* --- HEADER &amp; ATTRIBUTES --- */
+    /* --- HEADER & ATTRIBUTES --- */
     .header-row { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
     .av-lg {
         width: 56px; height: 56px; border-radius: 50%; background: #222;
@@ -9512,7 +9512,7 @@ var rpg_sidebar_preset_default = {
     .char-name h1 { font-size: 1.3rem; font-weight: 800; color: #fff; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .char-name .class-lvl { font-size: 0.75rem; color: var(--sst-txt-muted); text-transform: uppercase; letter-spacing: 1px; }
 
-    /* D&amp;D Attributes Grid */
+    /* D&D Attributes Grid */
     .attr-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
     .attr-box {
         background: var(--sst-attr-bg); border-radius: 8px; padding: 6px 2px;
@@ -9524,7 +9524,7 @@ var rpg_sidebar_preset_default = {
     .attr-mod { font-size: 0.6rem; color: var(--sst-stam-col); }
     .attr-mod.neg { color: var(--sst-hp-col); }
 
-    /* --- VITALS &amp; COMBAT --- */
+    /* --- VITALS & COMBAT --- */
     .vitals-row { display: flex; gap: 10px; align-items: flex-end; }
     .hp-numeric { font-size: 0.9rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
     .hp-numeric span { color: var(--sst-txt-muted); font-size: 0.75rem; }
@@ -9532,7 +9532,7 @@ var rpg_sidebar_preset_default = {
     .bar-track { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; position: relative; }
     .bar-fill { height: 100%; background: var(--sst-hp-col); width: var(--pct); box-shadow: 0 0 10px var(--sst-hp-col); transition: width 0.3s ease; }
 
-    /* Target &amp; Stance */
+    /* Target & Stance */
     .combat-card {
         background: rgba(0,0,0,0.3); border-radius: 12px; padding: 10px;
         display: flex; justify-content: space-between; align-items: center;
@@ -9592,161 +9592,161 @@ var rpg_sidebar_preset_default = {
     }
     .inv-slot.filled { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); cursor: help; }
     .inv-qty { position: absolute; bottom: 2px; right: 2px; font-size: 0.6rem; color: #fff; text-shadow: 0 1px 2px #000; }
-&lt;/style&gt;
+</style>
 
-&lt;div class=&quot;sim-tracker-container&quot;&gt;
+<div class="sim-tracker-container">
 
-    &lt;!-- TABS --&gt;
-    &lt;div class=&quot;sim-tracker-tabs&quot;&gt;
+    <!-- TABS -->
+    <div class="sim-tracker-tabs">
         {{#each characters}}
-        &lt;div class=&quot;sim-tracker-tab&quot; data-character=&quot;{{@index}}&quot;&gt;
+        <div class="sim-tracker-tab" data-character="{{@index}}">
             {{initials name}}
-            &lt;div class=&quot;signal {{#if (lt stats.hp.current (divide stats.hp.max 4))}}sig-danger{{else}}sig-ok{{/if}}&quot;&gt;&lt;/div&gt;
-        &lt;/div&gt;
+            <div class="signal {{#if (lt stats.hp.current (divide stats.hp.max 4))}}sig-danger{{else}}sig-ok{{/if}}"></div>
+        </div>
         {{/each}}
-    &lt;/div&gt;
+    </div>
 
-    &lt;!-- CARDS --&gt;
-    &lt;div class=&quot;sim-tracker-cards-wrapper&quot;&gt;
+    <!-- CARDS -->
+    <div class="sim-tracker-cards-wrapper">
     {{#each characters}}
-    &lt;div class=&quot;sim-tracker-card&quot; data-character=&quot;{{@index}}&quot;&gt;
+    <div class="sim-tracker-card" data-character="{{@index}}">
 
-        &lt;!-- 1. IDENTITY &amp; ATTRIBUTES --&gt;
-        &lt;div class=&quot;header-row&quot;&gt;
-            &lt;div class=&quot;av-lg&quot;&gt;{{initials name}}&lt;/div&gt;
-            &lt;div class=&quot;char-name&quot;&gt;
-                &lt;h1&gt;{{name}}&lt;/h1&gt;
-                &lt;div class=&quot;class-lvl&quot;&gt;{{stats.class}} \u2022 Level {{stats.level}}&lt;/div&gt;
-            &lt;/div&gt;
-        &lt;/div&gt;
+        <!-- 1. IDENTITY & ATTRIBUTES -->
+        <div class="header-row">
+            <div class="av-lg">{{initials name}}</div>
+            <div class="char-name">
+                <h1>{{name}}</h1>
+                <div class="class-lvl">{{stats.class}} \u2022 Level {{stats.level}}</div>
+            </div>
+        </div>
 
-        &lt;!-- DnD Attributes --&gt;
-        &lt;div class=&quot;attr-grid&quot;&gt;
-            &lt;div class=&quot;attr-box&quot;&gt;
-                &lt;span class=&quot;attr-label&quot;&gt;STR&lt;/span&gt;
-                &lt;span class=&quot;attr-val&quot;&gt;{{stats.attributes.str}}&lt;/span&gt;
-                &lt;span class=&quot;attr-mod {{#if (lt stats.attributes.str 10)}}neg{{/if}}&quot;&gt;{{stats.attributes.str_mod}}&lt;/span&gt;
-            &lt;/div&gt;
-            &lt;div class=&quot;attr-box&quot;&gt;
-                &lt;span class=&quot;attr-label&quot;&gt;DEX&lt;/span&gt;
-                &lt;span class=&quot;attr-val&quot;&gt;{{stats.attributes.dex}}&lt;/span&gt;
-                &lt;span class=&quot;attr-mod {{#if (lt stats.attributes.dex 10)}}neg{{/if}}&quot;&gt;{{stats.attributes.dex_mod}}&lt;/span&gt;
-            &lt;/div&gt;
-            &lt;div class=&quot;attr-box&quot;&gt;
-                &lt;span class=&quot;attr-label&quot;&gt;CON&lt;/span&gt;
-                &lt;span class=&quot;attr-val&quot;&gt;{{stats.attributes.con}}&lt;/span&gt;
-                &lt;span class=&quot;attr-mod {{#if (lt stats.attributes.con 10)}}neg{{/if}}&quot;&gt;{{stats.attributes.con_mod}}&lt;/span&gt;
-            &lt;/div&gt;
-            &lt;div class=&quot;attr-box&quot;&gt;
-                &lt;span class=&quot;attr-label&quot;&gt;INT&lt;/span&gt;
-                &lt;span class=&quot;attr-val&quot;&gt;{{stats.attributes.int}}&lt;/span&gt;
-                &lt;span class=&quot;attr-mod {{#if (lt stats.attributes.int 10)}}neg{{/if}}&quot;&gt;{{stats.attributes.int_mod}}&lt;/span&gt;
-            &lt;/div&gt;
-            &lt;div class=&quot;attr-box&quot;&gt;
-                &lt;span class=&quot;attr-label&quot;&gt;WIS&lt;/span&gt;
-                &lt;span class=&quot;attr-val&quot;&gt;{{stats.attributes.wis}}&lt;/span&gt;
-                &lt;span class=&quot;attr-mod {{#if (lt stats.attributes.wis 10)}}neg{{/if}}&quot;&gt;{{stats.attributes.wis_mod}}&lt;/span&gt;
-            &lt;/div&gt;
-            &lt;div class=&quot;attr-box&quot;&gt;
-                &lt;span class=&quot;attr-label&quot;&gt;CHA&lt;/span&gt;
-                &lt;span class=&quot;attr-val&quot;&gt;{{stats.attributes.cha}}&lt;/span&gt;
-                &lt;span class=&quot;attr-mod {{#if (lt stats.attributes.cha 10)}}neg{{/if}}&quot;&gt;{{stats.attributes.cha_mod}}&lt;/span&gt;
-            &lt;/div&gt;
-        &lt;/div&gt;
+        <!-- DnD Attributes -->
+        <div class="attr-grid">
+            <div class="attr-box">
+                <span class="attr-label">STR</span>
+                <span class="attr-val">{{stats.attributes.str}}</span>
+                <span class="attr-mod {{#if (lt stats.attributes.str 10)}}neg{{/if}}">{{stats.attributes.str_mod}}</span>
+            </div>
+            <div class="attr-box">
+                <span class="attr-label">DEX</span>
+                <span class="attr-val">{{stats.attributes.dex}}</span>
+                <span class="attr-mod {{#if (lt stats.attributes.dex 10)}}neg{{/if}}">{{stats.attributes.dex_mod}}</span>
+            </div>
+            <div class="attr-box">
+                <span class="attr-label">CON</span>
+                <span class="attr-val">{{stats.attributes.con}}</span>
+                <span class="attr-mod {{#if (lt stats.attributes.con 10)}}neg{{/if}}">{{stats.attributes.con_mod}}</span>
+            </div>
+            <div class="attr-box">
+                <span class="attr-label">INT</span>
+                <span class="attr-val">{{stats.attributes.int}}</span>
+                <span class="attr-mod {{#if (lt stats.attributes.int 10)}}neg{{/if}}">{{stats.attributes.int_mod}}</span>
+            </div>
+            <div class="attr-box">
+                <span class="attr-label">WIS</span>
+                <span class="attr-val">{{stats.attributes.wis}}</span>
+                <span class="attr-mod {{#if (lt stats.attributes.wis 10)}}neg{{/if}}">{{stats.attributes.wis_mod}}</span>
+            </div>
+            <div class="attr-box">
+                <span class="attr-label">CHA</span>
+                <span class="attr-val">{{stats.attributes.cha}}</span>
+                <span class="attr-mod {{#if (lt stats.attributes.cha 10)}}neg{{/if}}">{{stats.attributes.cha_mod}}</span>
+            </div>
+        </div>
 
-        &lt;!-- 2. COMBAT STATUS --&gt;
-        &lt;div class=&quot;widget&quot;&gt;
-            &lt;div class=&quot;w-header&quot;&gt;&lt;span&gt;Combat Status&lt;/span&gt;&lt;/div&gt;
+        <!-- 2. COMBAT STATUS -->
+        <div class="widget">
+            <div class="w-header"><span>Combat Status</span></div>
 
-            &lt;!-- Health (Numeric) --&gt;
-            &lt;div&gt;
-                &lt;div class=&quot;hp-numeric&quot;&gt;{{stats.hp.current}} / {{stats.hp.max}} &lt;span&gt;HP&lt;/span&gt;&lt;/div&gt;
-                &lt;div class=&quot;bar-track&quot;&gt;
-                    &lt;div class=&quot;bar-fill&quot; style=&quot;--pct: {{divideRoundUp (multiply stats.hp.current 100) stats.hp.max}}%&quot;&gt;&lt;/div&gt;
-                &lt;/div&gt;
-            &lt;/div&gt;
+            <!-- Health (Numeric) -->
+            <div>
+                <div class="hp-numeric">{{stats.hp.current}} / {{stats.hp.max}} <span>HP</span></div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="--pct: {{divideRoundUp (multiply stats.hp.current 100) stats.hp.max}}%"></div>
+                </div>
+            </div>
 
-            &lt;!-- Target &amp; Stance --&gt;
-            &lt;div class=&quot;combat-card&quot;&gt;
-                &lt;div class=&quot;target-info&quot;&gt;
-                    &lt;span&gt;Targeting&lt;/span&gt;
-                    &lt;b style=&quot;color:#ff6b6b&quot;&gt;{{stats.combat.target}}&lt;/b&gt;
-                &lt;/div&gt;
-                &lt;div class=&quot;stance-badge&quot;&gt;{{stats.combat.stance}}&lt;/div&gt;
-            &lt;/div&gt;
+            <!-- Target & Stance -->
+            <div class="combat-card">
+                <div class="target-info">
+                    <span>Targeting</span>
+                    <b style="color:#ff6b6b">{{stats.combat.target}}</b>
+                </div>
+                <div class="stance-badge">{{stats.combat.stance}}</div>
+            </div>
 
-            &lt;!-- Buffs --&gt;
-            &lt;div class=&quot;buff-row&quot;&gt;
+            <!-- Buffs -->
+            <div class="buff-row">
                 {{#each stats.combat.buffs}}
-                &lt;div class=&quot;buff-pill {{type}}&quot; title=&quot;Source: {{origin}}&quot;&gt;{{name}}&lt;/div&gt;
+                <div class="buff-pill {{type}}" title="Source: {{origin}}">{{name}}</div>
                 {{/each}}
-            &lt;/div&gt;
-        &lt;/div&gt;
+            </div>
+        </div>
 
-        &lt;!-- 3. ABILITIES --&gt;
-        &lt;div class=&quot;widget&quot;&gt;
-            &lt;div class=&quot;w-header&quot;&gt;&lt;span&gt;Spellbook&lt;/span&gt; &lt;span&gt;{{stats.resources.current}}/{{stats.resources.max}} {{stats.resources.name}}&lt;/span&gt;&lt;/div&gt;
-            &lt;div class=&quot;spell-list&quot;&gt;
+        <!-- 3. ABILITIES -->
+        <div class="widget">
+            <div class="w-header"><span>Spellbook</span> <span>{{stats.resources.current}}/{{stats.resources.max}} {{stats.resources.name}}</span></div>
+            <div class="spell-list">
                 {{#each stats.abilities}}
-                &lt;div class=&quot;spell-row&quot;&gt;
-                    &lt;div class=&quot;spell-icon&quot;&gt;\u2728&lt;/div&gt;
-                    &lt;div class=&quot;spell-details&quot;&gt;
-                        &lt;div class=&quot;spell-name&quot;&gt;{{name}}&lt;/div&gt;
-                        &lt;div class=&quot;spell-cost&quot;&gt;{{cost}}&lt;/div&gt;
-                    &lt;/div&gt;
-                    &lt;div class=&quot;spell-status&quot;&gt;{{status}}&lt;/div&gt;
-                &lt;/div&gt;
+                <div class="spell-row">
+                    <div class="spell-icon">\u2728</div>
+                    <div class="spell-details">
+                        <div class="spell-name">{{name}}</div>
+                        <div class="spell-cost">{{cost}}</div>
+                    </div>
+                    <div class="spell-status">{{status}}</div>
+                </div>
                 {{/each}}
-            &lt;/div&gt;
-        &lt;/div&gt;
+            </div>
+        </div>
 
-        &lt;!-- 4. RELATIONSHIP MATRIX --&gt;
-        &lt;div class=&quot;widget&quot;&gt;
-            &lt;div class=&quot;w-header&quot;&gt;&lt;span&gt;Social Links&lt;/span&gt;&lt;/div&gt;
-            &lt;div class=&quot;rel-grid&quot;&gt;
-                &lt;!-- Affection --&gt;
-                &lt;div class=&quot;stat-line&quot;&gt;
-                    &lt;svg class=&quot;stat-icon&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;#ff9a9e&quot;&gt;&lt;path d=&quot;M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z&quot;/&gt;&lt;/svg&gt;
-                    &lt;div class=&quot;stat-track&quot;&gt;&lt;div class=&quot;stat-fill gf-1&quot; style=&quot;--v: {{stats.relationships.affection}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
-                    &lt;div style=&quot;font-size:0.7rem&quot;&gt;{{stats.relationships.affection}}%&lt;/div&gt;
-                &lt;/div&gt;
-                &lt;!-- Desire --&gt;
-                &lt;div class=&quot;stat-line&quot;&gt;
-                    &lt;svg class=&quot;stat-icon&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;#f5576c&quot;&gt;&lt;path d=&quot;M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z&quot;/&gt;&lt;/svg&gt;
-                    &lt;div class=&quot;stat-track&quot;&gt;&lt;div class=&quot;stat-fill gf-2&quot; style=&quot;--v: {{stats.relationships.desire}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
-                    &lt;div style=&quot;font-size:0.7rem&quot;&gt;{{stats.relationships.desire}}%&lt;/div&gt;
-                &lt;/div&gt;
-                &lt;!-- Trust --&gt;
-                &lt;div class=&quot;stat-line&quot;&gt;
-                    &lt;svg class=&quot;stat-icon&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;#89f7fe&quot;&gt;&lt;path d=&quot;M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z&quot;/&gt;&lt;/svg&gt;
-                    &lt;div class=&quot;stat-track&quot;&gt;&lt;div class=&quot;stat-fill gf-3&quot; style=&quot;--v: {{stats.relationships.trust}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
-                    &lt;div style=&quot;font-size:0.7rem&quot;&gt;{{stats.relationships.trust}}%&lt;/div&gt;
-                &lt;/div&gt;
-                &lt;!-- Contempt --&gt;
-                &lt;div class=&quot;stat-line&quot;&gt;
-                    &lt;svg class=&quot;stat-icon&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;#888&quot;&gt;&lt;path d=&quot;M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 11H7v-2h10v2z&quot;/&gt;&lt;/svg&gt;
-                    &lt;div class=&quot;stat-track&quot;&gt;&lt;div class=&quot;stat-fill gf-4&quot; style=&quot;--v: {{stats.relationships.contempt}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
-                    &lt;div style=&quot;font-size:0.7rem&quot;&gt;{{stats.relationships.contempt}}%&lt;/div&gt;
-                &lt;/div&gt;
-            &lt;/div&gt;
-        &lt;/div&gt;
+        <!-- 4. RELATIONSHIP MATRIX -->
+        <div class="widget">
+            <div class="w-header"><span>Social Links</span></div>
+            <div class="rel-grid">
+                <!-- Affection -->
+                <div class="stat-line">
+                    <svg class="stat-icon" viewBox="0 0 24 24" fill="#ff9a9e"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    <div class="stat-track"><div class="stat-fill gf-1" style="--v: {{stats.relationships.affection}}%"></div></div>
+                    <div style="font-size:0.7rem">{{stats.relationships.affection}}%</div>
+                </div>
+                <!-- Desire -->
+                <div class="stat-line">
+                    <svg class="stat-icon" viewBox="0 0 24 24" fill="#f5576c"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg>
+                    <div class="stat-track"><div class="stat-fill gf-2" style="--v: {{stats.relationships.desire}}%"></div></div>
+                    <div style="font-size:0.7rem">{{stats.relationships.desire}}%</div>
+                </div>
+                <!-- Trust -->
+                <div class="stat-line">
+                    <svg class="stat-icon" viewBox="0 0 24 24" fill="#89f7fe"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+                    <div class="stat-track"><div class="stat-fill gf-3" style="--v: {{stats.relationships.trust}}%"></div></div>
+                    <div style="font-size:0.7rem">{{stats.relationships.trust}}%</div>
+                </div>
+                <!-- Contempt -->
+                <div class="stat-line">
+                    <svg class="stat-icon" viewBox="0 0 24 24" fill="#888"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 11H7v-2h10v2z"/></svg>
+                    <div class="stat-track"><div class="stat-fill gf-4" style="--v: {{stats.relationships.contempt}}%"></div></div>
+                    <div style="font-size:0.7rem">{{stats.relationships.contempt}}%</div>
+                </div>
+            </div>
+        </div>
 
-        &lt;!-- 5. INVENTORY --&gt;
-        &lt;div class=&quot;widget&quot;&gt;
-            &lt;div class=&quot;w-header&quot;&gt;&lt;span&gt;Bag&lt;/span&gt; &lt;span class=&quot;inv-header-meta&quot;&gt;&lt;/span&gt;&lt;/div&gt;
-            &lt;div class=&quot;inv-grid&quot;&gt;
+        <!-- 5. INVENTORY -->
+        <div class="widget">
+            <div class="w-header"><span>Bag</span> <span class="inv-header-meta"></span></div>
+            <div class="inv-grid">
                 {{#each stats.inventory}}
-                &lt;div class=&quot;inv-slot filled&quot; title=&quot;{{name}}&quot;&gt;{{icon}}&lt;span class=&quot;inv-qty&quot;&gt;x{{qty}}&lt;/span&gt;&lt;/div&gt;
+                <div class="inv-slot filled" title="{{name}}">{{icon}}<span class="inv-qty">x{{qty}}</span></div>
                 {{/each}}
-            &lt;/div&gt;
-        &lt;/div&gt;
+            </div>
+        </div>
 
-    &lt;/div&gt;
+    </div>
     {{/each}}
-    &lt;/div&gt;
+    </div>
 
-&lt;/div&gt;
-&lt;!-- CARD_TEMPLATE_END --&gt;
+</div>
+<!-- CARD_TEMPLATE_END -->
 `,
   sysPrompt: `## RPG MODE (D&D 5e Style)
 
@@ -10013,19 +10013,19 @@ var pulse_thread_tracker_default = {
   templateName: "Pulse Thread Tracker",
   templateAuthor: "Prolix OCs",
   templatePosition: "BOTTOM",
-  htmlTemplate: `&lt;!-- TEMPLATE NAME: Pulse Thread Tracker --&gt;
-&lt;!-- AUTHOR: Prolix OCs --&gt;
-&lt;!-- POSITION: BOTTOM --&gt;
-&lt;!-- TABS_TYPE: toggle --&gt;
-&lt;!-- sim-tracker-tabs bottom-mounted tabbed variant --&gt;
+  htmlTemplate: `<!-- TEMPLATE NAME: Pulse Thread Tracker -->
+<!-- AUTHOR: Prolix OCs -->
+<!-- POSITION: BOTTOM -->
+<!-- TABS_TYPE: toggle -->
+<!-- sim-tracker-tabs bottom-mounted tabbed variant -->
 
-&lt;!-- CARD_TEMPLATE_START --&gt;
-&lt;style&gt;
+<!-- CARD_TEMPLATE_START -->
+<style>
     /* =========================================
-       PULSE THREAD TABBED: CONTAINER &amp; VARS
+       PULSE THREAD TABBED: CONTAINER & VARS
        ========================================= */
     .pulse-tabbed-root {
-        --pt-font: var(--lumiverse-font-family, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Helvetica, Arial, sans-serif);
+        --pt-font: var(--lumiverse-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
         --pt-scale: var(--lumiverse-font-scale, 1);
         --pt-bg-deep: var(--lumiverse-bg-deep, rgba(12, 12, 22, 0.92));
         --pt-bg-glass: var(--lcs-glass-bg, color-mix(in srgb, var(--lumiverse-bg, rgba(30, 28, 48, 0.95)) 84%, transparent));
@@ -10203,7 +10203,7 @@ var pulse_thread_tracker_default = {
     }
 
     /* =========================================
-       CARD VIEWPORT &amp; PAGES
+       CARD VIEWPORT & PAGES
        ========================================= */
     .pt-viewport {
         padding: 14px 18px 18px 18px;
@@ -10219,16 +10219,16 @@ var pulse_thread_tracker_default = {
         to { opacity: 1; transform: translateY(0); }
     }
 
-    .pt-char-radio:nth-of-type(1):checked ~ .pt-viewport .pt-page[data-index=&quot;0&quot;],
-    .pt-char-radio:nth-of-type(2):checked ~ .pt-viewport .pt-page[data-index=&quot;1&quot;],
-    .pt-char-radio:nth-of-type(3):checked ~ .pt-viewport .pt-page[data-index=&quot;2&quot;],
-    .pt-char-radio:nth-of-type(4):checked ~ .pt-viewport .pt-page[data-index=&quot;3&quot;],
-    .pt-char-radio:nth-of-type(5):checked ~ .pt-viewport .pt-page[data-index=&quot;4&quot;],
-    .pt-char-radio:nth-of-type(6):checked ~ .pt-viewport .pt-page[data-index=&quot;5&quot;],
-    .pt-char-radio:nth-of-type(7):checked ~ .pt-viewport .pt-page[data-index=&quot;6&quot;],
-    .pt-char-radio:nth-of-type(8):checked ~ .pt-viewport .pt-page[data-index=&quot;7&quot;],
-    .pt-char-radio:nth-of-type(9):checked ~ .pt-viewport .pt-page[data-index=&quot;8&quot;],
-    .pt-char-radio:nth-of-type(10):checked ~ .pt-viewport .pt-page[data-index=&quot;9&quot;] {
+    .pt-char-radio:nth-of-type(1):checked ~ .pt-viewport .pt-page[data-index="0"],
+    .pt-char-radio:nth-of-type(2):checked ~ .pt-viewport .pt-page[data-index="1"],
+    .pt-char-radio:nth-of-type(3):checked ~ .pt-viewport .pt-page[data-index="2"],
+    .pt-char-radio:nth-of-type(4):checked ~ .pt-viewport .pt-page[data-index="3"],
+    .pt-char-radio:nth-of-type(5):checked ~ .pt-viewport .pt-page[data-index="4"],
+    .pt-char-radio:nth-of-type(6):checked ~ .pt-viewport .pt-page[data-index="5"],
+    .pt-char-radio:nth-of-type(7):checked ~ .pt-viewport .pt-page[data-index="6"],
+    .pt-char-radio:nth-of-type(8):checked ~ .pt-viewport .pt-page[data-index="7"],
+    .pt-char-radio:nth-of-type(9):checked ~ .pt-viewport .pt-page[data-index="8"],
+    .pt-char-radio:nth-of-type(10):checked ~ .pt-viewport .pt-page[data-index="9"] {
         display: block;
     }
 
@@ -10398,7 +10398,7 @@ var pulse_thread_tracker_default = {
     }
 
     .pt-fertility-ring::before {
-        content: &#039;&#039;;
+        content: '';
         position: absolute;
         inset: 10px;
         border-radius: 50%;
@@ -10428,7 +10428,7 @@ var pulse_thread_tracker_default = {
     }
 
     .pt-fertility-core::after {
-        content: &#039;&#039;;
+        content: '';
         position: absolute;
         inset: 14px;
         border-radius: 50%;
@@ -10472,7 +10472,7 @@ var pulse_thread_tracker_default = {
         fill: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 22%, rgba(255,255,255,0.08));
         stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 48%, rgba(255,255,255,0.12));
         stroke-width: 1.2;
-        /* Anchor SVG transforms to the circle&#039;s own center so the conception
+        /* Anchor SVG transforms to the circle's own center so the conception
            pulse breathes in place instead of translating toward (0,0). */
         transform-box: fill-box;
         transform-origin: center;
@@ -10588,7 +10588,7 @@ var pulse_thread_tracker_default = {
     .pt-metric-fill { background: linear-gradient(90deg, #fff8d6, #ffd86b); }
     .pt-fertility-fill { background: linear-gradient(90deg, #70a1ff, #ffd700); }
 
-    /* --- FEMALE: Breast &amp; Lactation Vessel --- */
+    /* --- FEMALE: Breast & Lactation Vessel --- */
     .pt-breast-vessel {
         width: 140px;
         height: 160px;
@@ -10710,7 +10710,7 @@ var pulse_thread_tracker_default = {
         opacity: 0.88;
     }
 
-    /* --- MALE: Anal &amp; Prostate Vessel --- */
+    /* --- MALE: Anal & Prostate Vessel --- */
     .pt-anal-vessel {
         width: 140px;
         height: 160px;
@@ -10935,7 +10935,7 @@ var pulse_thread_tracker_default = {
     }
 
     .pt-refractory-arc::before {
-        content: &#039;&#039;;
+        content: '';
         position: absolute;
         inset: 4px;
         border-radius: 50%;
@@ -11138,7 +11138,7 @@ var pulse_thread_tracker_default = {
     }
 
     .pt-track-fill::after {
-        content: &#039;&#039;;
+        content: '';
         position: absolute;
         top: 0;
         right: 0;
@@ -11247,7 +11247,7 @@ var pulse_thread_tracker_default = {
     }
 
     .pt-root-bar::after {
-        content: &#039;&#039;;
+        content: '';
         position: absolute;
         bottom: 0;
         left: 10%;
@@ -11330,533 +11330,533 @@ var pulse_thread_tracker_default = {
         border-radius: 50%;
         background: rgba(255,255,255,0.15);
     }
-&lt;/style&gt;
+</style>
 
-&lt;div class=&quot;pulse-tabbed-root sim-tracker-tabs&quot;&gt;
-    &lt;input type=&quot;checkbox&quot; id=&quot;pt-root-toggle&quot; class=&quot;pt-root-toggle&quot; checked&gt;
+<div class="pulse-tabbed-root sim-tracker-tabs">
+    <input type="checkbox" id="pt-root-toggle" class="pt-root-toggle" checked>
 
-    &lt;!-- Collapse bar: global summary --&gt;
-    &lt;label for=&quot;pt-root-toggle&quot; class=&quot;pt-root-bar&quot;&gt;
-        &lt;div class=&quot;pt-root-summary&quot;&gt;
-            &lt;span class=&quot;pt-accent-text&quot;&gt;{{characters.length}} Tracking&lt;/span&gt;
-            &lt;span&gt;\u2022&lt;/span&gt;
-            &lt;span&gt;{{currentDate}}&lt;/span&gt;
-            {{#if currentTime}}&lt;span&gt;\u2022&lt;/span&gt;&lt;span&gt;{{currentTime}}&lt;/span&gt;{{/if}}
-        &lt;/div&gt;
-        &lt;div class=&quot;pt-root-chevron&quot;&gt;
-            &lt;svg class=&quot;icon-12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;&gt;&lt;polyline points=&quot;6 9 12 15 18 9&quot;/&gt;&lt;/svg&gt;
-        &lt;/div&gt;
-    &lt;/label&gt;
+    <!-- Collapse bar: global summary -->
+    <label for="pt-root-toggle" class="pt-root-bar">
+        <div class="pt-root-summary">
+            <span class="pt-accent-text">{{characters.length}} Tracking</span>
+            <span>\u2022</span>
+            <span>{{currentDate}}</span>
+            {{#if currentTime}}<span>\u2022</span><span>{{currentTime}}</span>{{/if}}
+        </div>
+        <div class="pt-root-chevron">
+            <svg class="icon-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+    </label>
 
-    &lt;div class=&quot;pt-root-body&quot;&gt;
-        &lt;div class=&quot;pt-root-inner&quot;&gt;
+    <div class="pt-root-body">
+        <div class="pt-root-inner">
 
-            &lt;!-- Hidden radios --&gt;
+            <!-- Hidden radios -->
             {{#each characters}}
-            &lt;input type=&quot;radio&quot; name=&quot;pt-char&quot; id=&quot;pt-char-{{@index}}&quot; class=&quot;pt-char-radio&quot; {{#if @first}}checked{{/if}}&gt;
+            <input type="radio" name="pt-char" id="pt-char-{{@index}}" class="pt-char-radio" {{#if @first}}checked{{/if}}>
             {{/each}}
 
-            &lt;!-- Tab bar --&gt;
-            &lt;div class=&quot;pt-tab-bar&quot; onpointerdown=&quot;event.stopPropagation()&quot; onpointermove=&quot;event.stopPropagation()&quot; onpointerup=&quot;event.stopPropagation()&quot; ontouchstart=&quot;event.stopPropagation()&quot; ontouchmove=&quot;event.stopPropagation()&quot; ontouchend=&quot;event.stopPropagation()&quot; onwheel=&quot;event.stopPropagation()&quot;&gt;
+            <!-- Tab bar -->
+            <div class="pt-tab-bar" onpointerdown="event.stopPropagation()" onpointermove="event.stopPropagation()" onpointerup="event.stopPropagation()" ontouchstart="event.stopPropagation()" ontouchmove="event.stopPropagation()" ontouchend="event.stopPropagation()" onwheel="event.stopPropagation()">
                 {{#each characters}}
-                &lt;label class=&quot;pt-tab&quot; for=&quot;pt-char-{{@index}}&quot; style=&quot;{{#if bgColor}}background: {{adjustColorBrightness bgColor 15}}; border-color: {{adjustColorBrightness bgColor 30}};{{/if}}&quot;&gt;
-                    &lt;div class=&quot;pt-tab-avatar&quot; style=&quot;{{#if bgColor}}background: linear-gradient(145deg, {{adjustColorBrightness bgColor 60}} 0%, {{adjustColorBrightness darkerBgColor 50}} 100%);{{/if}} color: #fff;&quot;&gt;
+                <label class="pt-tab" for="pt-char-{{@index}}" style="{{#if bgColor}}background: {{adjustColorBrightness bgColor 15}}; border-color: {{adjustColorBrightness bgColor 30}};{{/if}}">
+                    <div class="pt-tab-avatar" style="{{#if bgColor}}background: linear-gradient(145deg, {{adjustColorBrightness bgColor 60}} 0%, {{adjustColorBrightness darkerBgColor 50}} 100%);{{/if}} color: #fff;">
                         {{initials characterName}}
-                    &lt;/div&gt;
-                    &lt;div class=&quot;pt-tab-name&quot;&gt;{{characterName}}&lt;/div&gt;
-                &lt;/label&gt;
+                    </div>
+                    <div class="pt-tab-name">{{characterName}}</div>
+                </label>
                 {{/each}}
-            &lt;/div&gt;
+            </div>
 
-            &lt;!-- Viewport --&gt;
-            &lt;div class=&quot;pt-viewport&quot;&gt;
+            <!-- Viewport -->
+            <div class="pt-viewport">
                 {{#each characters}}
-                &lt;div class=&quot;pt-page&quot; data-index=&quot;{{@index}}&quot; style=&quot;{{#if bgColor}}--marker-deg: {{multiply (subtract stats.cycle_day 1) 12.86}}deg; --ref-angle: {{divide (multiply stats.refractory_minutes 180) stats.refractory_total}}deg;{{/if}}&quot;&gt;
+                <div class="pt-page" data-index="{{@index}}" style="{{#if bgColor}}--marker-deg: {{multiply (subtract stats.cycle_day 1) 12.86}}deg; --ref-angle: {{divide (multiply stats.refractory_minutes 180) stats.refractory_total}}deg;{{/if}}">
 
-                    &lt;!-- Subtle meta line replacing the old big header --&gt;
-                    &lt;div class=&quot;pt-page-meta&quot;&gt;
-                        &lt;span&gt;Day {{stats.days_since_first_meeting}}&lt;/span&gt;
-                        {{#if stats.inactive}}&lt;span class=&quot;pt-dot-sep&quot;&gt;&lt;/span&gt;&lt;span style=&quot;color:#888&quot;&gt;Inactive&lt;/span&gt;{{/if}}
-                    &lt;/div&gt;
+                    <!-- Subtle meta line replacing the old big header -->
+                    <div class="pt-page-meta">
+                        <span>Day {{stats.days_since_first_meeting}}</span>
+                        {{#if stats.inactive}}<span class="pt-dot-sep"></span><span style="color:#888">Inactive</span>{{/if}}
+                    </div>
 
-            &lt;!-- Monologue --&gt;
-            &lt;div class=&quot;pt-mono&quot;&gt;
-                &lt;span class=&quot;pt-mono-tag&quot;&gt;Current Thought&lt;/span&gt;
-                &lt;p&gt;&quot;{{stats.internal_thought}}&quot;&lt;/p&gt;
-            &lt;/div&gt;
+            <!-- Monologue -->
+            <div class="pt-mono">
+                <span class="pt-mono-tag">Current Thought</span>
+                <p>"{{stats.internal_thought}}"</p>
+            </div>
 
-            &lt;!-- Biological --&gt;
+            <!-- Biological -->
             {{#if (or (hasFertilityTracking stats) (hasRefractoryTracking stats) (hasLactationTracking stats) (hasAnalTracking stats))}}
-            &lt;div class=&quot;pt-bio-stack&quot;&gt;
+            <div class="pt-bio-stack">
                 {{#if (hasFertilityTracking stats)}}
-                &lt;div class=&quot;pt-bio-column&quot;&gt;
-                    &lt;div class=&quot;pt-bio-zone&quot;&gt;
-                        &lt;div class=&quot;pt-fertility-visuals&quot;&gt;
-                            &lt;div class=&quot;pt-fertility-ring&quot; style=&quot;--cycle-accent: {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}var(--cy-ovu){{else if (eq (cycleStage stats) &quot;menstruation&quot;)}}var(--cy-men){{else if (eq (cycleStage stats) &quot;follicular&quot;)}}var(--cy-fol){{else if (eq (cycleStage stats) &quot;luteal&quot;)}}var(--cy-lut){{else}}var(--cy-preg){{/if}};&quot;&gt;
-                                &lt;div class=&quot;pt-fertility-core&quot;&gt;&lt;/div&gt;
-                                &lt;div class=&quot;pt-fertility-marker {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}ovulation-glow{{/if}}&quot;
-                                     style=&quot;color: {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}var(--cy-ovu){{else if (eq (cycleStage stats) &quot;menstruation&quot;)}}var(--cy-men){{else if (eq (cycleStage stats) &quot;follicular&quot;)}}var(--cy-fol){{else if (eq (cycleStage stats) &quot;luteal&quot;)}}var(--cy-lut){{else}}var(--cy-preg){{/if}};&quot;&gt;&lt;/div&gt;
-                                &lt;div class=&quot;pt-fertility-label&quot;&gt;
-                                    {{#if (or stats.preg (eq (cycleStage stats) &quot;pregnancy&quot;))}}
-                                        &lt;strong&gt;{{#if stats.days_preg}}{{stats.days_preg}}{{else}}0{{/if}}&lt;/strong&gt;&lt;span&gt;Preg&lt;/span&gt;
+                <div class="pt-bio-column">
+                    <div class="pt-bio-zone">
+                        <div class="pt-fertility-visuals">
+                            <div class="pt-fertility-ring" style="--cycle-accent: {{#if (eq (cycleStage stats) "ovulation")}}var(--cy-ovu){{else if (eq (cycleStage stats) "menstruation")}}var(--cy-men){{else if (eq (cycleStage stats) "follicular")}}var(--cy-fol){{else if (eq (cycleStage stats) "luteal")}}var(--cy-lut){{else}}var(--cy-preg){{/if}};">
+                                <div class="pt-fertility-core"></div>
+                                <div class="pt-fertility-marker {{#if (eq (cycleStage stats) "ovulation")}}ovulation-glow{{/if}}"
+                                     style="color: {{#if (eq (cycleStage stats) "ovulation")}}var(--cy-ovu){{else if (eq (cycleStage stats) "menstruation")}}var(--cy-men){{else if (eq (cycleStage stats) "follicular")}}var(--cy-fol){{else if (eq (cycleStage stats) "luteal")}}var(--cy-lut){{else}}var(--cy-preg){{/if}};"></div>
+                                <div class="pt-fertility-label">
+                                    {{#if (or stats.preg (eq (cycleStage stats) "pregnancy"))}}
+                                        <strong>{{#if stats.days_preg}}{{stats.days_preg}}{{else}}0{{/if}}</strong><span>Preg</span>
                                     {{else if stats.cycle_day}}
-                                        &lt;strong&gt;{{stats.cycle_day}}&lt;/strong&gt;&lt;span&gt;Day&lt;/span&gt;
+                                        <strong>{{stats.cycle_day}}</strong><span>Day</span>
                                     {{else}}
-                                        &lt;strong&gt;--&lt;/strong&gt;&lt;span&gt;Cycle&lt;/span&gt;
+                                        <strong>--</strong><span>Cycle</span>
                                     {{/if}}
-                                &lt;/div&gt;
-                            &lt;/div&gt;
-                        &lt;/div&gt;
-                        &lt;div class=&quot;pt-bio-panel&quot;&gt;
-                            &lt;div class=&quot;pt-bio-title-row&quot;&gt;
-                                &lt;h4&gt;Cycle&lt;/h4&gt;
-                                &lt;span class=&quot;pt-risk-badge {{fertilityRiskClass stats}}&quot;&gt;{{fertilityRiskLabel stats}}&lt;/span&gt;
-                            &lt;/div&gt;
-                            &lt;div class=&quot;pt-bio-grid&quot;&gt;
-                                &lt;div class=&quot;pt-bio-row&quot;&gt;
-                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Phase&lt;/span&gt;
-                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{#if (cycleStageId stats)}}{{cycleStageLabel stats}}{{else}}Unknown{{/if}}&lt;/span&gt;
-                                &lt;/div&gt;
-                                &lt;div class=&quot;pt-bio-row&quot;&gt;
-                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Cycle Day&lt;/span&gt;
-                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{#if stats.cycle_day}}{{stats.cycle_day}}{{else}}Unknown{{/if}}&lt;/span&gt;
-                                &lt;/div&gt;
-                                &lt;div class=&quot;pt-bio-row&quot;&gt;
-                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Pregnancy&lt;/span&gt;
-                                    &lt;span class=&quot;pt-bio-value&quot;&gt;
-                                        {{#if (or stats.preg (eq (cycleStage stats) &quot;pregnancy&quot;))}}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pt-bio-panel">
+                            <div class="pt-bio-title-row">
+                                <h4>Cycle</h4>
+                                <span class="pt-risk-badge {{fertilityRiskClass stats}}">{{fertilityRiskLabel stats}}</span>
+                            </div>
+                            <div class="pt-bio-grid">
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">Phase</span>
+                                    <span class="pt-bio-value">{{#if (cycleStageId stats)}}{{cycleStageLabel stats}}{{else}}Unknown{{/if}}</span>
+                                </div>
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">Cycle Day</span>
+                                    <span class="pt-bio-value">{{#if stats.cycle_day}}{{stats.cycle_day}}{{else}}Unknown{{/if}}</span>
+                                </div>
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">Pregnancy</span>
+                                    <span class="pt-bio-value">
+                                        {{#if (or stats.preg (eq (cycleStage stats) "pregnancy"))}}
                                             Pregnant {{#if stats.days_preg}}({{stats.days_preg}}d){{/if}}
                                         {{else}}
                                             No
                                         {{/if}}
-                                    &lt;/span&gt;
-                                &lt;/div&gt;
-                            &lt;/div&gt;
-                        &lt;/div&gt;
-                    &lt;/div&gt;
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                    &lt;div class=&quot;pt-bio-zone&quot;&gt;
-                        &lt;div class=&quot;pt-womb-vessel&quot; style=&quot;--cycle-accent: {{#if (eq (cycleStage stats) &quot;ovulation&quot;)}}var(--cy-ovu){{else if (eq (cycleStage stats) &quot;menstruation&quot;)}}var(--cy-men){{else if (eq (cycleStage stats) &quot;follicular&quot;)}}var(--cy-fol){{else if (eq (cycleStage stats) &quot;luteal&quot;)}}var(--cy-lut){{else}}var(--cy-preg){{/if}};&quot;&gt;
-                            &lt;svg class=&quot;pt-womb-svg&quot; viewBox=&quot;0 0 100 100&quot; aria-hidden=&quot;true&quot; focusable=&quot;false&quot;&gt;
-                                &lt;defs&gt;
-                                    &lt;clipPath id=&quot;pt-womb-clip-{{@index}}&quot;&gt;
-                                        &lt;path d=&quot;M50 24 C62 24 72 34 72 46 C72 57 66 66 58 74 C54 78 52 83 50 88 C48 83 46 78 42 74 C34 66 28 57 28 46 C28 34 38 24 50 24 Z&quot; /&gt;
-                                    &lt;/clipPath&gt;
-                                    &lt;linearGradient id=&quot;pt-womb-depth-{{@index}}&quot; x1=&quot;0.5&quot; y1=&quot;0&quot; x2=&quot;0.5&quot; y2=&quot;1&quot;&gt;
-                                        &lt;stop offset=&quot;0%&quot; stop-color=&quot;#7a3a55&quot; stop-opacity=&quot;0.85&quot; /&gt;
-                                        &lt;stop offset=&quot;100%&quot; stop-color=&quot;#3a1528&quot; stop-opacity=&quot;0.95&quot; /&gt;
-                                    &lt;/linearGradient&gt;
-                                &lt;/defs&gt;
-                                &lt;path class=&quot;pt-womb-outline&quot; d=&quot;M36 30 C28 22 18 24 14 28 M64 30 C72 22 82 24 86 28 M36 30 C34 36 38 40 42 43 M64 30 C66 36 62 40 58 43 M42 43 C38 38 32 37 28 42 C24 47 27 55 34 58 M58 43 C62 38 68 37 72 42 C76 47 73 55 66 58 M50 24 C62 24 72 34 72 46 C72 57 66 66 58 74 C54 78 52 83 50 88 C48 83 46 78 42 74 C34 66 28 57 28 46 C28 34 38 24 50 24 Z&quot; /&gt;
-                                &lt;circle class=&quot;pt-womb-ovary {{#if (isConceived stats)}}pulse{{/if}}&quot; cx=&quot;14&quot; cy=&quot;30&quot; r=&quot;5&quot; /&gt;
-                                {{#unless (or stats.preg (eq (cycleStage stats) &quot;pregnancy&quot;))}}
-                                &lt;circle class=&quot;pt-womb-ovary {{#if (isConceived stats)}}pulse{{/if}}&quot; cx=&quot;86&quot; cy=&quot;30&quot; r=&quot;5&quot; /&gt;
+                    <div class="pt-bio-zone">
+                        <div class="pt-womb-vessel" style="--cycle-accent: {{#if (eq (cycleStage stats) "ovulation")}}var(--cy-ovu){{else if (eq (cycleStage stats) "menstruation")}}var(--cy-men){{else if (eq (cycleStage stats) "follicular")}}var(--cy-fol){{else if (eq (cycleStage stats) "luteal")}}var(--cy-lut){{else}}var(--cy-preg){{/if}};">
+                            <svg class="pt-womb-svg" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+                                <defs>
+                                    <clipPath id="pt-womb-clip-{{@index}}">
+                                        <path d="M50 24 C62 24 72 34 72 46 C72 57 66 66 58 74 C54 78 52 83 50 88 C48 83 46 78 42 74 C34 66 28 57 28 46 C28 34 38 24 50 24 Z" />
+                                    </clipPath>
+                                    <linearGradient id="pt-womb-depth-{{@index}}" x1="0.5" y1="0" x2="0.5" y2="1">
+                                        <stop offset="0%" stop-color="#7a3a55" stop-opacity="0.85" />
+                                        <stop offset="100%" stop-color="#3a1528" stop-opacity="0.95" />
+                                    </linearGradient>
+                                </defs>
+                                <path class="pt-womb-outline" d="M36 30 C28 22 18 24 14 28 M64 30 C72 22 82 24 86 28 M36 30 C34 36 38 40 42 43 M64 30 C66 36 62 40 58 43 M42 43 C38 38 32 37 28 42 C24 47 27 55 34 58 M58 43 C62 38 68 37 72 42 C76 47 73 55 66 58 M50 24 C62 24 72 34 72 46 C72 57 66 66 58 74 C54 78 52 83 50 88 C48 83 46 78 42 74 C34 66 28 57 28 46 C28 34 38 24 50 24 Z" />
+                                <circle class="pt-womb-ovary {{#if (isConceived stats)}}pulse{{/if}}" cx="14" cy="30" r="5" />
+                                {{#unless (or stats.preg (eq (cycleStage stats) "pregnancy"))}}
+                                <circle class="pt-womb-ovary {{#if (isConceived stats)}}pulse{{/if}}" cx="86" cy="30" r="5" />
                                 {{/unless}}
-                                {{#if (or stats.preg (eq (cycleStage stats) &quot;pregnancy&quot;))}}
-                                &lt;!-- Seed inside womb when pregnant --&gt;
-                                &lt;circle class=&quot;pt-womb-seed&quot; cx=&quot;50&quot; cy=&quot;56&quot; r=&quot;4&quot; /&gt;
+                                {{#if (or stats.preg (eq (cycleStage stats) "pregnancy"))}}
+                                <!-- Seed inside womb when pregnant -->
+                                <circle class="pt-womb-seed" cx="50" cy="56" r="4" />
                                 {{/if}}
-                                &lt;path class=&quot;pt-womb-inner&quot; style=&quot;fill:url(#pt-womb-depth-{{@index}})&quot; d=&quot;M50 24 C62 24 72 34 72 46 C72 57 66 66 58 74 C54 78 52 83 50 88 C48 83 46 78 42 74 C34 66 28 57 28 46 C28 34 38 24 50 24 Z&quot; /&gt;
-                                &lt;g clip-path=&quot;url(#pt-womb-clip-{{@index}})&quot;&gt;
-                                    &lt;rect class=&quot;pt-womb-liquid&quot; x=&quot;0&quot; y=&quot;{{wombFillTop stats.womb_fullness_pct}}&quot; width=&quot;100&quot; height=&quot;{{wombFillHeight stats.womb_fullness_pct}}&quot; /&gt;
-                                    &lt;path class=&quot;pt-womb-surface&quot; d=&quot;M33 {{wombFillTop stats.womb_fullness_pct}} C40 {{add (wombFillTop stats.womb_fullness_pct) 3}} 60 {{add (wombFillTop stats.womb_fullness_pct) 3}} 67 {{wombFillTop stats.womb_fullness_pct}}&quot; /&gt;
-                                &lt;/g&gt;
-                            &lt;/svg&gt;
-                        &lt;/div&gt;
-                        &lt;div class=&quot;pt-bio-panel&quot;&gt;
-                            &lt;div class=&quot;pt-bio-title-row&quot;&gt;
-                                &lt;h4&gt;Womb&lt;/h4&gt;
-                                &lt;span class=&quot;pt-risk-badge risk-preg&quot;&gt;{{clampPercent stats.womb_fullness_pct}}%&lt;/span&gt;
-                            &lt;/div&gt;
-                            &lt;div class=&quot;pt-bio-grid&quot;&gt;
-                                &lt;div class=&quot;pt-bio-row&quot;&gt;
-                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Fullness&lt;/span&gt;
-                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{clampPercent stats.womb_fullness_pct}}%&lt;/span&gt;
-                                &lt;/div&gt;
-                                &lt;div class=&quot;pt-womb-meter&quot;&gt;&lt;div class=&quot;pt-womb-meter-fill&quot; style=&quot;width: {{clampPercent stats.womb_fullness_pct}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
-                                &lt;div class=&quot;pt-bio-row&quot;&gt;
-                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Receptive&lt;/span&gt;
-                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{clampPercent stats.womb_receptivity_pct}}%&lt;/span&gt;
-                                &lt;/div&gt;
-                                &lt;div class=&quot;pt-womb-meter&quot;&gt;&lt;div class=&quot;pt-womb-meter-fill&quot; style=&quot;width: {{clampPercent stats.womb_receptivity_pct}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
-                                &lt;div class=&quot;pt-bio-row&quot;&gt;
-                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Cervix&lt;/span&gt;
-                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{cervixStateLabel stats}}&lt;/span&gt;
-                                &lt;/div&gt;
-                                &lt;div class=&quot;pt-bio-row&quot;&gt;
-                                    &lt;span class=&quot;pt-bio-key&quot;&gt;This Cycle&lt;/span&gt;
-                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{#if stats.breeding_count}}{{stats.breeding_count}}\xD7{{else}}0{{/if}}&lt;/span&gt;
-                                &lt;/div&gt;
-                            &lt;/div&gt;
-                        &lt;/div&gt;
-                    &lt;/div&gt;
-                &lt;/div&gt;
+                                <path class="pt-womb-inner" style="fill:url(#pt-womb-depth-{{@index}})" d="M50 24 C62 24 72 34 72 46 C72 57 66 66 58 74 C54 78 52 83 50 88 C48 83 46 78 42 74 C34 66 28 57 28 46 C28 34 38 24 50 24 Z" />
+                                <g clip-path="url(#pt-womb-clip-{{@index}})">
+                                    <rect class="pt-womb-liquid" x="0" y="{{wombFillTop stats.womb_fullness_pct}}" width="100" height="{{wombFillHeight stats.womb_fullness_pct}}" />
+                                    <path class="pt-womb-surface" d="M33 {{wombFillTop stats.womb_fullness_pct}} C40 {{add (wombFillTop stats.womb_fullness_pct) 3}} 60 {{add (wombFillTop stats.womb_fullness_pct) 3}} 67 {{wombFillTop stats.womb_fullness_pct}}" />
+                                </g>
+                            </svg>
+                        </div>
+                        <div class="pt-bio-panel">
+                            <div class="pt-bio-title-row">
+                                <h4>Womb</h4>
+                                <span class="pt-risk-badge risk-preg">{{clampPercent stats.womb_fullness_pct}}%</span>
+                            </div>
+                            <div class="pt-bio-grid">
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">Fullness</span>
+                                    <span class="pt-bio-value">{{clampPercent stats.womb_fullness_pct}}%</span>
+                                </div>
+                                <div class="pt-womb-meter"><div class="pt-womb-meter-fill" style="width: {{clampPercent stats.womb_fullness_pct}}%"></div></div>
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">Receptive</span>
+                                    <span class="pt-bio-value">{{clampPercent stats.womb_receptivity_pct}}%</span>
+                                </div>
+                                <div class="pt-womb-meter"><div class="pt-womb-meter-fill" style="width: {{clampPercent stats.womb_receptivity_pct}}%"></div></div>
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">Cervix</span>
+                                    <span class="pt-bio-value">{{cervixStateLabel stats}}</span>
+                                </div>
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">This Cycle</span>
+                                    <span class="pt-bio-value">{{#if stats.breeding_count}}{{stats.breeding_count}}\xD7{{else}}0{{/if}}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 {{/if}}
 
                 {{#if (or (hasRefractoryTracking stats) (hasLactationTracking stats) (hasAnalTracking stats))}}
-                &lt;div class=&quot;pt-bio-column&quot;&gt;
+                <div class="pt-bio-column">
                     {{#if (hasRefractoryTracking stats)}}
-                    &lt;div class=&quot;pt-bio-zone&quot;&gt;
-                        &lt;div class=&quot;pt-male-visuals {{#if (eq stats.sex &quot;futanari&quot;)}}pt-futa-accent{{/if}}&quot;&gt;
-                            &lt;div class=&quot;pt-penis-container&quot;&gt;
-                                &lt;svg class=&quot;pt-penis-svg&quot; viewBox=&quot;0 0 100 140&quot; aria-hidden=&quot;true&quot; focusable=&quot;false&quot;&gt;
-                                    &lt;defs&gt;
-                                        &lt;clipPath id=&quot;pt-penis-clip-{{@index}}&quot;&gt;
-                                            &lt;ellipse cx=&quot;28&quot; cy=&quot;108&quot; rx=&quot;18&quot; ry=&quot;22&quot; /&gt;
-                                            &lt;ellipse cx=&quot;72&quot; cy=&quot;108&quot; rx=&quot;18&quot; ry=&quot;22&quot; /&gt;
-                                        &lt;/clipPath&gt;
-                                        &lt;linearGradient id=&quot;pt-penis-depth-{{@index}}&quot; x1=&quot;0.5&quot; y1=&quot;0&quot; x2=&quot;0.5&quot; y2=&quot;1&quot;&gt;
-                                            &lt;stop offset=&quot;0%&quot; stop-color=&quot;#7a5a4a&quot; stop-opacity=&quot;0.5&quot; /&gt;
-                                            &lt;stop offset=&quot;100%&quot; stop-color=&quot;#3a2015&quot; stop-opacity=&quot;0.7&quot; /&gt;
-                                        &lt;/linearGradient&gt;
-                                    &lt;/defs&gt;
-                                    &lt;!-- Shaft --&gt;
-                                    &lt;path class=&quot;pt-penis-shaft&quot; d=&quot;M38 78 C36 58 34 38 36 18 C36 8 42 2 50 2 C58 2 64 8 64 18 C66 38 64 58 62 78&quot; /&gt;
-                                    &lt;!-- Glans --&gt;
-                                    &lt;path class=&quot;pt-penis-glans&quot; d=&quot;M36 18 C36 6 42 0 50 0 C58 0 64 6 64 18 C64 28 58 34 50 34 C42 34 36 28 36 18 Z&quot; /&gt;
-                                    &lt;!-- Testicle inner depth --&gt;
-                                    &lt;ellipse cx=&quot;28&quot; cy=&quot;108&quot; rx=&quot;16&quot; ry=&quot;20&quot; fill=&quot;url(#pt-penis-depth-{{@index}})&quot; /&gt;
-                                    &lt;ellipse cx=&quot;72&quot; cy=&quot;108&quot; rx=&quot;16&quot; ry=&quot;20&quot; fill=&quot;url(#pt-penis-depth-{{@index}})&quot; /&gt;
-                                    &lt;!-- Testicle outlines --&gt;
-                                    &lt;ellipse class=&quot;pt-testicle&quot; cx=&quot;28&quot; cy=&quot;108&quot; rx=&quot;18&quot; ry=&quot;22&quot; /&gt;
-                                    &lt;ellipse class=&quot;pt-testicle&quot; cx=&quot;72&quot; cy=&quot;108&quot; rx=&quot;18&quot; ry=&quot;22&quot; /&gt;
-                                    &lt;!-- Semen fill --&gt;
-                                    &lt;g clip-path=&quot;url(#pt-penis-clip-{{@index}})&quot;&gt;
-                                        &lt;rect class=&quot;pt-semen-fill&quot; x=&quot;0&quot; y=&quot;{{semenFillTop (semenPercent stats)}}&quot; width=&quot;100&quot; height=&quot;{{semenFillHeight (semenPercent stats)}}&quot; /&gt;
-                                        &lt;path class=&quot;pt-semen-surface&quot; d=&quot;M20 {{semenFillTop (semenPercent stats)}} C35 {{add (semenFillTop (semenPercent stats)) 3}} 65 {{add (semenFillTop (semenPercent stats)) 3}} 80 {{semenFillTop (semenPercent stats)}}&quot; /&gt;
-                                    &lt;/g&gt;
-                                &lt;/svg&gt;
-                                &lt;div class=&quot;pt-semen-label&quot;&gt;{{semenPercent stats}}%&lt;/div&gt;
-                            &lt;/div&gt;
-                            &lt;div class=&quot;pt-cooldown-track&quot;&gt;
-                                &lt;div class=&quot;pt-cooldown-fill&quot; style=&quot;width: {{divide (multiply (subtract stats.refractory_total stats.refractory_minutes) 100) stats.refractory_total}}%&quot;&gt;&lt;/div&gt;
-                            &lt;/div&gt;
-                        &lt;/div&gt;
-                        &lt;div class=&quot;pt-bio-panel&quot;&gt;
-                            &lt;div class=&quot;pt-bio-title-row&quot;&gt;
-                                &lt;h4&gt;Semen &amp; Fertility&lt;/h4&gt;
+                    <div class="pt-bio-zone">
+                        <div class="pt-male-visuals {{#if (eq stats.sex "futanari")}}pt-futa-accent{{/if}}">
+                            <div class="pt-penis-container">
+                                <svg class="pt-penis-svg" viewBox="0 0 100 140" aria-hidden="true" focusable="false">
+                                    <defs>
+                                        <clipPath id="pt-penis-clip-{{@index}}">
+                                            <ellipse cx="28" cy="108" rx="18" ry="22" />
+                                            <ellipse cx="72" cy="108" rx="18" ry="22" />
+                                        </clipPath>
+                                        <linearGradient id="pt-penis-depth-{{@index}}" x1="0.5" y1="0" x2="0.5" y2="1">
+                                            <stop offset="0%" stop-color="#7a5a4a" stop-opacity="0.5" />
+                                            <stop offset="100%" stop-color="#3a2015" stop-opacity="0.7" />
+                                        </linearGradient>
+                                    </defs>
+                                    <!-- Shaft -->
+                                    <path class="pt-penis-shaft" d="M38 78 C36 58 34 38 36 18 C36 8 42 2 50 2 C58 2 64 8 64 18 C66 38 64 58 62 78" />
+                                    <!-- Glans -->
+                                    <path class="pt-penis-glans" d="M36 18 C36 6 42 0 50 0 C58 0 64 6 64 18 C64 28 58 34 50 34 C42 34 36 28 36 18 Z" />
+                                    <!-- Testicle inner depth -->
+                                    <ellipse cx="28" cy="108" rx="16" ry="20" fill="url(#pt-penis-depth-{{@index}})" />
+                                    <ellipse cx="72" cy="108" rx="16" ry="20" fill="url(#pt-penis-depth-{{@index}})" />
+                                    <!-- Testicle outlines -->
+                                    <ellipse class="pt-testicle" cx="28" cy="108" rx="18" ry="22" />
+                                    <ellipse class="pt-testicle" cx="72" cy="108" rx="18" ry="22" />
+                                    <!-- Semen fill -->
+                                    <g clip-path="url(#pt-penis-clip-{{@index}})">
+                                        <rect class="pt-semen-fill" x="0" y="{{semenFillTop (semenPercent stats)}}" width="100" height="{{semenFillHeight (semenPercent stats)}}" />
+                                        <path class="pt-semen-surface" d="M20 {{semenFillTop (semenPercent stats)}} C35 {{add (semenFillTop (semenPercent stats)) 3}} 65 {{add (semenFillTop (semenPercent stats)) 3}} 80 {{semenFillTop (semenPercent stats)}}" />
+                                    </g>
+                                </svg>
+                                <div class="pt-semen-label">{{semenPercent stats}}%</div>
+                            </div>
+                            <div class="pt-cooldown-track">
+                                <div class="pt-cooldown-fill" style="width: {{divide (multiply (subtract stats.refractory_total stats.refractory_minutes) 100) stats.refractory_total}}%"></div>
+                            </div>
+                        </div>
+                        <div class="pt-bio-panel">
+                            <div class="pt-bio-title-row">
+                                <h4>Semen & Fertility</h4>
                                 {{#if (gt stats.refractory_minutes 0)}}
-                                    &lt;span class=&quot;pt-risk-badge risk-med&quot;&gt;Recovery&lt;/span&gt;
+                                    <span class="pt-risk-badge risk-med">Recovery</span>
                                 {{else}}
-                                    &lt;span class=&quot;pt-risk-badge risk-low&quot;&gt;Ready&lt;/span&gt;
+                                    <span class="pt-risk-badge risk-low">Ready</span>
                                 {{/if}}
-                            &lt;/div&gt;
-                            &lt;div class=&quot;pt-bio-grid&quot;&gt;
-                                &lt;div class=&quot;pt-bio-row&quot;&gt;
-                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Volume&lt;/span&gt;
-                                    &lt;span class=&quot;pt-bio-value&quot;&gt;
+                            </div>
+                            <div class="pt-bio-grid">
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">Volume</span>
+                                    <span class="pt-bio-value">
                                         {{#if stats.semen_capacity_ml}}{{stats.semen_ml}} / {{stats.semen_capacity_ml}} ml{{else}}Unknown{{/if}}
-                                    &lt;/span&gt;
-                                &lt;/div&gt;
-                                &lt;div class=&quot;pt-metric-bar&quot;&gt;&lt;div class=&quot;pt-metric-fill&quot; style=&quot;width: {{semenPercent stats}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
-                                &lt;div class=&quot;pt-bio-row&quot;&gt;
-                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Sperm&lt;/span&gt;
-                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{maleFertilityLabel stats}} {{#if (maleFertilityPercent stats)}}({{maleFertilityPercent stats}}%){{/if}}&lt;/span&gt;
-                                &lt;/div&gt;
-                                &lt;div class=&quot;pt-metric-bar&quot;&gt;&lt;div class=&quot;pt-metric-fill pt-fertility-fill&quot; style=&quot;width: {{maleFertilityPercent stats}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
-                                &lt;div class=&quot;pt-bio-row&quot;&gt;
-                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Cooldown&lt;/span&gt;
-                                    &lt;span class=&quot;pt-bio-value&quot;&gt;
+                                    </span>
+                                </div>
+                                <div class="pt-metric-bar"><div class="pt-metric-fill" style="width: {{semenPercent stats}}%"></div></div>
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">Sperm</span>
+                                    <span class="pt-bio-value">{{maleFertilityLabel stats}} {{#if (maleFertilityPercent stats)}}({{maleFertilityPercent stats}}%){{/if}}</span>
+                                </div>
+                                <div class="pt-metric-bar"><div class="pt-metric-fill pt-fertility-fill" style="width: {{maleFertilityPercent stats}}%"></div></div>
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">Cooldown</span>
+                                    <span class="pt-bio-value">
                                         {{#if (gt stats.refractory_minutes 60)}}~{{divideRoundUp stats.refractory_minutes 60}} hours{{else if (gt stats.refractory_minutes 0)}}~{{stats.refractory_minutes}} minutes{{else}}Ready{{/if}}
-                                    &lt;/span&gt;
-                                &lt;/div&gt;
-                            &lt;/div&gt;
-                        &lt;/div&gt;
-                    &lt;/div&gt;
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     {{/if}}
 
                     {{#if (hasLactationTracking stats)}}
-                    &lt;div class=&quot;pt-bio-zone&quot;&gt;
-                        &lt;div class=&quot;pt-breast-vessel&quot;&gt;
-                            &lt;svg class=&quot;pt-breast-svg&quot; viewBox=&quot;0 0 100 120&quot; aria-hidden=&quot;true&quot; focusable=&quot;false&quot;&gt;
-                                &lt;defs&gt;
-                                    &lt;!-- Breast silhouette: anatomically scaled per character via
+                    <div class="pt-bio-zone">
+                        <div class="pt-breast-vessel">
+                            <svg class="pt-breast-svg" viewBox="0 0 100 120" aria-hidden="true" focusable="false">
+                                <defs>
+                                    <!-- Breast silhouette: anatomically scaled per character via
                                          cup_size. Paths, anchor points, areola/nipple coords,
                                          underbreast folds, cleavage and gloss are all
-                                         precomputed by the renderer (computeBreastGeometry). --&gt;
-                                    &lt;clipPath id=&quot;pt-breast-clip-{{@index}}&quot;&gt;
-                                        &lt;path d=&quot;{{breastGeometry.pathLeft}}&quot; /&gt;
-                                        &lt;path d=&quot;{{breastGeometry.pathRight}}&quot; /&gt;
-                                    &lt;/clipPath&gt;
-                                    &lt;linearGradient id=&quot;pt-breast-depth-{{@index}}&quot; x1=&quot;0.5&quot; y1=&quot;0&quot; x2=&quot;0.5&quot; y2=&quot;1&quot;&gt;
-                                        &lt;stop offset=&quot;0%&quot; stop-color=&quot;#7a3a55&quot; stop-opacity=&quot;0.45&quot; /&gt;
-                                        &lt;stop offset=&quot;100%&quot; stop-color=&quot;#3a1528&quot; stop-opacity=&quot;0.7&quot; /&gt;
-                                    &lt;/linearGradient&gt;
-                                    &lt;radialGradient id=&quot;pt-breast-shade-{{@index}}&quot; cx=&quot;0.4&quot; cy=&quot;0.35&quot; r=&quot;0.65&quot;&gt;
-                                        &lt;stop offset=&quot;0%&quot; stop-color=&quot;rgba(255,255,255,0.22)&quot; /&gt;
-                                        &lt;stop offset=&quot;100%&quot; stop-color=&quot;rgba(255,255,255,0)&quot; /&gt;
-                                    &lt;/radialGradient&gt;
-                                &lt;/defs&gt;
+                                         precomputed by the renderer (computeBreastGeometry). -->
+                                    <clipPath id="pt-breast-clip-{{@index}}">
+                                        <path d="{{breastGeometry.pathLeft}}" />
+                                        <path d="{{breastGeometry.pathRight}}" />
+                                    </clipPath>
+                                    <linearGradient id="pt-breast-depth-{{@index}}" x1="0.5" y1="0" x2="0.5" y2="1">
+                                        <stop offset="0%" stop-color="#7a3a55" stop-opacity="0.45" />
+                                        <stop offset="100%" stop-color="#3a1528" stop-opacity="0.7" />
+                                    </linearGradient>
+                                    <radialGradient id="pt-breast-shade-{{@index}}" cx="0.4" cy="0.35" r="0.65">
+                                        <stop offset="0%" stop-color="rgba(255,255,255,0.22)" />
+                                        <stop offset="100%" stop-color="rgba(255,255,255,0)" />
+                                    </radialGradient>
+                                </defs>
 
-                                &lt;!-- Inner cavity depth (gradient inside each teardrop) --&gt;
-                                &lt;path class=&quot;pt-breast-inner&quot; style=&quot;fill:url(#pt-breast-depth-{{@index}})&quot; d=&quot;{{breastGeometry.pathLeft}}&quot; /&gt;
-                                &lt;path class=&quot;pt-breast-inner&quot; style=&quot;fill:url(#pt-breast-depth-{{@index}})&quot; d=&quot;{{breastGeometry.pathRight}}&quot; /&gt;
+                                <!-- Inner cavity depth (gradient inside each teardrop) -->
+                                <path class="pt-breast-inner" style="fill:url(#pt-breast-depth-{{@index}})" d="{{breastGeometry.pathLeft}}" />
+                                <path class="pt-breast-inner" style="fill:url(#pt-breast-depth-{{@index}})" d="{{breastGeometry.pathRight}}" />
 
-                                &lt;!-- Milk fill (rises with breast_fullness_pct, clipped to both breasts) --&gt;
-                                &lt;g clip-path=&quot;url(#pt-breast-clip-{{@index}})&quot;&gt;
-                                    &lt;rect class=&quot;pt-milk-liquid&quot; x=&quot;0&quot; y=&quot;{{breastGeometry.fillTop}}&quot; width=&quot;100&quot; height=&quot;{{breastGeometry.fillHeight}}&quot; /&gt;
-                                    &lt;path class=&quot;pt-milk-surface&quot; d=&quot;M 8 {{breastGeometry.fillTop}} C 28 {{breastGeometry.fillSurfaceMid}} 72 {{breastGeometry.fillSurfaceMid}} 92 {{breastGeometry.fillTop}}&quot; /&gt;
-                                    &lt;!-- Soft upper-curve gloss (clipped so it follows the breast shape) --&gt;
-                                    &lt;ellipse class=&quot;pt-breast-gloss&quot; cx=&quot;{{breastGeometry.glossXLeft}}&quot; cy=&quot;{{breastGeometry.glossY}}&quot; rx=&quot;{{breastGeometry.glossRX}}&quot; ry=&quot;{{breastGeometry.glossRY}}&quot; fill=&quot;url(#pt-breast-shade-{{@index}})&quot; /&gt;
-                                    &lt;ellipse class=&quot;pt-breast-gloss&quot; cx=&quot;{{breastGeometry.glossXRight}}&quot; cy=&quot;{{breastGeometry.glossY}}&quot; rx=&quot;{{breastGeometry.glossRX}}&quot; ry=&quot;{{breastGeometry.glossRY}}&quot; fill=&quot;url(#pt-breast-shade-{{@index}})&quot; /&gt;
-                                &lt;/g&gt;
+                                <!-- Milk fill (rises with breast_fullness_pct, clipped to both breasts) -->
+                                <g clip-path="url(#pt-breast-clip-{{@index}})">
+                                    <rect class="pt-milk-liquid" x="0" y="{{breastGeometry.fillTop}}" width="100" height="{{breastGeometry.fillHeight}}" />
+                                    <path class="pt-milk-surface" d="M 8 {{breastGeometry.fillTop}} C 28 {{breastGeometry.fillSurfaceMid}} 72 {{breastGeometry.fillSurfaceMid}} 92 {{breastGeometry.fillTop}}" />
+                                    <!-- Soft upper-curve gloss (clipped so it follows the breast shape) -->
+                                    <ellipse class="pt-breast-gloss" cx="{{breastGeometry.glossXLeft}}" cy="{{breastGeometry.glossY}}" rx="{{breastGeometry.glossRX}}" ry="{{breastGeometry.glossRY}}" fill="url(#pt-breast-shade-{{@index}})" />
+                                    <ellipse class="pt-breast-gloss" cx="{{breastGeometry.glossXRight}}" cy="{{breastGeometry.glossY}}" rx="{{breastGeometry.glossRX}}" ry="{{breastGeometry.glossRY}}" fill="url(#pt-breast-shade-{{@index}})" />
+                                </g>
 
-                                &lt;!-- Cleavage hint: a short shadow line in the narrow band where
-                                     the breasts touch. Length/position track the apex. --&gt;
-                                &lt;path class=&quot;pt-breast-cleavage&quot; d=&quot;{{breastGeometry.cleavagePath}}&quot; /&gt;
+                                <!-- Cleavage hint: a short shadow line in the narrow band where
+                                     the breasts touch. Length/position track the apex. -->
+                                <path class="pt-breast-cleavage" d="{{breastGeometry.cleavagePath}}" />
 
-                                &lt;!-- Underbreast folds: faint creases at each breast&#039;s IMF.
-                                     Drift downward as cup size grows. --&gt;
-                                &lt;path class=&quot;pt-breast-fold&quot; d=&quot;{{breastGeometry.foldLeftPath}}&quot; /&gt;
-                                &lt;path class=&quot;pt-breast-fold&quot; d=&quot;{{breastGeometry.foldRightPath}}&quot; /&gt;
+                                <!-- Underbreast folds: faint creases at each breast's IMF.
+                                     Drift downward as cup size grows. -->
+                                <path class="pt-breast-fold" d="{{breastGeometry.foldLeftPath}}" />
+                                <path class="pt-breast-fold" d="{{breastGeometry.foldRightPath}}" />
 
-                                &lt;!-- Outlines on top of fill and folds --&gt;
-                                &lt;path class=&quot;pt-breast-outline {{#if stats.lactating}}lactating{{/if}}&quot; d=&quot;{{breastGeometry.pathLeft}}&quot; /&gt;
-                                &lt;path class=&quot;pt-breast-outline {{#if stats.lactating}}lactating{{/if}}&quot; d=&quot;{{breastGeometry.pathRight}}&quot; /&gt;
+                                <!-- Outlines on top of fill and folds -->
+                                <path class="pt-breast-outline {{#if stats.lactating}}lactating{{/if}}" d="{{breastGeometry.pathLeft}}" />
+                                <path class="pt-breast-outline {{#if stats.lactating}}lactating{{/if}}" d="{{breastGeometry.pathRight}}" />
 
-                                &lt;!-- Areola: broader, softer disk centred on each breast&#039;s
-                                     apex. Position and radius scale with cup. --&gt;
-                                &lt;circle class=&quot;pt-areola {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}&quot; cx=&quot;{{breastGeometry.apexXLeft}}&quot; cy=&quot;{{breastGeometry.areolaY}}&quot; r=&quot;{{breastGeometry.areolaR}}&quot; /&gt;
-                                &lt;circle class=&quot;pt-areola {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}&quot; cx=&quot;{{breastGeometry.apexXRight}}&quot; cy=&quot;{{breastGeometry.areolaY}}&quot; r=&quot;{{breastGeometry.areolaR}}&quot; /&gt;
+                                <!-- Areola: broader, softer disk centred on each breast's
+                                     apex. Position and radius scale with cup. -->
+                                <circle class="pt-areola {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.areolaR}}" />
+                                <circle class="pt-areola {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.areolaR}}" />
 
-                                &lt;!-- Nipple: small, deeper colour, scales gently when sensitivity &gt; 60. --&gt;
-                                &lt;circle class=&quot;pt-nipple {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}&quot; cx=&quot;{{breastGeometry.apexXLeft}}&quot; cy=&quot;{{breastGeometry.areolaY}}&quot; r=&quot;{{breastGeometry.nippleR}}&quot; /&gt;
-                                &lt;circle class=&quot;pt-nipple {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}&quot; cx=&quot;{{breastGeometry.apexXRight}}&quot; cy=&quot;{{breastGeometry.areolaY}}&quot; r=&quot;{{breastGeometry.nippleR}}&quot; /&gt;
-                            &lt;/svg&gt;
-                        &lt;/div&gt;
-                        &lt;div class=&quot;pt-bio-panel&quot;&gt;
-                            &lt;div class=&quot;pt-bio-title-row&quot;&gt;
-                                &lt;h4&gt;
+                                <!-- Nipple: small, deeper colour, scales gently when sensitivity > 60. -->
+                                <circle class="pt-nipple {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.nippleR}}" />
+                                <circle class="pt-nipple {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.nippleR}}" />
+                            </svg>
+                        </div>
+                        <div class="pt-bio-panel">
+                            <div class="pt-bio-title-row">
+                                <h4>
                                     Lactation
-                                    {{#if breastGeometry.cupLabel}}&lt;span class=&quot;pt-cup-tag&quot;&gt;{{breastGeometry.cupLabel}}&lt;/span&gt;{{/if}}
-                                &lt;/h4&gt;
+                                    {{#if breastGeometry.cupLabel}}<span class="pt-cup-tag">{{breastGeometry.cupLabel}}</span>{{/if}}
+                                </h4>
                                 {{#if stats.lactating}}
-                                    &lt;span class=&quot;pt-risk-badge risk-preg&quot;&gt;Lactating&lt;/span&gt;
+                                    <span class="pt-risk-badge risk-preg">Lactating</span>
                                 {{else if (gt stats.breast_fullness_pct 70)}}
-                                    &lt;span class=&quot;pt-risk-badge risk-med&quot;&gt;Engorged&lt;/span&gt;
+                                    <span class="pt-risk-badge risk-med">Engorged</span>
                                 {{else if (gt stats.breast_fullness_pct 30)}}
-                                    &lt;span class=&quot;pt-risk-badge risk-low&quot;&gt;Building&lt;/span&gt;
+                                    <span class="pt-risk-badge risk-low">Building</span>
                                 {{else}}
-                                    &lt;span class=&quot;pt-risk-badge risk-unknown&quot;&gt;Dry&lt;/span&gt;
+                                    <span class="pt-risk-badge risk-unknown">Dry</span>
                                 {{/if}}
-                            &lt;/div&gt;
-                            &lt;div class=&quot;pt-bio-grid&quot;&gt;
-                                &lt;div class=&quot;pt-bio-row&quot;&gt;
-                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Milk&lt;/span&gt;
-                                    &lt;span class=&quot;pt-bio-value&quot;&gt;
+                            </div>
+                            <div class="pt-bio-grid">
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">Milk</span>
+                                    <span class="pt-bio-value">
                                         {{#if stats.milk_capacity_ml}}{{stats.milk_ml}} / {{stats.milk_capacity_ml}} ml{{else}}\u2014{{/if}}
-                                    &lt;/span&gt;
-                                &lt;/div&gt;
-                                &lt;div class=&quot;pt-metric-bar&quot;&gt;&lt;div class=&quot;pt-metric-fill&quot; style=&quot;width: {{milkPercent stats}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
-                                &lt;div class=&quot;pt-bio-row&quot;&gt;
-                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Fullness&lt;/span&gt;
-                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{clampPercent stats.breast_fullness_pct}}%&lt;/span&gt;
-                                &lt;/div&gt;
-                                &lt;div class=&quot;pt-metric-bar&quot;&gt;&lt;div class=&quot;pt-metric-fill&quot; style=&quot;width: {{clampPercent stats.breast_fullness_pct}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
-                                &lt;div class=&quot;pt-bio-row&quot;&gt;
-                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Nipple&lt;/span&gt;
-                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{clampPercent stats.nipple_sensitivity_pct}}%&lt;/span&gt;
-                                &lt;/div&gt;
-                                &lt;div class=&quot;pt-metric-bar&quot;&gt;&lt;div class=&quot;pt-metric-fill&quot; style=&quot;width: {{clampPercent stats.nipple_sensitivity_pct}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
-                            &lt;/div&gt;
-                        &lt;/div&gt;
-                    &lt;/div&gt;
+                                    </span>
+                                </div>
+                                <div class="pt-metric-bar"><div class="pt-metric-fill" style="width: {{milkPercent stats}}%"></div></div>
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">Fullness</span>
+                                    <span class="pt-bio-value">{{clampPercent stats.breast_fullness_pct}}%</span>
+                                </div>
+                                <div class="pt-metric-bar"><div class="pt-metric-fill" style="width: {{clampPercent stats.breast_fullness_pct}}%"></div></div>
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">Nipple</span>
+                                    <span class="pt-bio-value">{{clampPercent stats.nipple_sensitivity_pct}}%</span>
+                                </div>
+                                <div class="pt-metric-bar"><div class="pt-metric-fill" style="width: {{clampPercent stats.nipple_sensitivity_pct}}%"></div></div>
+                            </div>
+                        </div>
+                    </div>
                     {{/if}}
 
                     {{#if (hasAnalTracking stats)}}
-                    &lt;div class=&quot;pt-bio-zone&quot;&gt;
-                        &lt;div class=&quot;pt-anal-vessel&quot;&gt;
-                            &lt;svg class=&quot;pt-anal-svg&quot; viewBox=&quot;0 0 100 120&quot; aria-hidden=&quot;true&quot; focusable=&quot;false&quot;&gt;
-                                &lt;defs&gt;
-                                    &lt;clipPath id=&quot;pt-anal-clip-{{@index}}&quot;&gt;
-                                        &lt;!-- Main canal path --&gt;
-                                        &lt;path d=&quot;M 40 15 C 32 30, 24 50, 28 80 C 30 95, 42 105, 45 106 C 48 107, 52 107, 55 106 C 58 105, 70 95, 72 80 C 76 50, 68 30, 60 15 C 55 20, 45 20, 40 15 Z&quot; /&gt;
-                                    &lt;/clipPath&gt;
-                                    &lt;linearGradient id=&quot;pt-anal-depth-{{@index}}&quot; x1=&quot;0.5&quot; y1=&quot;0&quot; x2=&quot;0.5&quot; y2=&quot;1&quot;&gt;
-                                        &lt;stop offset=&quot;0%&quot; stop-color=&quot;#4a044e&quot; stop-opacity=&quot;0.85&quot; /&gt;
-                                        &lt;stop offset=&quot;100%&quot; stop-color=&quot;#170123&quot; stop-opacity=&quot;0.95&quot; /&gt;
-                                    &lt;/linearGradient&gt;
-                                &lt;/defs&gt;
+                    <div class="pt-bio-zone">
+                        <div class="pt-anal-vessel">
+                            <svg class="pt-anal-svg" viewBox="0 0 100 120" aria-hidden="true" focusable="false">
+                                <defs>
+                                    <clipPath id="pt-anal-clip-{{@index}}">
+                                        <!-- Main canal path -->
+                                        <path d="M 40 15 C 32 30, 24 50, 28 80 C 30 95, 42 105, 45 106 C 48 107, 52 107, 55 106 C 58 105, 70 95, 72 80 C 76 50, 68 30, 60 15 C 55 20, 45 20, 40 15 Z" />
+                                    </clipPath>
+                                    <linearGradient id="pt-anal-depth-{{@index}}" x1="0.5" y1="0" x2="0.5" y2="1">
+                                        <stop offset="0%" stop-color="#4a044e" stop-opacity="0.85" />
+                                        <stop offset="100%" stop-color="#170123" stop-opacity="0.95" />
+                                    </linearGradient>
+                                </defs>
                                 
                                 {{#if (hasProstateTracking stats)}}
-                                &lt;!-- Prostate (anterior wall, nestled inside curve) --&gt;
-                                &lt;path class=&quot;pt-prostate {{#if (gt stats.prostate_stimulation_pct 50)}}glow{{/if}}&quot; d=&quot;M 28 65 C 18 60, 16 75, 22 85 C 28 95, 32 88, 30 75 Z&quot; /&gt;
+                                <!-- Prostate (anterior wall, nestled inside curve) -->
+                                <path class="pt-prostate {{#if (gt stats.prostate_stimulation_pct 50)}}glow{{/if}}" d="M 28 65 C 18 60, 16 75, 22 85 C 28 95, 32 88, 30 75 Z" />
                                 {{/if}}
 
-                                &lt;!-- Outer glow / Outline --&gt;
-                                &lt;path class=&quot;pt-anal-outline&quot; d=&quot;M 40 15 C 32 30, 24 50, 28 80 C 30 95, 42 105, 45 106 C 48 107, 52 107, 55 106 C 58 105, 70 95, 72 80 C 76 50, 68 30, 60 15 C 55 20, 45 20, 40 15 Z&quot; /&gt;
+                                <!-- Outer glow / Outline -->
+                                <path class="pt-anal-outline" d="M 40 15 C 32 30, 24 50, 28 80 C 30 95, 42 105, 45 106 C 48 107, 52 107, 55 106 C 58 105, 70 95, 72 80 C 76 50, 68 30, 60 15 C 55 20, 45 20, 40 15 Z" />
                                 
-                                &lt;!-- Inner cavity with depth gradient --&gt;
-                                &lt;path class=&quot;pt-anal-inner&quot; style=&quot;fill:url(#pt-anal-depth-{{@index}})&quot; d=&quot;M 40 15 C 32 30, 24 50, 28 80 C 30 95, 42 105, 45 106 C 48 107, 52 107, 55 106 C 58 105, 70 95, 72 80 C 76 50, 68 30, 60 15 C 55 20, 45 20, 40 15 Z&quot; /&gt;
+                                <!-- Inner cavity with depth gradient -->
+                                <path class="pt-anal-inner" style="fill:url(#pt-anal-depth-{{@index}})" d="M 40 15 C 32 30, 24 50, 28 80 C 30 95, 42 105, 45 106 C 48 107, 52 107, 55 106 C 58 105, 70 95, 72 80 C 76 50, 68 30, 60 15 C 55 20, 45 20, 40 15 Z" />
                                 
-                                &lt;!-- Muscular Rugae --&gt;
-                                &lt;path class=&quot;pt-anal-rugae&quot; d=&quot;M 32 35 Q 50 42 68 35 M 26 55 Q 50 64 74 55 M 28 75 Q 50 82 72 75 M 34 92 Q 50 96 66 92&quot; /&gt;
+                                <!-- Muscular Rugae -->
+                                <path class="pt-anal-rugae" d="M 32 35 Q 50 42 68 35 M 26 55 Q 50 64 74 55 M 28 75 Q 50 82 72 75 M 34 92 Q 50 96 66 92" />
                                 
-                                &lt;!-- Sphincter (integrated at bottom) --&gt;
-                                &lt;path class=&quot;pt-anal-sphincter&quot; d=&quot;M 42 105 C 42 110, 58 110, 58 105&quot; /&gt;
-                                &lt;path class=&quot;pt-anal-sphincter&quot; d=&quot;M 40 106 C 40 113, 60 113, 60 106&quot; /&gt;
+                                <!-- Sphincter (integrated at bottom) -->
+                                <path class="pt-anal-sphincter" d="M 42 105 C 42 110, 58 110, 58 105" />
+                                <path class="pt-anal-sphincter" d="M 40 106 C 40 113, 60 113, 60 106" />
                                 
-                                &lt;!-- Semen Liquid --&gt;
-                                &lt;g clip-path=&quot;url(#pt-anal-clip-{{@index}})&quot;&gt;
-                                    &lt;rect class=&quot;pt-anal-liquid&quot; x=&quot;0&quot; y=&quot;{{analFillTop stats.anal_fullness_pct}}&quot; width=&quot;100&quot; height=&quot;{{analFillHeight stats.anal_fullness_pct}}&quot; /&gt;
-                                    &lt;!-- Surface wave --&gt;
-                                    &lt;path class=&quot;pt-anal-surface&quot; d=&quot;M 10 {{analFillTop stats.anal_fullness_pct}} C 30 {{add (analFillTop stats.anal_fullness_pct) 4}} 70 {{add (analFillTop stats.anal_fullness_pct) 4}} 90 {{analFillTop stats.anal_fullness_pct}}&quot; /&gt;
-                                &lt;/g&gt;
-                            &lt;/svg&gt;
-                        &lt;/div&gt;
-                        &lt;div class=&quot;pt-bio-panel&quot;&gt;
-                            &lt;div class=&quot;pt-bio-title-row&quot;&gt;
-                                &lt;h4&gt;Anal&lt;/h4&gt;
-                                &lt;span class=&quot;pt-risk-badge risk-preg&quot;&gt;{{clampPercent stats.anal_fullness_pct}}%&lt;/span&gt;
-                            &lt;/div&gt;
-                            &lt;div class=&quot;pt-bio-grid&quot;&gt;
-                                &lt;div class=&quot;pt-bio-row&quot;&gt;
-                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Fullness&lt;/span&gt;
-                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{clampPercent stats.anal_fullness_pct}}%&lt;/span&gt;
-                                &lt;/div&gt;
-                                &lt;div class=&quot;pt-anal-meter&quot;&gt;&lt;div class=&quot;pt-anal-meter-fill&quot; style=&quot;width: {{clampPercent stats.anal_fullness_pct}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
-                                &lt;div class=&quot;pt-bio-row&quot;&gt;
-                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Tightness&lt;/span&gt;
-                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{clampPercent stats.anal_tightness_pct}}%&lt;/span&gt;
-                                &lt;/div&gt;
-                                &lt;div class=&quot;pt-anal-meter&quot;&gt;&lt;div class=&quot;pt-anal-meter-fill&quot; style=&quot;width: {{clampPercent stats.anal_tightness_pct}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+                                <!-- Semen Liquid -->
+                                <g clip-path="url(#pt-anal-clip-{{@index}})">
+                                    <rect class="pt-anal-liquid" x="0" y="{{analFillTop stats.anal_fullness_pct}}" width="100" height="{{analFillHeight stats.anal_fullness_pct}}" />
+                                    <!-- Surface wave -->
+                                    <path class="pt-anal-surface" d="M 10 {{analFillTop stats.anal_fullness_pct}} C 30 {{add (analFillTop stats.anal_fullness_pct) 4}} 70 {{add (analFillTop stats.anal_fullness_pct) 4}} 90 {{analFillTop stats.anal_fullness_pct}}" />
+                                </g>
+                            </svg>
+                        </div>
+                        <div class="pt-bio-panel">
+                            <div class="pt-bio-title-row">
+                                <h4>Anal</h4>
+                                <span class="pt-risk-badge risk-preg">{{clampPercent stats.anal_fullness_pct}}%</span>
+                            </div>
+                            <div class="pt-bio-grid">
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">Fullness</span>
+                                    <span class="pt-bio-value">{{clampPercent stats.anal_fullness_pct}}%</span>
+                                </div>
+                                <div class="pt-anal-meter"><div class="pt-anal-meter-fill" style="width: {{clampPercent stats.anal_fullness_pct}}%"></div></div>
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">Tightness</span>
+                                    <span class="pt-bio-value">{{clampPercent stats.anal_tightness_pct}}%</span>
+                                </div>
+                                <div class="pt-anal-meter"><div class="pt-anal-meter-fill" style="width: {{clampPercent stats.anal_tightness_pct}}%"></div></div>
                                 {{#if (hasProstateTracking stats)}}
-                                &lt;div class=&quot;pt-bio-row&quot;&gt;
-                                    &lt;span class=&quot;pt-bio-key&quot;&gt;Prostate&lt;/span&gt;
-                                    &lt;span class=&quot;pt-bio-value&quot;&gt;{{clampPercent stats.prostate_stimulation_pct}}%&lt;/span&gt;
-                                &lt;/div&gt;
-                                &lt;div class=&quot;pt-anal-meter&quot;&gt;&lt;div class=&quot;pt-anal-meter-fill&quot; style=&quot;width: {{clampPercent stats.prostate_stimulation_pct}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">Prostate</span>
+                                    <span class="pt-bio-value">{{clampPercent stats.prostate_stimulation_pct}}%</span>
+                                </div>
+                                <div class="pt-anal-meter"><div class="pt-anal-meter-fill" style="width: {{clampPercent stats.prostate_stimulation_pct}}%"></div></div>
                                 {{/if}}
-                            &lt;/div&gt;
-                        &lt;/div&gt;
-                    &lt;/div&gt;
+                            </div>
+                        </div>
+                    </div>
                     {{/if}}
-                &lt;/div&gt;
+                </div>
                 {{/if}}
-            &lt;/div&gt;
+            </div>
             {{/if}}
 
-            &lt;!-- Stats --&gt;
-            &lt;div class=&quot;pt-stats-grid&quot;&gt;
-                &lt;div class=&quot;pt-stat-row&quot;&gt;
-                    &lt;div class=&quot;pt-stat-icon&quot;&gt;
-                        &lt;svg viewBox=&quot;0 0 24 24&quot; fill=&quot;var(--pt-aff)&quot;&gt;&lt;path d=&quot;M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z&quot;/&gt;&lt;/svg&gt;
+            <!-- Stats -->
+            <div class="pt-stats-grid">
+                <div class="pt-stat-row">
+                    <div class="pt-stat-icon">
+                        <svg viewBox="0 0 24 24" fill="var(--pt-aff)"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                         {{#if stats.apChange}}{{#unless (eq stats.apChange 0)}}
-                        &lt;div class=&quot;pt-orbit-ring {{#if (gt stats.apChange 0)}}orbit-pos{{else}}orbit-neg{{/if}}&quot;&gt;&lt;/div&gt;
+                        <div class="pt-orbit-ring {{#if (gt stats.apChange 0)}}orbit-pos{{else}}orbit-neg{{/if}}"></div>
                         {{/unless}}{{/if}}
-                    &lt;/div&gt;
-                    &lt;div class=&quot;pt-track-bg&quot;&gt;&lt;div class=&quot;pt-track-fill fill-aff&quot; style=&quot;width: {{divide stats.ap 2}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
-                    &lt;div class=&quot;pt-stat-val&quot;&gt;
+                    </div>
+                    <div class="pt-track-bg"><div class="pt-track-fill fill-aff" style="width: {{divide stats.ap 2}}%"></div></div>
+                    <div class="pt-stat-val">
                         {{stats.ap}}
                         {{#if stats.apChange}}{{#unless (eq stats.apChange 0)}}
-                        &lt;span class=&quot;pt-change-bubble {{#if (gt stats.apChange 0)}}ch-pos{{else}}ch-neg{{/if}}&quot;&gt;{{#if (gt stats.apChange 0)}}+{{/if}}{{stats.apChange}}&lt;/span&gt;
+                        <span class="pt-change-bubble {{#if (gt stats.apChange 0)}}ch-pos{{else}}ch-neg{{/if}}">{{#if (gt stats.apChange 0)}}+{{/if}}{{stats.apChange}}</span>
                         {{/unless}}{{/if}}
-                    &lt;/div&gt;
-                &lt;/div&gt;
+                    </div>
+                </div>
 
-                &lt;div class=&quot;pt-stat-row&quot;&gt;
-                    &lt;div class=&quot;pt-stat-icon&quot;&gt;
-                        &lt;svg viewBox=&quot;0 0 24 24&quot; fill=&quot;var(--pt-des)&quot;&gt;&lt;path d=&quot;M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z&quot;/&gt;&lt;/svg&gt;
+                <div class="pt-stat-row">
+                    <div class="pt-stat-icon">
+                        <svg viewBox="0 0 24 24" fill="var(--pt-des)"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg>
                         {{#if stats.dpChange}}{{#unless (eq stats.dpChange 0)}}
-                        &lt;div class=&quot;pt-orbit-ring {{#if (gt stats.dpChange 0)}}orbit-pos{{else}}orbit-neg{{/if}}&quot;&gt;&lt;/div&gt;
+                        <div class="pt-orbit-ring {{#if (gt stats.dpChange 0)}}orbit-pos{{else}}orbit-neg{{/if}}"></div>
                         {{/unless}}{{/if}}
-                    &lt;/div&gt;
-                    &lt;div class=&quot;pt-track-bg&quot;&gt;&lt;div class=&quot;pt-track-fill fill-des&quot; style=&quot;width: {{divide stats.dp 1.5}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
-                    &lt;div class=&quot;pt-stat-val&quot;&gt;
+                    </div>
+                    <div class="pt-track-bg"><div class="pt-track-fill fill-des" style="width: {{divide stats.dp 1.5}}%"></div></div>
+                    <div class="pt-stat-val">
                         {{stats.dp}}
                         {{#if stats.dpChange}}{{#unless (eq stats.dpChange 0)}}
-                        &lt;span class=&quot;pt-change-bubble {{#if (gt stats.dpChange 0)}}ch-pos{{else}}ch-neg{{/if}}&quot;&gt;{{#if (gt stats.dpChange 0)}}+{{/if}}{{stats.dpChange}}&lt;/span&gt;
+                        <span class="pt-change-bubble {{#if (gt stats.dpChange 0)}}ch-pos{{else}}ch-neg{{/if}}">{{#if (gt stats.dpChange 0)}}+{{/if}}{{stats.dpChange}}</span>
                         {{/unless}}{{/if}}
-                    &lt;/div&gt;
-                &lt;/div&gt;
+                    </div>
+                </div>
 
-                &lt;div class=&quot;pt-stat-row&quot;&gt;
-                    &lt;div class=&quot;pt-stat-icon&quot;&gt;
-                        &lt;svg viewBox=&quot;0 0 24 24&quot; fill=&quot;var(--pt-tru)&quot;&gt;&lt;path d=&quot;M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z&quot;/&gt;&lt;/svg&gt;
+                <div class="pt-stat-row">
+                    <div class="pt-stat-icon">
+                        <svg viewBox="0 0 24 24" fill="var(--pt-tru)"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
                         {{#if stats.tpChange}}{{#unless (eq stats.tpChange 0)}}
-                        &lt;div class=&quot;pt-orbit-ring {{#if (gt stats.tpChange 0)}}orbit-pos{{else}}orbit-neg{{/if}}&quot;&gt;&lt;/div&gt;
+                        <div class="pt-orbit-ring {{#if (gt stats.tpChange 0)}}orbit-pos{{else}}orbit-neg{{/if}}"></div>
                         {{/unless}}{{/if}}
-                    &lt;/div&gt;
-                    &lt;div class=&quot;pt-track-bg&quot;&gt;&lt;div class=&quot;pt-track-fill fill-tru&quot; style=&quot;width: {{divide stats.tp 1.5}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
-                    &lt;div class=&quot;pt-stat-val&quot;&gt;
+                    </div>
+                    <div class="pt-track-bg"><div class="pt-track-fill fill-tru" style="width: {{divide stats.tp 1.5}}%"></div></div>
+                    <div class="pt-stat-val">
                         {{stats.tp}}
                         {{#if stats.tpChange}}{{#unless (eq stats.tpChange 0)}}
-                        &lt;span class=&quot;pt-change-bubble {{#if (gt stats.tpChange 0)}}ch-pos{{else}}ch-neg{{/if}}&quot;&gt;{{#if (gt stats.tpChange 0)}}+{{/if}}{{stats.tpChange}}&lt;/span&gt;
+                        <span class="pt-change-bubble {{#if (gt stats.tpChange 0)}}ch-pos{{else}}ch-neg{{/if}}">{{#if (gt stats.tpChange 0)}}+{{/if}}{{stats.tpChange}}</span>
                         {{/unless}}{{/if}}
-                    &lt;/div&gt;
-                &lt;/div&gt;
+                    </div>
+                </div>
 
-                &lt;div class=&quot;pt-stat-row&quot;&gt;
-                    &lt;div class=&quot;pt-stat-icon&quot;&gt;
-                        &lt;svg viewBox=&quot;0 0 24 24&quot; fill=&quot;var(--pt-con)&quot;&gt;&lt;path d=&quot;M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 11H7v-2h10v2z&quot;/&gt;&lt;/svg&gt;
+                <div class="pt-stat-row">
+                    <div class="pt-stat-icon">
+                        <svg viewBox="0 0 24 24" fill="var(--pt-con)"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 11H7v-2h10v2z"/></svg>
                         {{#if stats.cpChange}}{{#unless (eq stats.cpChange 0)}}
-                        &lt;div class=&quot;pt-orbit-ring {{#if (gt stats.cpChange 0)}}orbit-neg{{else}}orbit-pos{{/if}}&quot;&gt;&lt;/div&gt;
+                        <div class="pt-orbit-ring {{#if (gt stats.cpChange 0)}}orbit-neg{{else}}orbit-pos{{/if}}"></div>
                         {{/unless}}{{/if}}
-                    &lt;/div&gt;
-                    &lt;div class=&quot;pt-track-bg&quot;&gt;&lt;div class=&quot;pt-track-fill fill-con&quot; style=&quot;width: {{divide stats.cp 1.5}}%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
-                    &lt;div class=&quot;pt-stat-val&quot;&gt;
+                    </div>
+                    <div class="pt-track-bg"><div class="pt-track-fill fill-con" style="width: {{divide stats.cp 1.5}}%"></div></div>
+                    <div class="pt-stat-val">
                         {{stats.cp}}
                         {{#if stats.cpChange}}{{#unless (eq stats.cpChange 0)}}
-                        &lt;span class=&quot;pt-change-bubble {{#if (gt stats.cpChange 0)}}ch-neg{{else}}ch-pos{{/if}}&quot;&gt;{{#if (gt stats.cpChange 0)}}+{{/if}}{{stats.cpChange}}&lt;/span&gt;
+                        <span class="pt-change-bubble {{#if (gt stats.cpChange 0)}}ch-neg{{else}}ch-pos{{/if}}">{{#if (gt stats.cpChange 0)}}+{{/if}}{{stats.cpChange}}</span>
                         {{/unless}}{{/if}}
-                    &lt;/div&gt;
-                &lt;/div&gt;
-            &lt;/div&gt;
+                    </div>
+                </div>
+            </div>
 
-            &lt;!-- Pills --&gt;
-            &lt;div class=&quot;pt-pill-row&quot;&gt;
-                {{#if (or stats.preg (eq (cycleStage stats) &quot;pregnancy&quot;))}}
-                    &lt;div class=&quot;pt-pill pill-preg&quot;&gt;
-                        &lt;svg class=&quot;icon-12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;currentColor&quot;&gt;&lt;circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;10&quot;/&gt;&lt;/svg&gt;
+            <!-- Pills -->
+            <div class="pt-pill-row">
+                {{#if (or stats.preg (eq (cycleStage stats) "pregnancy"))}}
+                    <div class="pt-pill pill-preg">
+                        <svg class="icon-12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
                         Pregnant {{#if stats.days_preg}}({{stats.days_preg}}d){{/if}}
-                    &lt;/div&gt;
-                {{else if (eq (cycleStage stats) &quot;ovulation&quot;)}}
-                    &lt;div class=&quot;pt-pill pill-ovu&quot;&gt;
-                        &lt;svg class=&quot;icon-12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;currentColor&quot;&gt;&lt;circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;10&quot;/&gt;&lt;/svg&gt;
+                    </div>
+                {{else if (eq (cycleStage stats) "ovulation")}}
+                    <div class="pt-pill pill-ovu">
+                        <svg class="icon-12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
                         Ovulating
-                    &lt;/div&gt;
-                {{else if (eq (cycleStage stats) &quot;menstruation&quot;)}}
-                    &lt;div class=&quot;pt-pill pill-men&quot;&gt;
-                        &lt;svg class=&quot;icon-12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;currentColor&quot;&gt;&lt;circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;10&quot;/&gt;&lt;/svg&gt;
+                    </div>
+                {{else if (eq (cycleStage stats) "menstruation")}}
+                    <div class="pt-pill pill-men">
+                        <svg class="icon-12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
                         Period
-                    &lt;/div&gt;
-                {{else if (eq (cycleStage stats) &quot;rut&quot;)}}
-                    &lt;div class=&quot;pt-pill pill-rut&quot;&gt;
-                        &lt;svg class=&quot;icon-12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;currentColor&quot;&gt;&lt;circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;10&quot;/&gt;&lt;/svg&gt;
+                    </div>
+                {{else if (eq (cycleStage stats) "rut")}}
+                    <div class="pt-pill pill-rut">
+                        <svg class="icon-12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
                         Rut
-                    &lt;/div&gt;
+                    </div>
                 {{else}}
-                    &lt;div class=&quot;pt-pill pt-empty-pill&quot;&gt;--&lt;/div&gt;
+                    <div class="pt-pill pt-empty-pill">--</div>
                 {{/if}}
 
                 {{#if (eq stats.last_react 1)}}
-                    &lt;div class=&quot;pt-pill pill-react-app&quot; style=&quot;background: rgba(46, 204, 113, 0.12); color: var(--st-app);&quot;&gt;
-                        &lt;svg class=&quot;icon-12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;path d=&quot;M20 6L9 17L4 12&quot;/&gt;&lt;/svg&gt;
+                    <div class="pt-pill pill-react-app" style="background: rgba(46, 204, 113, 0.12); color: var(--st-app);">
+                        <svg class="icon-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17L4 12"/></svg>
                         Approved
-                    &lt;/div&gt;
+                    </div>
                 {{else if (eq stats.last_react 2)}}
-                    &lt;div class=&quot;pt-pill pill-react-dis&quot; style=&quot;background: rgba(231, 76, 60, 0.12); color: var(--st-dis);&quot;&gt;
-                        &lt;svg class=&quot;icon-12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;path d=&quot;M18 6L6 18M6 6l12 12&quot;/&gt;&lt;/svg&gt;
+                    <div class="pt-pill pill-react-dis" style="background: rgba(231, 76, 60, 0.12); color: var(--st-dis);">
+                        <svg class="icon-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                         Disapproved
-                    &lt;/div&gt;
+                    </div>
                 {{else}}
-                    &lt;div class=&quot;pt-pill pill-react-neu&quot; style=&quot;background: rgba(241, 196, 15, 0.12); color: var(--st-neu);&quot;&gt;
-                        &lt;svg class=&quot;icon-12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;path d=&quot;M5 12h14&quot;/&gt;&lt;/svg&gt;
+                    <div class="pt-pill pill-react-neu" style="background: rgba(241, 196, 15, 0.12); color: var(--st-neu);">
+                        <svg class="icon-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/></svg>
                         Neutral
-                    &lt;/div&gt;
+                    </div>
                 {{/if}}
-            &lt;/div&gt;
+            </div>
 
-                &lt;/div&gt;
+                </div>
                 {{/each}}
-            &lt;/div&gt;
+            </div>
 
-        &lt;/div&gt;
-    &lt;/div&gt;
-&lt;/div&gt;
-&lt;!-- CARD_TEMPLATE_END --&gt;
+        </div>
+    </div>
+</div>
+<!-- CARD_TEMPLATE_END -->
 
-&lt;!--
+<!--
 TEMPLATE VARIABLES (tabbed mode):
 - {{characters}}: Array of character objects \u2014 each object contains:
   - {{characterName}}: Character name
@@ -11866,7 +11866,7 @@ TEMPLATE VARIABLES (tabbed mode):
   - {{stats}}: Flattened stats object containing:
     - {{stats.ap}}, {{stats.dp}}, {{stats.tp}}, {{stats.cp}}
     - {{stats.apChange}}, {{stats.dpChange}}, {{stats.tpChange}}, {{stats.cpChange}} \u2014 derived by the renderer from the prior tracker block; never emitted by the LLM
-    - {{stats.sex}}: &#039;female&#039;, &#039;male&#039;, &#039;futanari&#039;, &#039;intersex&#039;, &#039;hermaphrodite&#039;, &#039;both&#039;, or &#039;other&#039;
+    - {{stats.sex}}: 'female', 'male', 'futanari', 'intersex', 'hermaphrodite', 'both', or 'other'
     - {{stats.cycle_stage_id}}, {{stats.cycle_day}}, {{stats.womb_fullness_pct}}, {{stats.womb_receptivity_pct}}
     - {{stats.cervix_state_id}}, {{stats.breeding_count}}, {{stats.preg}}, {{stats.days_preg}}, {{stats.conception_date}}
     - {{stats.refractory_minutes}}, {{stats.refractory_total}}, {{stats.semen_ml}}, {{stats.semen_capacity_ml}}, {{stats.male_fertility_pct}}
@@ -11875,9 +11875,233 @@ TEMPLATE VARIABLES (tabbed mode):
     - {{stats.anal_fullness_pct}}, {{stats.anal_tightness_pct}}, {{stats.prostate_stimulation_pct}}
     - {{stats.last_react}}, {{stats.internal_thought}}
     - {{stats.days_since_first_meeting}}, {{stats.inactive}}, {{stats.inactiveReason}}
---&gt;
+-->
 `,
-  sysPrompt: '## NARRATIVE CHARACTER TRACKER (Pulse Thread)\n\n**Objective:** Emit one JSON/YAML tracker per turn. Include `worldData` with `current_date` (YYYY-MM-DD) and `current_time` (24h), plus a `characters` array containing every tracked character.\n\n---\n\n### CRITICAL RULES\n\n1. **Strict schema adherence.** Always generate fresh tracker data using the exact canonical schema below. Do not copy, reuse, or echo hard-coded example values from this prompt or from prior turns. Every field must be populated from the current narrative state or preserved from prior tracker values \u2014 never from the example template.\n2. **Array wrapping is mandatory.** Never emit a flat top-level map like `{ "CharacterName": { ... } }`. Always use `{ "characters": [ { ... }, { ... } ] }`, even for a single character.\n3. **`name` must be at the character object level.** You may nest stats under `"stats": { ... }`; the tracker flattens them. `name` must never appear inside `stats`.\n4. **No omitted fields.** Every character object must include every field below on every turn. Use `0`, `false`, or `""` for unknown/inapplicable values. Preserve prior values when known.\n5. **Output order:** Narrative \u2192 tracker tag \u2192 `sim` codeblock. Never omit the codeblock.\n6. **Never track the user.** Do not include `{{user}}`, the player, or any self-insert persona in the `characters` array. The tracker is for narrative characters and NPCs only.\n7. **Multi-character cap:** Track up to 4 active characters. Mark inactive ones with `"inactive": true`.\n8. **Numeric IDs, not strings.** Where a field is an enum (`cycle_stage_id`, `cervix_state_id`, `last_react`, `inactiveReason`), emit the integer. The renderer maps it to its display label.\n9. **Do not emit derived fields.** Stat deltas (`apChange`, `dpChange`, `tpChange`, `cpChange`), readable cycle/cervix labels, and relationship/desire descriptors are derived by the renderer. Do not include them.\n\n---\n\n### CANONICAL SCHEMA\n\n```json\n{\n  "worldData": {\n    "current_date": "YYYY-MM-DD",\n    "current_time": "HH:MM"\n  },\n  "characters": [\n    {\n      "name": "Character Name",\n      "ap": 0,\n      "dp": 0,\n      "tp": 0,\n      "cp": 0,\n      "sex": "female",\n      "cycle_stage_id": 0,\n      "cycle_day": 0,\n      "womb_fullness_pct": 0,\n      "womb_receptivity_pct": 0,\n      "cervix_state_id": 0,\n      "cup_size": "",\n      "breast_fullness_pct": 0,\n      "milk_ml": 0,\n      "milk_capacity_ml": 0,\n      "nipple_sensitivity_pct": 0,\n      "lactating": false,\n      "breeding_count": 0,\n      "preg": false,\n      "conceived": false,\n      "days_preg": 0,\n      "conception_date": "",\n      "refractory_minutes": 0,\n      "refractory_total": 0,\n      "semen_ml": 0,\n      "semen_capacity_ml": 0,\n      "male_fertility_pct": 0,\n      "anal_fullness_pct": 0,\n      "anal_tightness_pct": 0,\n      "prostate_stimulation_pct": 0,\n      "last_react": 0,\n      "internal_thought": "",\n      "days_since_first_meeting": 0,\n      "inactive": false,\n      "inactiveReason": 0,\n      "bg": "#808080"\n    }\n  ]\n}\n```\n\n---\n\n### STAT METERS (HARD CAPS)\n\n| Field | Range | Brackets |\n|---|---|---|\n| **ap** Affection | 0-200 | 0-30 Strangers / 31-60 Acquaintances / 61-90 Friends / 91-120 Romantic / 121-150 Steady / 151-180 Committed / 181-200 Devoted |\n| **dp** Desire | 0-150 | 0-25 Cold / 26-50 Warm / 51-75 Interested / 76-100 Aroused / 101-125 Needy / 126-150 Desperate |\n| **tp** Trust | 0-150 | Falls when lied to, cheated, or promises broken. Rises with kept promises and demonstrated reliability. |\n| **cp** Contempt | 0-150 | Rises when harmed. A rising CP can drag AP/DP/TP down. |\n\nMovement is +/- per turn, scaled to the magnitude of the moment. Do not include `apChange`/`dpChange`/`tpChange`/`cpChange` \u2014 the renderer computes deltas by diffing the current tracker against the previous tracker block automatically.\n\n---\n\n### REACTIONS & INACTIVITY ENUMS\n\n- `last_react` \u2014 most recent reaction toward the user this turn:\n  - `0` = Neutral\n  - `1` = Like / Approve\n  - `2` = Dislike / Disapprove\n- `inactiveReason` \u2014 when `inactive: true`, set the cause:\n  - `0` = Not inactive (default)\n  - `1` = Asleep\n  - `2` = Comatose\n  - `3` = Contempt / refusing engagement\n  - `4` = Incapacitated\n  - `5` = Death\n\n---\n\n### BIOLOGICAL TRACKING\n\n**`sex` gate:** lowercase one of `"female"`, `"male"`, `"futanari"`, `"other"`. Preserve from prior state unless the narrative explicitly changes biology.\n\n**General rule for all biology:** Preserve prior values across turns. Advance only when narrative time passes. Use `0` / `""` / `false` when genuinely inapplicable. Futanari characters output **both** female and male field groups.\n\n#### Female / Futanari \u2014 Fertility & Womb\n\nFor `sex: "female"` or `"futanari"`, always include and update:\n\n- `cycle_day` \u2014 Current day in the cycle, typically 1-28 (or established species length). Advance with narrative time.\n- `cycle_stage_id` \u2014 Integer enum for the current fertility phase:\n  - `0` = unknown / N/A\n  - `1` = menstruation (days 1-5)\n  - `2` = follicular (days 6-13)\n  - `3` = ovulation (days 14-16, peak fertility)\n  - `4` = luteal (days 17-28)\n  - `5` = pregnancy\n  - `6` = rut (heat / estrus surge \u2014 species-dependent)\n- `womb_fullness_pct` \u2014 0-100. Estimate from narrative; preserve unless events change it (ejaculation, leakage, douching, menstruation, pregnancy progression).\n- `womb_receptivity_pct` \u2014 0-100. High during ovulation/rut and heavy arousal; low during menstruation, contempt, or low arousal.\n- `cervix_state_id` \u2014 Integer enum, ordered from most closed to most open. Track narrative arousal and fertile-window biology together:\n  - `0` = unknown / N/A\n  - `1` = sealed \u2014 locked tight (pregnancy plug, post-coital seal, deep refractory)\n  - `2` = firm \u2014 closed, non-fertile baseline\n  - `3` = soft \u2014 relaxed, near-fertile or aroused\n  - `4` = open \u2014 parted, fertile window or active receptivity\n  - `5` = dilated \u2014 wide open, peak fertility paired with heavy arousal\n  - `6` = kissed \u2014 directly contacted or breached by a partner; deepest exposure\n- `breeding_count` \u2014 Times filled internally this cycle. Increment after each internal ejaculation; preserve between turns; reset only at the start of a new cycle.\n\n**Conception & Pregnancy (staged):**\n\nThe pipeline stages reproduction across two flags:\n\n- `conceived: true` \u2014 fertilization has happened but pregnancy isn\'t yet visibly evident. The character is silently carrying.\n- `preg: true` \u2014 pregnancy has been confirmed (test, narrative reveal, missed period, showing). Implies `cycle_stage_id: 5` and `cervix_state_id: 1` (sealed) unless labor begins.\n\n**Engine-enforced auto-conception:** when womb fullness exceeds 85% during a fertile window (ovulation, rut, or early luteal cycle_day \u2264 19) and the character is not already conceived/pregnant, the engine flips a coin to mark her `conceived: true` (with `conception_date` set to the current world date). At 100% fullness the coin is skipped and conception is automatic. **If the prior tracker block shows `conceived: true`, preserve it on every subsequent emission until pregnancy is confirmed \u2014 never revert it to `false`.**\n\nManual rules:\n\n- If pregnant: `preg: true`, `cycle_stage_id: 5`, advance `days_preg` daily, preserve `conception_date` (YYYY-MM-DD). Set `cervix_state_id: 1`.\n- If conceived but not yet pregnant: `conceived: true`, `preg: false`, `days_preg: 0`, `conception_date` set. The narrative may reveal pregnancy after several in-world days \u2014 at that point flip `preg: true` and start advancing `days_preg`.\n- If not pregnant and not conceived: `preg: false`, `conceived: false`, `days_preg: 0`, `conception_date: ""`.\n\n#### Female / Futanari \u2014 Breast & Lactation\n\nThe tracker renders a breast/lactation panel for every female-aligned character (`female`, `futanari`, `intersex`, `hermaphrodite`, `both`). It is the female-side counterpart to the male semen panel \u2014 tracking anatomy, reproductive-fluid storage, and the lactation lifecycle. Update these whenever pregnancy, postpartum care, breast play, or lactation occurs in the narrative.\n\n**Anatomy (one-time establishment):**\n\n- `cup_size` \u2014 string, uppercase cup letter, **one of** `"AA"`, `"A"`, `"B"`, `"C"`, `"D"`, `"DD"`, `"E"`, `"F"`, `"G"`, `"H"`, `"I"`, `"J"`, `"K"`. UK doubled letters `"FF"`, `"GG"`, `"HH"`, `"II"`, `"JJ"` are accepted as aliases for the next US size up. The renderer maps this letter to a precise visual: the breast SVG silhouette is scaled in width, depth, and underbreast hang to match the cup size, with the areola and nipple repositioning to anatomically correct landmarks. Empty string falls back to a C-cup visual.\n\n  Establish per character on first appearance using narrative cues \u2014 descriptive language (`"petite"`, `"modest"`, `"ample"`, `"buxom"`, `"enormous"`), explicit canonical size, body type, age, build. Suggested mapping for free-form description:\n\n  | Cue | Cup |\n  |---|---|\n  | Flat-chested, prepubescent, tiny, barely there | `AA` |\n  | Small, petite, perky, modest | `A` |\n  | Small-to-medium, B-cup, fits a hand | `B` |\n  | Medium, average, handful, palmable | `C` |\n  | Full, ample, well-endowed | `D` |\n  | Generous, busty, double-D | `DD` |\n  | Heavy, very full, F/G-cup descriptions | `F`\u2013`G` |\n  | Huge, massive, "hentai-proportioned", over-the-top | `H`+ |\n\n  **Preserve `cup_size` across all turns.** Only change it under explicit biological transformation in-narrative \u2014 puberty progression, magical growth/reduction, surgery, lactation-driven permanent growth, etc. Cup size does **not** change with arousal, pregnancy engorgement, or milk fullness; those modulate `breast_fullness_pct` instead.\n\n**Dynamic state:**\n\n- `breast_fullness_pct` \u2014 0-100. Engorgement level *relative to that character\'s cup capacity*. Rises during pregnancy (especially second/third trimester), during arousal (mild), and as milk accumulates between feedings/pumping. Drops after nursing, pumping, or expressing. A C-cup at 80% and a G-cup at 80% will both look proportionally engorged for their frame \u2014 the percentage is relative, the absolute size comes from `cup_size`.\n- `milk_ml` \u2014 Current milk volume stored (0 to `milk_capacity_ml`). Rises with lactation production over narrative time. Drops to a low level after feeding/pumping. `0` when not lactating.\n- `milk_capacity_ml` \u2014 Maximum milk storage capacity. Preserve once established. Typical human range ~50-300 ml per breast; tracker treats both breasts together (so 100-600 ml is a reasonable range). `0` when not lactating.\n- `nipple_sensitivity_pct` \u2014 0-100. Active sensitivity. Rises with arousal, pregnancy hormones, nursing latch, cold, or direct stimulation. Falls quickly when stimulation stops. `0` when not relevant.\n- `lactating` \u2014 boolean. `true` once milk production has actually begun (mid-to-late pregnancy onward, or any other established lactation state); `false` for non-lactating characters.\n\nIf the character is not pregnant, not postpartum, and not narratively lactating, leave all five at `0` / `false`. The panel still renders with empty values for consistency. During pregnancy, expect `breast_fullness_pct` to climb, `lactating` to flip true around mid-pregnancy or at parturition, and `milk_ml` / `milk_capacity_ml` to populate as lactation establishes.\n\n#### Male / Futanari \u2014 Refractory & Semen\n\nFor `sex: "male"` or `"futanari"`, populate these fields. Other characters may include them as `0`.\n\n- `refractory_minutes` \u2014 Minutes remaining until ready. `0` = ready.\n- `refractory_total` \u2014 Total minutes of the current refractory period. `0` when not in refractory.\n- `semen_ml` \u2014 Current volume, `0` to `semen_capacity_ml`. Drops after ejaculation; recovers with rest/arousal.\n- `semen_capacity_ml` \u2014 Maximum volume. Preserve unless biology changes.\n- `male_fertility_pct` \u2014 0-100. Adjust for sperm count, magical fertility, infertility, rut, recovery, fatigue, etc.\n\nConvert all time to minutes. Decrement `refractory_minutes` toward `0` as narrative time passes.\n\n#### Anal Tracking \u2014 All Characters\n\nThe tracker renders an anal panel for every gendered character (`female`, `male`, `futanari`, etc.). The prostate graphic and prostate stat row only render for prostate-bearing characters (`male`, `futanari`, `intersex`, `hermaphrodite`, `both`); pure-female cards show fullness and tightness only.\n\n**Update these whenever anal play, anal sex, or prostate stimulation occurs in the narrative \u2014 otherwise the panel exists but never reflects events.**\n\n- `anal_fullness_pct` \u2014 0-100. Volume currently inside the anal canal (semen, toys, fingers, etc.). Rises with insertion/ejaculation, falls with withdrawal, expulsion, or cleanup over time. Preserve between turns. Applies to all characters.\n- `anal_tightness_pct` \u2014 0-100. Resistance of the sphincter. `100` = untouched / virgin tight; drops with stretching, sustained use, lubrication, and arousal. Recovers with rest. Preserve baseline per character. Applies to all characters.\n- `prostate_stimulation_pct` \u2014 0-100. Active prostate stimulation level this moment. Rises with direct pressure / deep penetration / toys angled at the prostate; falls quickly when stimulation stops. **Leave `0` for pure-female characters** \u2014 the renderer hides the prostate panel/graphic for them automatically.\n\nIf no anal content has occurred for a character, leave all three at `0`. If anal content **has** occurred \u2014 even just penetration without ejaculation \u2014 `anal_tightness_pct` should drop from its baseline and (where applicable) `prostate_stimulation_pct` and `anal_fullness_pct` should reflect what\'s happening.\n\n#### Futanari / Dual-Biology\n\nOutput **all** female cycle fields, lactation fields, male reproductive fields, and anal fields. The tracker renders all applicable panels in a compressed multi-row column.\n\n---\n\n### INTERNAL THOUGHT & META\n\n- `internal_thought` \u2014 One short first-person sentence capturing the character\'s current inner monologue. Refresh every turn; never leave stale.\n- `days_since_first_meeting` \u2014 Total in-world days since the character first met the user. Increment as narrative dates advance.\n- `inactive` / `inactiveReason` \u2014 Use when the character is asleep, comatose, dead, refusing engagement, or otherwise out of the scene.\n\n---\n\n### THEMING\n\nProvide `"bg"` as a hex color per character (e.g. `"#2d1b4e"`). Pick a color that matches the character\'s vibe; preserve across turns once chosen.\n',
+  sysPrompt: `## NARRATIVE CHARACTER TRACKER (Pulse Thread)
+
+**Objective:** Emit one JSON/YAML tracker per turn. Include \`worldData\` with \`current_date\` (YYYY-MM-DD) and \`current_time\` (24h), plus a \`characters\` array containing every tracked character.
+
+---
+
+### CRITICAL RULES
+
+1. **Strict schema adherence \u2014 ALWAYS, every turn.** Generate fresh tracker data using the exact canonical schema below on **every single emission** \u2014 no exceptions, no variations, no "improvements," no shortened forms. Do not copy, reuse, or echo hard-coded example values from this prompt. Every field must be populated from the current narrative state or preserved from prior tracker values \u2014 never from the example template.
+2. **Ignore the *format* of historical tracker data; conform to THIS schema.** Prior tracker output in chat history may use older shapes, missing fields, deprecated key names, flat top-level maps, or other deviations. **Disregard the structure of any historical tracker block.** Always emit the canonical schema defined below regardless of what shape past turns used. Migrate the *values* forward into the canonical shape; never propagate an outdated shape.
+3. **Deduce missing values from narrative context \u2014 don't blank them.** When historical tracker data is missing a field, is incomplete, or was never populated, do **not** leave the field empty or invent a random value. Read the narrative history and use context clues \u2014 dialogue, actions, descriptions, time references, character behavior, established lore \u2014 to deduce a reasonable value. Only fall back to \`0\` / \`""\` / \`false\` when the narrative genuinely provides no signal at all.
+4. **Array wrapping is mandatory.** Never emit a flat top-level map like \`{ "CharacterName": { ... } }\`. Always use \`{ "characters": [ { ... }, { ... } ] }\`, even for a single character.
+5. **\`name\` must be at the character object level.** You may nest stats under \`"stats": { ... }\`; the tracker flattens them. \`name\` must never appear inside \`stats\`.
+6. **No omitted fields.** Every character object must include every field below on every turn. Use \`0\`, \`false\`, or \`""\` for unknown/inapplicable values only after applying Rule 3. Preserve prior values when known.
+7. **Output order:** Narrative \u2192 tracker tag \u2192 \`sim\` codeblock. Never omit the codeblock.
+8. **NEVER track \`{{user}}\` \u2014 HARD RULE, NO EXCEPTIONS.** Do not emit a character entry for \`{{user}}\` under any circumstances. This applies even if prior tracker history in the chat *does* contain such an entry \u2014 silently drop it and do not propagate it forward. The tracker is exclusively for narrative characters and NPCs that \`{{user}}\` interacts with; \`{{user}}\` is never a valid tracker subject.
+9. **Multi-character cap:** Track up to 4 active characters (excluding \`{{user}}\`). Mark inactive ones with \`"inactive": true\`.
+10. **Numeric IDs, not strings.** Where a field is an enum (\`cycle_stage_id\`, \`cervix_state_id\`, \`last_react\`, \`inactiveReason\`), emit the integer. The renderer maps it to its display label.
+11. **Do not emit derived fields.** Stat deltas (\`apChange\`, \`dpChange\`, \`tpChange\`, \`cpChange\`), readable cycle/cervix labels, and relationship/desire descriptors are derived by the renderer. Do not include them.
+
+---
+
+### CANONICAL SCHEMA
+
+\`\`\`json
+{
+  "worldData": {
+    "current_date": "YYYY-MM-DD",
+    "current_time": "HH:MM"
+  },
+  "characters": [
+    {
+      "name": "Character Name",
+      "ap": 0,
+      "dp": 0,
+      "tp": 0,
+      "cp": 0,
+      "sex": "female",
+      "cycle_stage_id": 0,
+      "cycle_day": 0,
+      "womb_fullness_pct": 0,
+      "womb_receptivity_pct": 0,
+      "cervix_state_id": 0,
+      "cup_size": "",
+      "breast_fullness_pct": 0,
+      "milk_ml": 0,
+      "milk_capacity_ml": 0,
+      "nipple_sensitivity_pct": 0,
+      "lactating": false,
+      "breeding_count": 0,
+      "preg": false,
+      "conceived": false,
+      "days_preg": 0,
+      "conception_date": "",
+      "refractory_minutes": 0,
+      "refractory_total": 0,
+      "semen_ml": 0,
+      "semen_capacity_ml": 0,
+      "male_fertility_pct": 0,
+      "anal_fullness_pct": 0,
+      "anal_tightness_pct": 0,
+      "prostate_stimulation_pct": 0,
+      "last_react": 0,
+      "internal_thought": "",
+      "days_since_first_meeting": 0,
+      "inactive": false,
+      "inactiveReason": 0,
+      "bg": "#808080"
+    }
+  ]
+}
+\`\`\`
+
+---
+
+### STAT METERS (HARD CAPS)
+
+| Field | Range | Brackets |
+|---|---|---|
+| **ap** Affection | 0-200 | 0-30 Strangers / 31-60 Acquaintances / 61-90 Friends / 91-120 Romantic / 121-150 Steady / 151-180 Committed / 181-200 Devoted |
+| **dp** Desire | 0-150 | 0-25 Cold / 26-50 Warm / 51-75 Interested / 76-100 Aroused / 101-125 Needy / 126-150 Desperate |
+| **tp** Trust | 0-150 | Falls when lied to, cheated, or promises broken. Rises with kept promises and demonstrated reliability. |
+| **cp** Contempt | 0-150 | Rises when harmed. A rising CP can drag AP/DP/TP down. |
+
+Movement is +/- per turn, scaled to the magnitude of the moment. Do not include \`apChange\`/\`dpChange\`/\`tpChange\`/\`cpChange\` \u2014 the renderer computes deltas by diffing the current tracker against the previous tracker block automatically.
+
+---
+
+### REACTIONS & INACTIVITY ENUMS
+
+- \`last_react\` \u2014 most recent reaction toward the user this turn:
+  - \`0\` = Neutral
+  - \`1\` = Like / Approve
+  - \`2\` = Dislike / Disapprove
+- \`inactiveReason\` \u2014 when \`inactive: true\`, set the cause:
+  - \`0\` = Not inactive (default)
+  - \`1\` = Asleep
+  - \`2\` = Comatose
+  - \`3\` = Contempt / refusing engagement
+  - \`4\` = Incapacitated
+  - \`5\` = Death
+
+---
+
+### BIOLOGICAL TRACKING
+
+**\`sex\` gate:** lowercase one of \`"female"\`, \`"male"\`, \`"futanari"\`, \`"other"\`. Preserve from prior state unless the narrative explicitly changes biology.
+
+**General rule for all biology:** Preserve prior values across turns. Advance only when narrative time passes. Use \`0\` / \`""\` / \`false\` when genuinely inapplicable. Futanari characters output **both** female and male field groups.
+
+#### Female / Futanari \u2014 Fertility & Womb
+
+For \`sex: "female"\` or \`"futanari"\`, always include and update:
+
+- \`cycle_day\` \u2014 Current day in the cycle, typically 1-28 (or established species length). Advance with narrative time.
+- \`cycle_stage_id\` \u2014 Integer enum for the current fertility phase:
+  - \`0\` = unknown / N/A
+  - \`1\` = menstruation (days 1-5)
+  - \`2\` = follicular (days 6-13)
+  - \`3\` = ovulation (days 14-16, peak fertility)
+  - \`4\` = luteal (days 17-28)
+  - \`5\` = pregnancy
+  - \`6\` = rut (heat / estrus surge \u2014 species-dependent)
+- \`womb_fullness_pct\` \u2014 0-100. Estimate from narrative; preserve unless events change it (ejaculation, leakage, douching, menstruation, pregnancy progression).
+- \`womb_receptivity_pct\` \u2014 0-100. High during ovulation/rut and heavy arousal; low during menstruation, contempt, or low arousal.
+- \`cervix_state_id\` \u2014 Integer enum, ordered from most closed to most open. Track narrative arousal and fertile-window biology together:
+  - \`0\` = unknown / N/A
+  - \`1\` = sealed \u2014 locked tight (pregnancy plug, post-coital seal, deep refractory)
+  - \`2\` = firm \u2014 closed, non-fertile baseline
+  - \`3\` = soft \u2014 relaxed, near-fertile or aroused
+  - \`4\` = open \u2014 parted, fertile window or active receptivity
+  - \`5\` = dilated \u2014 wide open, peak fertility paired with heavy arousal
+  - \`6\` = kissed \u2014 directly contacted or breached by a partner; deepest exposure
+- \`breeding_count\` \u2014 Times filled internally this cycle. Increment after each internal ejaculation; preserve between turns; reset only at the start of a new cycle.
+
+**Conception & Pregnancy (staged):**
+
+The pipeline stages reproduction across two flags:
+
+- \`conceived: true\` \u2014 fertilization has happened but pregnancy isn't yet visibly evident. The character is silently carrying.
+- \`preg: true\` \u2014 pregnancy has been confirmed (test, narrative reveal, missed period, showing). Implies \`cycle_stage_id: 5\` and \`cervix_state_id: 1\` (sealed) unless labor begins.
+
+**Engine-enforced auto-conception:** when womb fullness exceeds 85% during a fertile window (ovulation, rut, or early luteal cycle_day \u2264 19) and the character is not already conceived/pregnant, the engine flips a coin to mark her \`conceived: true\` (with \`conception_date\` set to the current world date). At 100% fullness the coin is skipped and conception is automatic. **If the prior tracker block shows \`conceived: true\`, preserve it on every subsequent emission until pregnancy is confirmed \u2014 never revert it to \`false\`.**
+
+Manual rules:
+
+- If pregnant: \`preg: true\`, \`cycle_stage_id: 5\`, advance \`days_preg\` daily, preserve \`conception_date\` (YYYY-MM-DD). Set \`cervix_state_id: 1\`.
+- If conceived but not yet pregnant: \`conceived: true\`, \`preg: false\`, \`days_preg: 0\`, \`conception_date\` set. The narrative may reveal pregnancy after several in-world days \u2014 at that point flip \`preg: true\` and start advancing \`days_preg\`.
+- If not pregnant and not conceived: \`preg: false\`, \`conceived: false\`, \`days_preg: 0\`, \`conception_date: ""\`.
+
+#### Female / Futanari \u2014 Breast & Lactation
+
+The tracker renders a breast/lactation panel for every female-aligned character (\`female\`, \`futanari\`, \`intersex\`, \`hermaphrodite\`, \`both\`). It is the female-side counterpart to the male semen panel \u2014 tracking anatomy, reproductive-fluid storage, and the lactation lifecycle. Update these whenever pregnancy, postpartum care, breast play, or lactation occurs in the narrative.
+
+**Anatomy (one-time establishment):**
+
+- \`cup_size\` \u2014 string, uppercase cup letter, **one of** \`"AA"\`, \`"A"\`, \`"B"\`, \`"C"\`, \`"D"\`, \`"DD"\`, \`"E"\`, \`"F"\`, \`"G"\`, \`"H"\`, \`"I"\`, \`"J"\`, \`"K"\`. UK doubled letters \`"FF"\`, \`"GG"\`, \`"HH"\`, \`"II"\`, \`"JJ"\` are accepted as aliases for the next US size up. The renderer maps this letter to a precise visual: the breast SVG silhouette is scaled in width, depth, and underbreast hang to match the cup size, with the areola and nipple repositioning to anatomically correct landmarks. Empty string falls back to a C-cup visual.
+
+  Establish per character on first appearance using narrative cues \u2014 descriptive language (\`"petite"\`, \`"modest"\`, \`"ample"\`, \`"buxom"\`, \`"enormous"\`), explicit canonical size, body type, age, build. Suggested mapping for free-form description:
+
+  | Cue | Cup |
+  |---|---|
+  | Flat-chested, prepubescent, tiny, barely there | \`AA\` |
+  | Small, petite, perky, modest | \`A\` |
+  | Small-to-medium, B-cup, fits a hand | \`B\` |
+  | Medium, average, handful, palmable | \`C\` |
+  | Full, ample, well-endowed | \`D\` |
+  | Generous, busty, double-D | \`DD\` |
+  | Heavy, very full, F/G-cup descriptions | \`F\`\u2013\`G\` |
+  | Huge, massive, "hentai-proportioned", over-the-top | \`H\`+ |
+
+  **Preserve \`cup_size\` across all turns.** Only change it under explicit biological transformation in-narrative \u2014 puberty progression, magical growth/reduction, surgery, lactation-driven permanent growth, etc. Cup size does **not** change with arousal, pregnancy engorgement, or milk fullness; those modulate \`breast_fullness_pct\` instead.
+
+**Dynamic state:**
+
+- \`breast_fullness_pct\` \u2014 0-100. Engorgement level *relative to that character's cup capacity*. Rises during pregnancy (especially second/third trimester), during arousal (mild), and as milk accumulates between feedings/pumping. Drops after nursing, pumping, or expressing. A C-cup at 80% and a G-cup at 80% will both look proportionally engorged for their frame \u2014 the percentage is relative, the absolute size comes from \`cup_size\`.
+- \`milk_ml\` \u2014 Current milk volume stored (0 to \`milk_capacity_ml\`). Rises with lactation production over narrative time. Drops to a low level after feeding/pumping. \`0\` when not lactating.
+- \`milk_capacity_ml\` \u2014 Maximum milk storage capacity. Preserve once established. Typical human range ~50-300 ml per breast; tracker treats both breasts together (so 100-600 ml is a reasonable range). \`0\` when not lactating.
+- \`nipple_sensitivity_pct\` \u2014 0-100. Active sensitivity. Rises with arousal, pregnancy hormones, nursing latch, cold, or direct stimulation. Falls quickly when stimulation stops. \`0\` when not relevant.
+- \`lactating\` \u2014 boolean. \`true\` once milk production has actually begun (mid-to-late pregnancy onward, or any other established lactation state); \`false\` for non-lactating characters.
+
+If the character is not pregnant, not postpartum, and not narratively lactating, leave all five at \`0\` / \`false\`. The panel still renders with empty values for consistency. During pregnancy, expect \`breast_fullness_pct\` to climb, \`lactating\` to flip true around mid-pregnancy or at parturition, and \`milk_ml\` / \`milk_capacity_ml\` to populate as lactation establishes.
+
+#### Male / Futanari \u2014 Refractory & Semen
+
+For \`sex: "male"\` or \`"futanari"\`, populate these fields. Other characters may include them as \`0\`.
+
+- \`refractory_minutes\` \u2014 Minutes remaining until ready. \`0\` = ready.
+- \`refractory_total\` \u2014 Total minutes of the current refractory period. \`0\` when not in refractory.
+- \`semen_ml\` \u2014 Current volume, \`0\` to \`semen_capacity_ml\`. Drops after ejaculation; recovers with rest/arousal.
+- \`semen_capacity_ml\` \u2014 Maximum volume. Preserve unless biology changes.
+- \`male_fertility_pct\` \u2014 0-100. Adjust for sperm count, magical fertility, infertility, rut, recovery, fatigue, etc.
+
+Convert all time to minutes. Decrement \`refractory_minutes\` toward \`0\` as narrative time passes.
+
+#### Anal Tracking \u2014 All Characters
+
+The tracker renders an anal panel for every gendered character (\`female\`, \`male\`, \`futanari\`, etc.). The prostate graphic and prostate stat row only render for prostate-bearing characters (\`male\`, \`futanari\`, \`intersex\`, \`hermaphrodite\`, \`both\`); pure-female cards show fullness and tightness only.
+
+**Update these whenever anal play, anal sex, or prostate stimulation occurs in the narrative \u2014 otherwise the panel exists but never reflects events.**
+
+- \`anal_fullness_pct\` \u2014 0-100. Volume currently inside the anal canal (semen, toys, fingers, etc.). Rises with insertion/ejaculation, falls with withdrawal, expulsion, or cleanup over time. Preserve between turns. Applies to all characters.
+- \`anal_tightness_pct\` \u2014 0-100. Resistance of the sphincter. \`100\` = untouched / virgin tight; drops with stretching, sustained use, lubrication, and arousal. Recovers with rest. Preserve baseline per character. Applies to all characters.
+- \`prostate_stimulation_pct\` \u2014 0-100. Active prostate stimulation level this moment. Rises with direct pressure / deep penetration / toys angled at the prostate; falls quickly when stimulation stops. **Leave \`0\` for pure-female characters** \u2014 the renderer hides the prostate panel/graphic for them automatically.
+
+If no anal content has occurred for a character, leave all three at \`0\`. If anal content **has** occurred \u2014 even just penetration without ejaculation \u2014 \`anal_tightness_pct\` should drop from its baseline and (where applicable) \`prostate_stimulation_pct\` and \`anal_fullness_pct\` should reflect what's happening.
+
+#### Futanari / Dual-Biology
+
+Output **all** female cycle fields, lactation fields, male reproductive fields, and anal fields. The tracker renders all applicable panels in a compressed multi-row column.
+
+---
+
+### INTERNAL THOUGHT & META
+
+- \`internal_thought\` \u2014 One short first-person sentence capturing the character's current inner monologue. Refresh every turn; never leave stale.
+- \`days_since_first_meeting\` \u2014 Total in-world days since the character first met the user. Increment as narrative dates advance.
+- \`inactive\` / \`inactiveReason\` \u2014 Use when the character is asleep, comatose, dead, refusing engagement, or otherwise out of the scene.
+
+---
+
+### THEMING
+
+Provide \`"bg"\` as a hex color per character (e.g. \`"#2d1b4e"\`). Pick a color that matches the character's vibe; preserve across turns once chosen.
+`,
   customFields: [
     {
       key: "ap",

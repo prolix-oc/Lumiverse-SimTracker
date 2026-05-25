@@ -1,6 +1,6 @@
 # Template Creation Guide: Tabbed Sidebar Templates
 
-This guide explains how to create tabbed sidebar templates for the SillySimTracker extension, using the "Dating Sim Tracker (Left w/ Tabs)" template as a reference.
+This guide explains how to create tabbed sidebar templates for the Silly Sim Tracker extension, using the "Dating Sim Tracker (Left w/ Tabs)" template as a reference.
 
 ## Overview
 

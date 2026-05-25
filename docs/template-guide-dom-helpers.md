@@ -1,6 +1,6 @@
 # DOM Measurement Handlebars Helpers
 
-SillySimTracker provides powerful Handlebars helpers that expose DOM measurements to your templates. This allows you to create dynamic, responsive layouts that adapt to the user's viewport and UI elements.
+Silly Sim Tracker provides powerful Handlebars helpers that expose DOM measurements to your templates. This allows you to create dynamic, responsive layouts that adapt to the user's viewport and UI elements.
 
 ## Overview
 
@@ -328,20 +328,11 @@ Returns true if an element exists in the DOM.
 
 ---
 
-## Common Selectors
+## Selectors
 
-Here are commonly used selectors in SillyTavern:
+The DOM helpers accept any CSS selector — pass whatever is meaningful in the host's DOM. Use your browser DevTools to inspect the live Lumiverse interface and pick stable selectors (preferably IDs or data attributes) for the regions you want to measure.
 
-| Element | Selector | Description |
-|---------|----------|-------------|
-| Sheld (sidebar) | `sheld` or `#sheld` | Left sidebar container |
-| Chat area | `#chat` | Main chat message area |
-| Send form | `#send_form` | Message input form |
-| Text area | `#send_textarea` | Message text input |
-| Messages | `.mes` | Individual message blocks |
-| Message text | `.mes_text` | Message content area |
-| Left nav panel | `#left-nav-panel` | Left navigation panel |
-| Right nav panel | `#right-nav-panel` | Right navigation panel |
+A useful starting set for Lumiverse is the chat scroller, message list, and any sidebar panel containers exposed by the active theme. Avoid coupling to class names that look auto-generated (hashed/minified), since they can change between releases.
 
 ---
 
