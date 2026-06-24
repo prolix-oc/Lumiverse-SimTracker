@@ -1389,8 +1389,11 @@ export function setup(ctx: SpindleFrontendContext) {
     previousData: TrackerData | null;
     mode: TrackerMountMode;
   };
+  type LatestMessageRenderIntent = TrackerRenderInputs & { messageId: string };
   const trackerMessageRenders = new Map<string, TrackerRenderInputs>();
   const trackerGeneratingIndicators = new Map<string, Element>();
+  let latestMessageRenderIntent: LatestMessageRenderIntent | null = null;
+  let pendingGeneratingIndicatorMessageId: string | null = null;
   const inlineProcessor = createInlineTemplateProcessor({
     getConfig: () => ({
       enableInlineTemplates: config.enableInlineTemplates,
@@ -1662,6 +1665,25 @@ export function setup(ctx: SpindleFrontendContext) {
     updateRegenerateButton();
   };
 
+  const clearLatestMessageRenderIntent = (messageId?: string | null) => {
+    if (!latestMessageRenderIntent) return;
+    if (messageId && latestMessageRenderIntent.messageId !== messageId) return;
+    latestMessageRenderIntent = null;
+  };
+
+  const retryLatestMessageRenderIntent = (messageId: string | null) => {
+    if (!messageId || !latestMessageRenderIntent || latestMessageRenderIntent.messageId !== messageId) return;
+    if (latestMessageRenderIntent.mode === "side_left" || latestMessageRenderIntent.mode === "side_right") return;
+    renderTrackerIntoMessage(
+      latestMessageRenderIntent.messageId,
+      latestMessageRenderIntent.data,
+      latestMessageRenderIntent.preset,
+      latestMessageRenderIntent.previousData,
+      latestMessageRenderIntent.mode,
+    );
+    pruneNonLatestMessageTrackers();
+  };
+
   const clearSideTrackerRender = () => {
     if (sideTrackerMount) {
       sideTrackerMount.remove();
@@ -1784,6 +1806,7 @@ export function setup(ctx: SpindleFrontendContext) {
     // Tag interceptor flag `removeFromMessage` already strips the existing
     // tracker tag from the bubble before we inject, so the indicator slots
     // into the same vertical space the new tracker will land in.
+    pendingGeneratingIndicatorMessageId = messageId;
     const existing = trackerGeneratingIndicators.get(messageId);
     if (existing && existing.isConnected) return;
     const messageNode = ctx.dom.findMessageElement(messageId);
@@ -1798,6 +1821,9 @@ export function setup(ctx: SpindleFrontendContext) {
   };
 
   const hideGeneratingIndicator = (messageId: string) => {
+    if (pendingGeneratingIndicatorMessageId === messageId) {
+      pendingGeneratingIndicatorMessageId = null;
+    }
     const mount = trackerGeneratingIndicators.get(messageId);
     if (mount) ctx.dom.uninject(mount);
     trackerGeneratingIndicators.delete(messageId);
@@ -1806,6 +1832,12 @@ export function setup(ctx: SpindleFrontendContext) {
   const hideAllGeneratingIndicators = () => {
     for (const [, mount] of trackerGeneratingIndicators) ctx.dom.uninject(mount);
     trackerGeneratingIndicators.clear();
+    pendingGeneratingIndicatorMessageId = null;
+  };
+
+  const retryGeneratingIndicator = (messageId: string | null) => {
+    if (!messageId || pendingGeneratingIndicatorMessageId !== messageId) return;
+    showGeneratingIndicator(messageId);
   };
 
   // Cheap deep-equality stable enough for tracker payloads (plain JSON shape).
@@ -1894,7 +1926,10 @@ export function setup(ctx: SpindleFrontendContext) {
     if (!parsed) {
       setStatus("Tracker found (invalid JSON/YAML)");
       renderEmpty(raw);
-      if (messageId) clearMessageTrackerRender(messageId);
+      if (messageId) {
+        clearLatestMessageRenderIntent(messageId);
+        clearMessageTrackerRender(messageId);
+      }
       return;
     }
     latestTrackerRaw = raw;
@@ -1914,9 +1949,17 @@ export function setup(ctx: SpindleFrontendContext) {
     // Re-applications of an already-mounted tracker (config reload,
     // template switch) must now pass the messageId explicitly.
     if (mountMode === "side_left" || mountMode === "side_right") {
+      clearLatestMessageRenderIntent();
       renderTrackerInSidebar(parsed, preset, previousTrackerData, mountMode);
       if (messageId) clearMessageTrackerRender(messageId);
     } else if (messageId) {
+      latestMessageRenderIntent = {
+        messageId,
+        data: parsed,
+        preset,
+        previousData: previousTrackerData,
+        mode: mountMode,
+      };
       clearSideTrackerRender();
       renderTrackerIntoMessage(messageId, parsed, preset, previousTrackerData, mountMode);
       pruneNonLatestMessageTrackers();
@@ -1932,6 +1975,7 @@ export function setup(ctx: SpindleFrontendContext) {
       let wasLatest = false;
       if (messageId && trackerMessageIds.has(messageId)) {
         trackerMessageIds.delete(messageId);
+        clearLatestMessageRenderIntent(messageId);
         clearMessageTrackerRender(messageId);
         if (latestTrackerMessageId === messageId) {
           latestTrackerMessageId = null;
@@ -2021,10 +2065,10 @@ export function setup(ctx: SpindleFrontendContext) {
       if (entry && typeof entry.payload === "string" && entry.payload.trim()) {
         const msgId = typeof entry.messageId === "string" ? entry.messageId : null;
         // Hydration safety net: only useful when the latest tracker-bearing
-        // message was virtualized out at chat-open time so the post-switch
-        // DOM scan couldn't find it. If we already rendered for that
-        // messageId, skip — otherwise we'd flash the message-level render
-        // with `previousData` now equal to the latest data (no diffs).
+        // message wasn't reprocessed through a live frontend event yet. If
+        // we already handled that messageId, skip — otherwise we'd flash the
+        // message-level render with `previousData` now equal to the latest
+        // data (no diffs).
         if (msgId && trackerMessageIds.has(msgId)) return;
         handleTrackerPayload(entry.payload, entry.payload, msgId);
       }
@@ -2123,9 +2167,9 @@ export function setup(ctx: SpindleFrontendContext) {
       rehydratedChatIds.add(chatId);
       ctx.sendToBackend({ type: "get_latest_tracker", chatId });
     }
-    // Wait two frames for Lumiverse to finish painting the new chat's messages before scanning.
+    // Wait two frames for Lumiverse to finish painting the new chat's
+    // messages before running the inline-template sweep.
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      renderTrackersFromDOM();
       inlineProcessor.processAll();
     }));
   };
@@ -2158,6 +2202,7 @@ export function setup(ctx: SpindleFrontendContext) {
     latestTrackerRaw = null;
     latestTrackerSourceContent = null;
     latestContent = null;
+    latestMessageRenderIntent = null;
 
     // If the swiped-to message already has content (historical), process it now.
     if (context.content) {
@@ -2170,6 +2215,17 @@ export function setup(ctx: SpindleFrontendContext) {
     handleChatSwitch(extractChatId(payload));
     const context = readMessageContext(payload);
     if (!context || context.isUser === true) return;
+    retryLatestMessageRenderIntent(context.messageId);
+    retryGeneratingIndicator(context.messageId);
+    const latestMountedId = ctx.messages.getLatestMessageId();
+    const needsLatestAttach =
+      !!context.messageId &&
+      context.messageId === latestMountedId &&
+      latestMessageRenderIntent?.messageId !== context.messageId &&
+      !trackerMessageRenders.has(context.messageId);
+    if (needsLatestAttach && context.content) {
+      handleContent(context.content, context.messageId);
+    }
     runInlinePass(context.messageId);
   };
 
@@ -2181,6 +2237,7 @@ export function setup(ctx: SpindleFrontendContext) {
     // regenerate button and the side panel don't reference a ghost.
     if (trackerMessageIds.has(context.messageId)) {
       trackerMessageIds.delete(context.messageId);
+      clearLatestMessageRenderIntent(context.messageId);
       clearMessageTrackerRender(context.messageId);
     }
     hideGeneratingIndicator(context.messageId);
@@ -2198,24 +2255,12 @@ export function setup(ctx: SpindleFrontendContext) {
     // side-channel entry, so no frontend → backend bridge needed here.
   };
 
-  const renderTrackersFromDOM = () => {
-    const messageNodes = Array.from(document.querySelectorAll("[data-message-id]"));
-    for (const msgNode of messageNodes) {
-      const msgId = msgNode.getAttribute("data-message-id");
-      if (!msgId) continue;
-      const preSel = `pre[data-code-lang="${config.codeBlockIdentifier}"]`;
-      const preBlock = msgNode.querySelector(preSel);
-      const raw = preBlock?.textContent?.trim() || "";
-      if (raw) handleTrackerPayload(raw, raw, msgId);
-    }
-  };
-
   // Virtualization replay is handled host-side: the wrapper returned by
   // ctx.dom.inject() is preserved across scroll-away/scroll-back and moved
   // back into the remounted bubble with its identity, form state, and
-  // listeners intact. See lumiverse-spindle-types/dom.ts (>=0.5.13) for the
-  // full contract. We just inject once per render-input change and trust
-  // the host to keep it attached.
+  // listeners intact. We keep the latest render intent around so
+  // CHARACTER_MESSAGE_RENDERED can finish the first attach as soon as the
+  // newest bubble mounts, then trust the host to keep it attached.
 
   const resetChatState = () => {
     previousTrackerData = null;
@@ -2223,6 +2268,7 @@ export function setup(ctx: SpindleFrontendContext) {
     latestTrackerRaw = null;
     latestTrackerSourceContent = null;
     latestContent = null;
+    latestMessageRenderIntent = null;
     trackerMessageIds.clear();
     updateRegenerateButton();
     for (const mount of trackerMessageMounts.values()) ctx.dom.uninject(mount);

@@ -18097,6 +18097,8 @@ function setup(ctx) {
   const trackerMessageMounts = new Map;
   const trackerMessageRenders = new Map;
   const trackerGeneratingIndicators = new Map;
+  let latestMessageRenderIntent = null;
+  let pendingGeneratingIndicatorMessageId = null;
   const inlineProcessor = createInlineTemplateProcessor({
     getConfig: () => ({
       enableInlineTemplates: config.enableInlineTemplates,
@@ -18348,6 +18350,21 @@ function setup(ctx) {
     latestTrackerMessageId = latestId;
     updateRegenerateButton();
   };
+  const clearLatestMessageRenderIntent = (messageId) => {
+    if (!latestMessageRenderIntent)
+      return;
+    if (messageId && latestMessageRenderIntent.messageId !== messageId)
+      return;
+    latestMessageRenderIntent = null;
+  };
+  const retryLatestMessageRenderIntent = (messageId) => {
+    if (!messageId || !latestMessageRenderIntent || latestMessageRenderIntent.messageId !== messageId)
+      return;
+    if (latestMessageRenderIntent.mode === "side_left" || latestMessageRenderIntent.mode === "side_right")
+      return;
+    renderTrackerIntoMessage(latestMessageRenderIntent.messageId, latestMessageRenderIntent.data, latestMessageRenderIntent.preset, latestMessageRenderIntent.previousData, latestMessageRenderIntent.mode);
+    pruneNonLatestMessageTrackers();
+  };
   const clearSideTrackerRender = () => {
     if (sideTrackerMount) {
       sideTrackerMount.remove();
@@ -18453,6 +18470,7 @@ function setup(ctx) {
     }
   };
   const showGeneratingIndicator = (messageId) => {
+    pendingGeneratingIndicatorMessageId = messageId;
     const existing = trackerGeneratingIndicators.get(messageId);
     if (existing && existing.isConnected)
       return;
@@ -18465,6 +18483,9 @@ function setup(ctx) {
     trackerGeneratingIndicators.set(messageId, mount);
   };
   const hideGeneratingIndicator = (messageId) => {
+    if (pendingGeneratingIndicatorMessageId === messageId) {
+      pendingGeneratingIndicatorMessageId = null;
+    }
     const mount = trackerGeneratingIndicators.get(messageId);
     if (mount)
       ctx.dom.uninject(mount);
@@ -18474,6 +18495,12 @@ function setup(ctx) {
     for (const [, mount] of trackerGeneratingIndicators)
       ctx.dom.uninject(mount);
     trackerGeneratingIndicators.clear();
+    pendingGeneratingIndicatorMessageId = null;
+  };
+  const retryGeneratingIndicator = (messageId) => {
+    if (!messageId || pendingGeneratingIndicatorMessageId !== messageId)
+      return;
+    showGeneratingIndicator(messageId);
   };
   const sameRenderInputs = (a, data, preset, previousData, mode) => {
     if (!a)
@@ -18535,8 +18562,10 @@ function setup(ctx) {
     if (!parsed) {
       setStatus("Tracker found (invalid JSON/YAML)");
       renderEmpty(raw);
-      if (messageId)
+      if (messageId) {
+        clearLatestMessageRenderIntent(messageId);
         clearMessageTrackerRender(messageId);
+      }
       return;
     }
     latestTrackerRaw = raw;
@@ -18546,10 +18575,18 @@ function setup(ctx) {
       injectIntoPanelBody(html);
     });
     if (mountMode === "side_left" || mountMode === "side_right") {
+      clearLatestMessageRenderIntent();
       renderTrackerInSidebar(parsed, preset, previousTrackerData, mountMode);
       if (messageId)
         clearMessageTrackerRender(messageId);
     } else if (messageId) {
+      latestMessageRenderIntent = {
+        messageId,
+        data: parsed,
+        preset,
+        previousData: previousTrackerData,
+        mode: mountMode
+      };
       clearSideTrackerRender();
       renderTrackerIntoMessage(messageId, parsed, preset, previousTrackerData, mountMode);
       pruneNonLatestMessageTrackers();
@@ -18563,6 +18600,7 @@ function setup(ctx) {
       let wasLatest = false;
       if (messageId && trackerMessageIds.has(messageId)) {
         trackerMessageIds.delete(messageId);
+        clearLatestMessageRenderIntent(messageId);
         clearMessageTrackerRender(messageId);
         if (latestTrackerMessageId === messageId) {
           latestTrackerMessageId = null;
@@ -18741,7 +18779,6 @@ function setup(ctx) {
       ctx.sendToBackend({ type: "get_latest_tracker", chatId });
     }
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      renderTrackersFromDOM();
       inlineProcessor.processAll();
     }));
   };
@@ -18774,6 +18811,7 @@ function setup(ctx) {
     latestTrackerRaw = null;
     latestTrackerSourceContent = null;
     latestContent = null;
+    latestMessageRenderIntent = null;
     if (context.content) {
       handleContent(context.content, context.messageId);
     }
@@ -18784,6 +18822,13 @@ function setup(ctx) {
     const context = readMessageContext(payload);
     if (!context || context.isUser === true)
       return;
+    retryLatestMessageRenderIntent(context.messageId);
+    retryGeneratingIndicator(context.messageId);
+    const latestMountedId = ctx.messages.getLatestMessageId();
+    const needsLatestAttach = !!context.messageId && context.messageId === latestMountedId && latestMessageRenderIntent?.messageId !== context.messageId && !trackerMessageRenders.has(context.messageId);
+    if (needsLatestAttach && context.content) {
+      handleContent(context.content, context.messageId);
+    }
     runInlinePass(context.messageId);
   };
   const onMessageDeleted = (payload) => {
@@ -18793,6 +18838,7 @@ function setup(ctx) {
       return;
     if (trackerMessageIds.has(context.messageId)) {
       trackerMessageIds.delete(context.messageId);
+      clearLatestMessageRenderIntent(context.messageId);
       clearMessageTrackerRender(context.messageId);
     }
     hideGeneratingIndicator(context.messageId);
@@ -18807,25 +18853,13 @@ function setup(ctx) {
       updateRegenerateButton();
     }
   };
-  const renderTrackersFromDOM = () => {
-    const messageNodes = Array.from(document.querySelectorAll("[data-message-id]"));
-    for (const msgNode of messageNodes) {
-      const msgId = msgNode.getAttribute("data-message-id");
-      if (!msgId)
-        continue;
-      const preSel = `pre[data-code-lang="${config.codeBlockIdentifier}"]`;
-      const preBlock = msgNode.querySelector(preSel);
-      const raw = preBlock?.textContent?.trim() || "";
-      if (raw)
-        handleTrackerPayload(raw, raw, msgId);
-    }
-  };
   const resetChatState = () => {
     previousTrackerData = null;
     latestTrackerMessageId = null;
     latestTrackerRaw = null;
     latestTrackerSourceContent = null;
     latestContent = null;
+    latestMessageRenderIntent = null;
     trackerMessageIds.clear();
     updateRegenerateButton();
     for (const mount of trackerMessageMounts.values())
