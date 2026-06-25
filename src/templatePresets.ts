@@ -22,6 +22,10 @@ export type TemplatePreset = {
   customFields?: TemplateField[];
   extSettings?: {
     codeBlockIdentifier?: string;
+    /** Compile once with `worldData` and the normalized `characters` array. */
+    renderMode?: string;
+    /** Optional display cap applied after character normalization. */
+    maxCharacters?: number;
     [key: string]: unknown;
   };
 };
