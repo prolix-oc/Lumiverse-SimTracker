@@ -13879,6 +13879,11 @@ async function getEphemeralPoolStatusSafe() {
     return null;
   }
 }
+function sendConfigError(message) {
+  try {
+    spindle.sendToFrontend({ type: "config_error", message }, activeUserId || undefined);
+  } catch {}
+}
 async function sendConfigState() {
   try {
     await refreshGrantedPermissions();
@@ -13894,6 +13899,7 @@ async function sendConfigState() {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     spindle.log.error(`sendConfigState failed: ${message}`);
+    sendConfigError(message);
   }
 }
 async function handleImportPresetFile(payload) {
@@ -13990,6 +13996,7 @@ spindle.onFrontendMessage(async (payload, userId) => {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       spindle.log.error(`get_config handler failed: ${msg}`);
+      sendConfigError(msg);
     }
     return;
   }

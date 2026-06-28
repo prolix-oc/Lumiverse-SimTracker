@@ -2417,6 +2417,14 @@ async function getEphemeralPoolStatusSafe(): Promise<Record<string, unknown> | n
   }
 }
 
+function sendConfigError(message: string): void {
+  try {
+    spindle.sendToFrontend({ type: "config_error", message }, activeUserId || undefined);
+  } catch {
+    // If frontend delivery itself fails, the backend log is the remaining signal.
+  }
+}
+
 async function sendConfigState(): Promise<void> {
   try {
     await refreshGrantedPermissions();
@@ -2432,6 +2440,7 @@ async function sendConfigState(): Promise<void> {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     spindle.log.error(`sendConfigState failed: ${message}`);
+    sendConfigError(message);
   }
 }
 
@@ -2538,6 +2547,7 @@ spindle.onFrontendMessage(async (payload: unknown, userId: string) => {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       spindle.log.error(`get_config handler failed: ${msg}`);
+      sendConfigError(msg);
     }
     return;
   }

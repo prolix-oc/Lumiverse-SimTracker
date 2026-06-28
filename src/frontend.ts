@@ -566,11 +566,15 @@ function byId<T extends Element>(id: string): T | null {
   return document.getElementById(id) as T | null;
 }
 
+const DEFAULT_PANEL_STATUS = "Waiting for tracker tag...";
+const LOADING_CONFIG_STATUS = "Loading config...";
+const CONFIG_ERROR_STATUS_PREFIX = "Config load failed:";
+
 const PANEL_HTML = `
   <section id="sst-lumi-panel" class="sst-lumi-panel">
     <header class="sst-lumi-header">
       <h3>Silly Sim Tracker</h3>
-      <span class="sst-lumi-status" id="sst-lumi-status">Waiting for tracker tag...</span>
+      <span class="sst-lumi-status" id="sst-lumi-status">${DEFAULT_PANEL_STATUS}</span>
     </header>
     <div class="sst-lumi-controls">
       <label>Template<select id="sst-lumi-template"></select></label>
@@ -793,6 +797,11 @@ function resolveTrackerMountMode(preset: TemplatePreset): TrackerMountMode {
 function setStatus(text: string): void {
   const el = byId<HTMLElement>("sst-lumi-status");
   if (el) el.textContent = text;
+}
+
+function shouldResetStatusAfterConfigLoad(): boolean {
+  const text = byId<HTMLElement>("sst-lumi-status")?.textContent?.trim() || "";
+  return !text || text === LOADING_CONFIG_STATUS || text.startsWith(CONFIG_ERROR_STATUS_PREFIX);
 }
 
 function renderCapabilities(
@@ -2027,6 +2036,11 @@ export function setup(ctx: SpindleFrontendContext) {
       setStatus(message);
       return;
     }
+    if (obj?.type === "config_error") {
+      const message = typeof obj.message === "string" && obj.message.trim() ? obj.message.trim() : "Unknown error";
+      setStatus(`${CONFIG_ERROR_STATUS_PREFIX} ${message}`);
+      return;
+    }
     if (obj?.type === "connections_list" && Array.isArray(obj.connections)) {
       connections = obj.connections as ConnectionProfile[];
       populateConnectionDropdown();
@@ -2137,6 +2151,9 @@ export function setup(ctx: SpindleFrontendContext) {
       const pending = pendingTrackerPayload;
       pendingTrackerPayload = null;
       handleTrackerPayload(pending.raw, pending.sourceContent, pending.messageId);
+    }
+    if (shouldResetStatusAfterConfigLoad()) {
+      setStatus(DEFAULT_PANEL_STATUS);
     }
     requestInitialTrackerRehydrate();
     inlineProcessor.processAll();
@@ -2450,7 +2467,7 @@ export function setup(ctx: SpindleFrontendContext) {
   ctx.sendToBackend({ type: "get_config" });
   ctx.sendToBackend({ type: "get_connections" });
   updatePermissionGatedControls();
-  setStatus("Loading config...");
+  setStatus(LOADING_CONFIG_STATUS);
   renderEmpty("When a message includes a tracker tag, cards will appear here.");
 
   // Retry config request after a short delay in case the backend is still

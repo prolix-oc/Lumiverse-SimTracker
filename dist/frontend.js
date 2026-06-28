@@ -17375,11 +17375,14 @@ function byId(id) {
     return scoped;
   return document.getElementById(id);
 }
+var DEFAULT_PANEL_STATUS = "Waiting for tracker tag...";
+var LOADING_CONFIG_STATUS = "Loading config...";
+var CONFIG_ERROR_STATUS_PREFIX = "Config load failed:";
 var PANEL_HTML = `
   <section id="sst-lumi-panel" class="sst-lumi-panel">
     <header class="sst-lumi-header">
       <h3>Silly Sim Tracker</h3>
-      <span class="sst-lumi-status" id="sst-lumi-status">Waiting for tracker tag...</span>
+      <span class="sst-lumi-status" id="sst-lumi-status">${DEFAULT_PANEL_STATUS}</span>
     </header>
     <div class="sst-lumi-controls">
       <label>Template<select id="sst-lumi-template"></select></label>
@@ -17585,6 +17588,10 @@ function setStatus(text) {
   const el = byId("sst-lumi-status");
   if (el)
     el.textContent = text;
+}
+function shouldResetStatusAfterConfigLoad() {
+  const text = byId("sst-lumi-status")?.textContent?.trim() || "";
+  return !text || text === LOADING_CONFIG_STATUS || text.startsWith(CONFIG_ERROR_STATUS_PREFIX);
 }
 function renderCapabilities(grantedPermissions, requestedPermissions, ephemeralPoolStatus) {
   const perms = grantedPermissions.length ? grantedPermissions.join(", ") : "none";
@@ -18648,6 +18655,11 @@ function setup(ctx) {
       setStatus(message);
       return;
     }
+    if (obj?.type === "config_error") {
+      const message = typeof obj.message === "string" && obj.message.trim() ? obj.message.trim() : "Unknown error";
+      setStatus(`${CONFIG_ERROR_STATUS_PREFIX} ${message}`);
+      return;
+    }
     if (obj?.type === "connections_list" && Array.isArray(obj.connections)) {
       connections = obj.connections;
       populateConnectionDropdown();
@@ -18746,6 +18758,9 @@ function setup(ctx) {
       const pending = pendingTrackerPayload;
       pendingTrackerPayload = null;
       handleTrackerPayload(pending.raw, pending.sourceContent, pending.messageId);
+    }
+    if (shouldResetStatusAfterConfigLoad()) {
+      setStatus(DEFAULT_PANEL_STATUS);
     }
     requestInitialTrackerRehydrate();
     inlineProcessor.processAll();
@@ -19016,7 +19031,7 @@ function setup(ctx) {
   ctx.sendToBackend({ type: "get_config" });
   ctx.sendToBackend({ type: "get_connections" });
   updatePermissionGatedControls();
-  setStatus("Loading config...");
+  setStatus(LOADING_CONFIG_STATUS);
   renderEmpty("When a message includes a tracker tag, cards will appear here.");
   let configRetryTimer = null;
   const scheduleConfigRetry = () => {
