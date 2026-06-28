@@ -5,7 +5,7 @@
   "author": "Prolix OCs",
   "github": "https://github.com/prolix-oc/Lumiverse-SimTracker",
   "homepage": "https://github.com/prolix-oc/Lumiverse-SimTracker",
-  "description": "Lumiverse port in progress for rendering tracker cards from sim code blocks.",
+  "description": "Lumiverse extension for rendering tracker cards using data that the LLM supplies in-message.",
   "permissions": [
     "interceptor",
     "ephemeral_storage",
