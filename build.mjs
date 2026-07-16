@@ -1,17 +1,27 @@
 #!/usr/bin/env bun
+import { resolve } from "node:path";
+
 // Build script for Silly Sim Tracker.
 //
-// Wraps Bun.build() so we can install a plugin that swaps out the `yaml`
-// package's `!!binary` tag handler (yaml/dist/schema/yaml-1.1/binary.js).
+// Wraps Bun.build() so the backend uses yaml's ESM browser entry rather than
+// its CommonJS Node entry. The Node entry makes Bun emit import.meta.require,
+// which Spindle correctly rejects as an unrestricted module-loader surface.
+//
+// The plugin also swaps out the `yaml` package's `!!binary` tag handler
+// (yaml/dist/schema/yaml-1.1/binary.js).
 // That handler does Buffer.from(s, "base64") / atob / btoa, which the
 // Spindle host's startup scanner flags as a backend "base64 decoding"
 // capability. We never parse !!binary tags, so we replace the module with
 // a same-shape stub that throws if invoked — eliminating the base64
 // codepath from the bundle entirely.
 
-const stubYamlBinary = {
-  name: "stub-yaml-binary",
+const yamlForSpindle = {
+  name: "yaml-for-spindle",
   setup(build) {
+    build.onResolve({ filter: /^yaml$/ }, () => ({
+      path: resolve(import.meta.dir, "node_modules/yaml/browser/index.js"),
+    }));
+
     build.onResolve({ filter: /[\\/]binary\.js$/ }, (args) => {
       if (!args.importer || !/[\\/]yaml[\\/](?:browser[\\/])?dist[\\/]schema[\\/]/.test(args.importer)) {
         return undefined;
@@ -52,7 +62,7 @@ for (const t of targets) {
     entrypoints: [t.entrypoint],
     outdir: "dist",
     target: t.target,
-    plugins: [stubYamlBinary],
+    plugins: [yamlForSpindle],
   });
 
   if (!result.success) {
