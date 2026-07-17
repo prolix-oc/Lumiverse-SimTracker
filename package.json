@@ -9,7 +9,7 @@
   },
   "devDependencies": {
     "handlebars": "^4.7.8",
-    "lumiverse-spindle-types": "0.5.26",
+    "lumiverse-spindle-types": "0.6.4",
     "typescript": "^5.7.3",
     "yaml": "^2.8.1"
   }

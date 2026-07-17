@@ -12144,10 +12144,14 @@ async function handleSlashCommand(content, ctx) {
     mode: "fallback"
   });
 }
-async function loadConfig() {
-  const userId = activeUserId;
+async function loadConfig(userId) {
+  if (!userId)
+    throw new Error("A user id is required to load SimTracker settings.");
   try {
-    const parsed = await spindle.userStorage.getJson(CONFIG_PATH, { fallback: { ...DEFAULT_CONFIG }, userId: userId || undefined });
+    const parsed = await spindle.userStorage.getJson(CONFIG_PATH, {
+      fallback: { ...DEFAULT_CONFIG },
+      userId
+    });
     config = {
       trackerTagName: sanitizeTagName(parsed.trackerTagName),
       codeBlockIdentifier: sanitizeIdentifier(parsed.codeBlockIdentifier),
@@ -12165,8 +12169,10 @@ async function loadConfig() {
       secondaryLLMTemperature: sanitizeTemperature(parsed.secondaryLLMTemperature),
       secondaryLLMStripHTML: sanitizeBool(parsed.secondaryLLMStripHTML, DEFAULT_CONFIG.secondaryLLMStripHTML)
     };
-  } catch {
-    config = { ...DEFAULT_CONFIG };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    spindle.log.error(`Failed to load SimTracker settings for user ${userId}: ${message}`);
+    throw new Error(`Unable to load saved settings: ${message}`);
   }
   loadedConfigUserId = userId;
   pushMacroValues();
@@ -12177,7 +12183,7 @@ async function ensureConfigForUser(userId) {
   if (activeUserId === userId && loadedConfigUserId === userId)
     return;
   activeUserId = userId;
-  await loadConfig();
+  await loadConfig(userId);
 }
 async function loadSeededTemplatePresets() {
   const seeded = [];
@@ -12237,13 +12243,10 @@ async function loadSeededTemplatePresets() {
   } catch {}
   runtime.seededPresets = seeded;
 }
-async function saveConfig() {
-  await spindle.userStorage.setJson(CONFIG_PATH, config, { indent: 2, userId: activeUserId || undefined });
-  if (activeUserId) {
-    try {
-      await spindle.userStorage.setJson(CONFIG_PATH, config, { indent: 2 });
-    } catch {}
-  }
+async function saveConfig(userId, configToSave = config) {
+  if (!userId)
+    throw new Error("A user id is required to save SimTracker settings.");
+  await spindle.userStorage.setJson(CONFIG_PATH, configToSave, { indent: 2, userId });
 }
 spindle.on("MESSAGE_SENT", (payload, userId) => {
   (async () => {
@@ -13004,30 +13007,24 @@ async function getEphemeralPoolStatusSafe() {
     return null;
   }
 }
-function sendConfigError(message) {
+function sendConfigError(userId, message, operation = "load") {
   try {
-    spindle.sendToFrontend({ type: "config_error", message }, activeUserId || undefined);
+    spindle.sendToFrontend({ type: "config_error", message, operation }, userId);
   } catch {}
 }
-async function sendConfigState() {
-  try {
-    await refreshGrantedPermissions();
-    await loadSeededTemplatePresets();
-    spindle.sendToFrontend({
-      type: "config",
-      config,
-      grantedPermissions: Array.from(runtime.grantedPermissions),
-      requestedPermissions: spindle.manifest?.permissions || [],
-      seededPresets: runtime.seededPresets,
-      ephemeralPoolStatus: await getEphemeralPoolStatusSafe()
-    }, activeUserId || undefined);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    spindle.log.error(`sendConfigState failed: ${message}`);
-    sendConfigError(message);
-  }
+async function sendConfigState(userId, configToSend = config) {
+  await refreshGrantedPermissions();
+  await loadSeededTemplatePresets();
+  spindle.sendToFrontend({
+    type: "config",
+    config: configToSend,
+    grantedPermissions: Array.from(runtime.grantedPermissions),
+    requestedPermissions: spindle.manifest?.permissions || [],
+    seededPresets: runtime.seededPresets,
+    ephemeralPoolStatus: await getEphemeralPoolStatusSafe()
+  }, userId);
 }
-async function handleImportPresetFile(payload) {
+async function handleImportPresetFile(payload, userId) {
   const text = typeof payload.text === "string" ? payload.text : "";
   const fileName = typeof payload.fileName === "string" ? payload.fileName : "import.json";
   if (!text.trim()) {
@@ -13035,7 +13032,7 @@ async function handleImportPresetFile(payload) {
       type: "import_result",
       ok: false,
       message: "Import failed (empty file)."
-    }, activeUserId || undefined);
+    }, userId);
     return;
   }
   if (hasPermission("ephemeral_storage")) {
@@ -13064,20 +13061,20 @@ async function handleImportPresetFile(payload) {
       type: "import_result",
       ok: false,
       message: "Import failed (invalid JSON)."
-    }, activeUserId || undefined);
+    }, userId);
     await trackEvent("sst.import.failed", { reason: "invalid_json", fileName }, { level: "warn" });
     return;
   }
   if (Array.isArray(parsed.inlineTemplates) && parsed.inlineTemplates.length > 0) {
     config = { ...config, inlinePacks: [...config.inlinePacks, parsed] };
-    await saveConfig();
+    await saveConfig(userId);
     pushMacroValues();
-    await sendConfigState();
+    await sendConfigState(userId);
     spindle.sendToFrontend({
       type: "import_result",
       ok: true,
       message: `Imported inline pack: ${String(parsed.templateName || "Unnamed")}`
-    }, activeUserId || undefined);
+    }, userId);
     await trackEvent("sst.import.inline_pack", { fileName }, { level: "info" });
     return;
   }
@@ -13099,14 +13096,14 @@ async function handleImportPresetFile(payload) {
     userPresets: [...config.userPresets, preset],
     templateId: preset.id
   };
-  await saveConfig();
+  await saveConfig(userId);
   pushMacroValues();
-  await sendConfigState();
+  await sendConfigState(userId);
   spindle.sendToFrontend({
     type: "import_result",
     ok: true,
     message: `Imported preset: ${preset.templateName}`
-  }, activeUserId || undefined);
+  }, userId);
   await trackEvent("sst.import.preset", { fileName, templateId: preset.id }, { level: "info" });
 }
 spindle.onFrontendMessage(async (payload, userId) => {
@@ -13116,45 +13113,53 @@ spindle.onFrontendMessage(async (payload, userId) => {
   const message = payload;
   if (message.type === "get_config") {
     try {
-      await loadConfig();
-      await sendConfigState();
+      await loadConfig(userId);
+      await sendConfigState(userId);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       spindle.log.error(`get_config handler failed: ${msg}`);
-      sendConfigError(msg);
+      sendConfigError(userId, msg, "load");
     }
     return;
   }
   if (message.type === "set_config") {
-    const incoming = message.config;
-    config = {
-      trackerTagName: sanitizeTagName(incoming?.trackerTagName ?? config.trackerTagName),
-      codeBlockIdentifier: sanitizeIdentifier(incoming?.codeBlockIdentifier ?? config.codeBlockIdentifier),
-      hideSimBlocks: sanitizeBool(incoming?.hideSimBlocks ?? config.hideSimBlocks, config.hideSimBlocks),
-      templateId: sanitizeTemplateId(incoming?.templateId ?? config.templateId),
-      trackerFormat: sanitizeTrackerFormat(incoming?.trackerFormat ?? config.trackerFormat),
-      retainTrackerCount: sanitizeRetainCount(incoming?.retainTrackerCount ?? config.retainTrackerCount),
-      enableInlineTemplates: sanitizeInlineEnabled(incoming?.enableInlineTemplates ?? config.enableInlineTemplates),
-      userPresets: sanitizePresetArray(incoming?.userPresets ?? config.userPresets),
-      inlinePacks: sanitizeInlinePacks(incoming?.inlinePacks ?? config.inlinePacks),
-      useSecondaryLLM: sanitizeBool(incoming?.useSecondaryLLM ?? config.useSecondaryLLM, config.useSecondaryLLM),
-      secondaryLLMConnectionId: sanitizeStr(incoming?.secondaryLLMConnectionId ?? config.secondaryLLMConnectionId, config.secondaryLLMConnectionId),
-      secondaryLLMModel: sanitizeSecondaryLLMModel(incoming?.secondaryLLMModel ?? config.secondaryLLMModel, config.secondaryLLMModel),
-      secondaryLLMMessageCount: sanitizeMessageCount(incoming?.secondaryLLMMessageCount ?? config.secondaryLLMMessageCount),
-      secondaryLLMTemperature: sanitizeTemperature(incoming?.secondaryLLMTemperature ?? config.secondaryLLMTemperature),
-      secondaryLLMStripHTML: sanitizeBool(incoming?.secondaryLLMStripHTML ?? config.secondaryLLMStripHTML, config.secondaryLLMStripHTML)
-    };
-    await saveConfig();
-    pushMacroValues();
-    await trackEvent("sst.config.updated", {
-      trackerTagName: config.trackerTagName,
-      templateId: config.templateId,
-      trackerFormat: config.trackerFormat,
-      retainTrackerCount: config.retainTrackerCount,
-      hideSimBlocks: config.hideSimBlocks,
-      useSecondaryLLM: config.useSecondaryLLM
-    });
-    await sendConfigState();
+    try {
+      await ensureConfigForUser(userId);
+      const incoming = message.config;
+      config = {
+        trackerTagName: sanitizeTagName(incoming?.trackerTagName ?? config.trackerTagName),
+        codeBlockIdentifier: sanitizeIdentifier(incoming?.codeBlockIdentifier ?? config.codeBlockIdentifier),
+        hideSimBlocks: sanitizeBool(incoming?.hideSimBlocks ?? config.hideSimBlocks, config.hideSimBlocks),
+        templateId: sanitizeTemplateId(incoming?.templateId ?? config.templateId),
+        trackerFormat: sanitizeTrackerFormat(incoming?.trackerFormat ?? config.trackerFormat),
+        retainTrackerCount: sanitizeRetainCount(incoming?.retainTrackerCount ?? config.retainTrackerCount),
+        enableInlineTemplates: sanitizeInlineEnabled(incoming?.enableInlineTemplates ?? config.enableInlineTemplates),
+        userPresets: sanitizePresetArray(incoming?.userPresets ?? config.userPresets),
+        inlinePacks: sanitizeInlinePacks(incoming?.inlinePacks ?? config.inlinePacks),
+        useSecondaryLLM: sanitizeBool(incoming?.useSecondaryLLM ?? config.useSecondaryLLM, config.useSecondaryLLM),
+        secondaryLLMConnectionId: sanitizeStr(incoming?.secondaryLLMConnectionId ?? config.secondaryLLMConnectionId, config.secondaryLLMConnectionId),
+        secondaryLLMModel: sanitizeSecondaryLLMModel(incoming?.secondaryLLMModel ?? config.secondaryLLMModel, config.secondaryLLMModel),
+        secondaryLLMMessageCount: sanitizeMessageCount(incoming?.secondaryLLMMessageCount ?? config.secondaryLLMMessageCount),
+        secondaryLLMTemperature: sanitizeTemperature(incoming?.secondaryLLMTemperature ?? config.secondaryLLMTemperature),
+        secondaryLLMStripHTML: sanitizeBool(incoming?.secondaryLLMStripHTML ?? config.secondaryLLMStripHTML, config.secondaryLLMStripHTML)
+      };
+      await saveConfig(userId);
+      pushMacroValues();
+      await trackEvent("sst.config.updated", {
+        trackerTagName: config.trackerTagName,
+        templateId: config.templateId,
+        trackerFormat: config.trackerFormat,
+        retainTrackerCount: config.retainTrackerCount,
+        hideSimBlocks: config.hideSimBlocks,
+        useSecondaryLLM: config.useSecondaryLLM
+      });
+      await sendConfigState(userId);
+      spindle.sendToFrontend({ type: "config_saved" }, userId);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      spindle.log.error(`set_config handler failed for user ${userId}: ${msg}`);
+      sendConfigError(userId, msg, "save");
+    }
     return;
   }
   if (message.type === "get_connections") {
@@ -13249,9 +13254,9 @@ spindle.onFrontendMessage(async (payload, userId) => {
       const next = config.inlinePacks.slice();
       next.splice(index, 1);
       config = { ...config, inlinePacks: next };
-      await saveConfig();
+      await saveConfig(userId);
       pushMacroValues();
-      await sendConfigState();
+      await sendConfigState(userId);
     }
     return;
   }
@@ -13262,19 +13267,15 @@ spindle.onFrontendMessage(async (payload, userId) => {
       const next = config.inlinePacks.slice();
       next[index] = { ...next[index], enabled };
       config = { ...config, inlinePacks: next };
-      await saveConfig();
+      await saveConfig(userId);
       pushMacroValues();
-      await sendConfigState();
+      await sendConfigState(userId);
     }
     return;
   }
   if (message.type === "import_preset_file") {
-    await handleImportPresetFile(message);
+    await handleImportPresetFile(message, userId);
   }
 });
 await initGrantedPermissions();
-await loadConfig();
 spindle.log.info("Silly Sim Tracker (Lumiverse) backend started");
-try {
-  await sendConfigState();
-} catch {}
