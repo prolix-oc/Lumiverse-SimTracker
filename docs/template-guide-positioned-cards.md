@@ -351,6 +351,51 @@ List all available variables here
 - `"BOTTOM"` - Cards appear below chat messages
 - `"LEFT"` / `"RIGHT"` - Sidebar positions (see other guides)
 
+### Tracker-Level Positioned Templates
+
+Positioned templates compile once per character by default. Use tracker-level
+rendering when a template needs one shared world/story panel plus a collection
+of character cards:
+
+```json
+"extSettings": {
+  "codeBlockIdentifier": "sim",
+  "renderMode": "tracker",
+  "maxCharacters": 4
+}
+```
+
+With `renderMode: "tracker"`, the template is compiled once and receives:
+
+- `{{worldData}}` - the complete top-level world object.
+- `{{characters}}` - normalized character template records.
+- `{{currentDate}}` and `{{currentTime}}` - convenience values derived from
+  `worldData.current_date` and `worldData.current_time`.
+
+Iterate over character records inside the template:
+
+```handlebars
+<section class="world-panel">
+  <h2>{{worldData.part_of_day}}</h2>
+  <p>{{worldData.immediate_narrative_thread}}</p>
+</section>
+
+<div class="character-grid">
+  {{#each characters}}
+    <article style="--accent: {{bgColor}};">
+      <h2>{{characterName}}</h2>
+      <p>{{stats.internal_thought}}</p>
+    </article>
+  {{else}}
+    <p>No characters are currently tracked.</p>
+  {{/each}}
+</div>
+```
+
+`maxCharacters` is optional. When present, it limits the normalized character
+array before change calculation and rendering. Existing templates that omit
+`renderMode` continue using per-character compilation without behavior changes.
+
 ---
 
 ## 5. System Prompt Creation

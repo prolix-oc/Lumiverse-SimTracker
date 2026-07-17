@@ -948,7 +948,11 @@ function extractTemplateLogic(htmlTemplate?: string): string | null {
   return match[1].trim();
 }
 
-function executeTemplateLogic<T extends Record<string, unknown>>(input: T, templateType: "single" | "tabbed", preset: TemplatePreset): T {
+function executeTemplateLogic<T extends Record<string, unknown>>(
+  input: T,
+  templateType: "single" | "tabbed" | "tracker",
+  preset: TemplatePreset,
+): T {
   const logic = extractTemplateLogic(preset.htmlTemplate);
   if (!logic) return input;
   try {
@@ -1155,12 +1159,23 @@ function buildTemplateData(
   data: TrackerData,
   preset: TemplatePreset,
   previousData: TrackerData | null,
-): { tabbed: boolean; input: Record<string, unknown>; fallbackRaw: string } {
+): {
+  renderMode: "single" | "tabbed" | "tracker";
+  input: Record<string, unknown>;
+  fallbackRaw: string;
+} {
   const worldData = (data.worldData || {}) as Record<string, unknown>;
-  const characters = normalizeCharacters(data);
+  const configuredMaxCharacters = Number(preset.extSettings?.maxCharacters);
+  const maxCharacters = Number.isFinite(configuredMaxCharacters) && configuredMaxCharacters > 0
+    ? Math.floor(configuredMaxCharacters)
+    : Number.POSITIVE_INFINITY;
+  const characters = normalizeCharacters(data).slice(0, maxCharacters);
   const currentDate = typeof worldData.current_date === "string" ? worldData.current_date : "Unknown Date";
   const currentTime = typeof worldData.current_time === "string" ? worldData.current_time : "Unknown Time";
   const tabbed = (preset.htmlTemplate || "").includes("sim-tracker-tabs") || preset.id.includes("tabs");
+  // Positioned templates normally compile once per character. Tracker mode is
+  // an explicit opt-in for layouts that need one world panel around all cards.
+  const trackerLevel = preset.extSettings?.renderMode === "tracker";
   const statChanges = calculateStatChanges(characters, previousData);
 
   const characterPayload = characters.map((character) => {
@@ -1211,11 +1226,12 @@ function buildTemplateData(
     };
   });
 
-  if (tabbed) {
+  if (tabbed || trackerLevel) {
     return {
-      tabbed: true,
+      renderMode: trackerLevel ? "tracker" : "tabbed",
       input: {
         characters: characterPayload,
+        worldData,
         currentDate,
         currentTime,
       },
@@ -1224,9 +1240,10 @@ function buildTemplateData(
   }
 
   return {
-    tabbed: false,
+    renderMode: "single",
     input: {
       characters: characterPayload,
+      worldData,
       currentDate,
       currentTime,
     },
@@ -1275,8 +1292,8 @@ function buildTrackerMarkup(
   const prep = buildTemplateData(data, preset, previousData);
   try {
     let cardsHtml = "";
-    if (prep.tabbed) {
-      const transformed = executeTemplateLogic(prep.input, "tabbed", preset);
+    if (prep.renderMode !== "single") {
+      const transformed = executeTemplateLogic(prep.input, prep.renderMode, preset);
       cardsHtml = compiled(transformed);
     } else {
       const inputChars = ((prep.input.characters as Array<Record<string, unknown>>) || []);

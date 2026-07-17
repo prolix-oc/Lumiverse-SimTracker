@@ -17923,10 +17923,15 @@ function compileTemplate(preset) {
 }
 function buildTemplateData(data, preset, previousData) {
   const worldData = data.worldData || {};
-  const characters = normalizeCharacters(data);
+  const configuredMaxCharacters = Number(preset.extSettings?.maxCharacters);
+  const maxCharacters = Number.isFinite(configuredMaxCharacters) && configuredMaxCharacters > 0 ? Math.floor(configuredMaxCharacters) : Number.POSITIVE_INFINITY;
+  const characters = normalizeCharacters(data).slice(0, maxCharacters);
   const currentDate = typeof worldData.current_date === "string" ? worldData.current_date : "Unknown Date";
   const currentTime = typeof worldData.current_time === "string" ? worldData.current_time : "Unknown Time";
   const tabbed = (preset.htmlTemplate || "").includes("sim-tracker-tabs") || preset.id.includes("tabs");
+  // Positioned templates normally compile once per character. Tracker mode is
+  // an explicit opt-in for layouts that need one world panel around all cards.
+  const trackerLevel = preset.extSettings?.renderMode === "tracker";
   const statChanges = calculateStatChanges(characters, previousData);
   const characterPayload = characters.map((character) => {
     const stats = character;
@@ -17964,11 +17969,12 @@ function buildTemplateData(data, preset, previousData) {
       showThoughtBubble: true
     };
   });
-  if (tabbed) {
+  if (tabbed || trackerLevel) {
     return {
-      tabbed: true,
+      renderMode: trackerLevel ? "tracker" : "tabbed",
       input: {
         characters: characterPayload,
+        worldData,
         currentDate,
         currentTime
       },
@@ -17976,9 +17982,10 @@ function buildTemplateData(data, preset, previousData) {
     };
   }
   return {
-    tabbed: false,
+    renderMode: "single",
     input: {
       characters: characterPayload,
+      worldData,
       currentDate,
       currentTime
     },
@@ -18015,8 +18022,8 @@ function buildTrackerMarkup(data, preset, previousData) {
   const prep = buildTemplateData(data, preset, previousData);
   try {
     let cardsHtml = "";
-    if (prep.tabbed) {
-      const transformed = executeTemplateLogic(prep.input, "tabbed", preset);
+    if (prep.renderMode !== "single") {
+      const transformed = executeTemplateLogic(prep.input, prep.renderMode, preset);
       cardsHtml = compiled(transformed);
     } else {
       const inputChars = prep.input.characters || [];
