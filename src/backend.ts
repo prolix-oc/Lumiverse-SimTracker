@@ -1,4 +1,4 @@
-import { getTemplatePresetById, getTemplatePresets, type TemplatePreset } from "./templatePresets";
+import { getTemplatePresetById, getTemplatePresets, mergeTemplatePresets, type TemplatePreset } from "./templatePresets";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
 declare const spindle: import("lumiverse-spindle-types").SpindleAPI;
@@ -110,7 +110,7 @@ const runtime = {
 };
 
 function getAllPresets(): TemplatePreset[] {
-  return [...getTemplatePresets(), ...runtime.seededPresets, ...config.userPresets];
+  return mergeTemplatePresets(getTemplatePresets(), runtime.seededPresets, config.userPresets);
 }
 
 function getActivePreset(): TemplatePreset {

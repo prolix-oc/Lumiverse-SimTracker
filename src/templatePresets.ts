@@ -53,6 +53,26 @@ export function getTemplatePresets(): TemplatePreset[] {
   return PRESETS;
 }
 
+/**
+ * Combine template sources without showing the same preset more than once.
+ * Sources are ordered by precedence, so bundled presets take priority over
+ * their storage-seeded copies.
+ */
+export function mergeTemplatePresets(...sources: readonly TemplatePreset[][]): TemplatePreset[] {
+  const seenIds = new Set<string>();
+  const presets: TemplatePreset[] = [];
+
+  for (const source of sources) {
+    for (const preset of source) {
+      if (seenIds.has(preset.id)) continue;
+      seenIds.add(preset.id);
+      presets.push(preset);
+    }
+  }
+
+  return presets;
+}
+
 export function getTemplatePresetById(id: string): TemplatePreset {
   return PRESETS.find((preset) => preset.id === id) || PRESETS[0];
 }

@@ -1,6 +1,6 @@
 import Handlebars from "handlebars";
 import type { SpindleFrontendContext, SpindleModelComboboxHandle } from "lumiverse-spindle-types";
-import { getTemplatePresets, type TemplatePreset } from "./templatePresets";
+import { getTemplatePresets, mergeTemplatePresets, type TemplatePreset } from "./templatePresets";
 import { parseTrackerBlock, type TrackerData } from "./trackerData";
 import { createInlineTemplateProcessor } from "./inlineTemplates";
 
@@ -713,7 +713,7 @@ function sanitizeSecondaryLLMModel(value: unknown): string {
 }
 
 function getAllPresets(config: TrackerConfig): TemplatePreset[] {
-  return [...BUILTIN_PRESETS, ...runtimeSeededPresets, ...config.userPresets];
+  return mergeTemplatePresets(BUILTIN_PRESETS, runtimeSeededPresets, config.userPresets);
 }
 
 function getPresetById(config: TrackerConfig, id: string): TemplatePreset {

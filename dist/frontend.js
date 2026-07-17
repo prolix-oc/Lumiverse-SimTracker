@@ -10538,6 +10538,19 @@ var PRESETS = [
 function getTemplatePresets() {
   return PRESETS;
 }
+function mergeTemplatePresets(...sources) {
+  const seenIds = new Set;
+  const presets = [];
+  for (const source of sources) {
+    for (const preset of source) {
+      if (seenIds.has(preset.id))
+        continue;
+      seenIds.add(preset.id);
+      presets.push(preset);
+    }
+  }
+  return presets;
+}
 
 // node_modules/yaml/browser/dist/nodes/identity.js
 var ALIAS = Symbol.for("yaml.alias");
@@ -17515,7 +17528,7 @@ function sanitizeSecondaryLLMModel(value) {
   return SECONDARY_LLM_MODEL_PLACEHOLDERS.has(trimmed.toLowerCase()) ? "" : trimmed;
 }
 function getAllPresets(config) {
-  return [...BUILTIN_PRESETS, ...runtimeSeededPresets, ...config.userPresets];
+  return mergeTemplatePresets(BUILTIN_PRESETS, runtimeSeededPresets, config.userPresets);
 }
 function getPresetById(config, id) {
   return getAllPresets(config).find((preset) => preset.id === id) || BUILTIN_PRESETS[0];

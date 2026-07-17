@@ -5152,6 +5152,19 @@ var PRESETS = [
 function getTemplatePresets() {
   return PRESETS;
 }
+function mergeTemplatePresets(...sources) {
+  const seenIds = new Set;
+  const presets = [];
+  for (const source of sources) {
+    for (const preset of source) {
+      if (seenIds.has(preset.id))
+        continue;
+      seenIds.add(preset.id);
+      presets.push(preset);
+    }
+  }
+  return presets;
+}
 function getTemplatePresetById(id) {
   return PRESETS.find((preset) => preset.id === id) || PRESETS[0];
 }
@@ -11274,7 +11287,7 @@ var runtime = {
   seededPresets: []
 };
 function getAllPresets() {
-  return [...getTemplatePresets(), ...runtime.seededPresets, ...config.userPresets];
+  return mergeTemplatePresets(getTemplatePresets(), runtime.seededPresets, config.userPresets);
 }
 function getActivePreset() {
   return getAllPresets().find((preset) => preset.id === config.templateId) || getTemplatePresetById(config.templateId) || getTemplatePresetById(DEFAULT_CONFIG.templateId);
