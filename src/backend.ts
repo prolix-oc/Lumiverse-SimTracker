@@ -473,7 +473,10 @@ function getChatTrackerHistory(chatId: string | null): TrackerHistoryEntry[] {
   return chatTrackerHistory.get(chatId) || [];
 }
 
-async function normalizeLegacyTrackersInChat(chatId: string): Promise<Array<{
+async function normalizeLegacyTrackersInChat(
+  chatId: string,
+  scanTail = Number.MAX_SAFE_INTEGER,
+): Promise<Array<{
   id: string;
   role: "system" | "user" | "assistant";
   content: string;
@@ -486,10 +489,16 @@ async function normalizeLegacyTrackersInChat(chatId: string): Promise<Array<{
   const messages = await spindle.chat.getMessages(chatId);
   if (!hasPermission("chat_mutation")) return messages;
 
+  // Legacy hidden-div trackers only matter for messages that could still
+  // influence current context. Scanning the whole history on every page
+  // reload is expensive, so we cap the normalization pass to the recent
+  // tail. Callers that need full-history migration can pass a larger tail.
+  const startIdx = Math.max(0, messages.length - Math.max(0, scanTail));
   let repairedMessages = 0;
   let repairedBlocks = 0;
 
-  for (const msg of messages) {
+  for (let i = startIdx; i < messages.length; i += 1) {
+    const msg = messages[i];
     const normalizedContent = normalizeLegacyHiddenDivTrackers(msg.content);
     const normalizedSwipes = msg.swipes.map((swipe) => normalizeLegacyHiddenDivTrackers(swipe));
     const swipesChanged = normalizedSwipes.some((entry, idx) => entry.content !== msg.swipes[idx]);
@@ -531,25 +540,43 @@ async function normalizeLegacyTrackersInChat(chatId: string): Promise<Array<{
 async function rehydrateChatTrackerHistory(chatId: string | null): Promise<void> {
   if (!chatId) return;
   try {
-    const messages = await normalizeLegacyTrackersInChat(chatId);
+    // The side-channel only needs enough recent trackers to satisfy the
+    // user's retention setting plus a small buffer for the side panel and
+    // secondary LLM fallback. There is no need to scan the entire chat
+    // history on every page reload.
+    const retainSetting = Number.isFinite(config.retainTrackerCount)
+      ? config.retainTrackerCount
+      : DEFAULT_CONFIG.retainTrackerCount;
+    const historyLimit = Math.max(3, Math.min(20, retainSetting + 2));
+    const scanTail = Math.max(200, historyLimit * 5);
+
+    const messages = await normalizeLegacyTrackersInChat(chatId, scanTail);
     if (rehydratedChats.has(chatId)) return;
     rehydratedChats.add(chatId);
+
     let history = chatTrackerHistory.get(chatId);
     if (!history) {
       history = [];
       chatTrackerHistory.set(chatId, history);
     }
     const known = new Set(history.map((entry) => entry.messageId));
-    // Preserve existing (interceptor-sourced) order: append any newly
-    // discovered trackers that haven't been recorded yet, in chat order.
-    for (const msg of messages) {
+
+    // Scan newest → oldest, collecting only the trackers we actually need.
+    const found: TrackerHistoryEntry[] = [];
+    for (let i = messages.length - 1; i >= 0 && found.length < historyLimit; i -= 1) {
+      const msg = messages[i];
       if (known.has(msg.id)) continue;
       const payload = extractTrackerPayloadFromMessage(msg.content);
       if (payload) {
-        history.push({ messageId: msg.id, payload });
+        found.unshift({ messageId: msg.id, payload: payload.trim() });
         known.add(msg.id);
       }
     }
+
+    if (found.length > 0) {
+      history.push(...found);
+    }
+
     // Re-sort entries to match current chat order where possible.
     const order = new Map<string, number>();
     messages.forEach((msg, idx) => order.set(msg.id, idx));
@@ -2022,14 +2049,83 @@ spindle.on("GENERATION_ENDED", (payload: unknown, userId?: string) => {
   })();
 });
 
+type BlockRange = { start: number; end: number };
+
+/**
+ * Collect all tracker block ranges (fences, tags, legacy hidden divs) in a
+ * single message, sorted by start position and deduplicated by start index.
+ */
+function collectTrackerBlockRanges(content: string, identifier: string): BlockRange[] {
+  if (!content) return [];
+  const desiredType = sanitizeIdentifier(identifier);
+  const ranges: BlockRange[] = [];
+  const seenStarts = new Set<number>();
+
+  const fenceRe = buildTrackerFenceRegex(identifier, "gi");
+  const tagRe = buildTrackerTagRegex(config.trackerTagName, "gi");
+
+  for (const match of content.matchAll(fenceRe)) {
+    const text = match[0] || "";
+    const start = match.index;
+    if (typeof start !== "number" || !text || seenStarts.has(start)) continue;
+    seenStarts.add(start);
+    ranges.push({ start, end: start + text.length });
+  }
+  for (const match of content.matchAll(tagRe)) {
+    const text = match[0] || "";
+    const start = match.index;
+    if (typeof start !== "number" || !text || seenStarts.has(start)) continue;
+    const attrs = parseTagAttributes(match[1] || "");
+    const foundType = sanitizeIdentifier(attrs.type || "");
+    if (foundType && foundType !== desiredType) continue;
+    seenStarts.add(start);
+    ranges.push({ start, end: start + text.length });
+  }
+  for (const range of legacyHiddenDivTrackerRanges(content)) {
+    if (seenStarts.has(range.start)) continue;
+    seenStarts.add(range.start);
+    ranges.push(range);
+  }
+
+  ranges.sort((a, b) => a.start - b.start);
+  return ranges;
+}
+
+/**
+ * Remove every tracker block from the content. Used for messages that are
+ * entirely outside the retention window.
+ */
+function stripAllTrackerBlocks(content: string, identifier: string): string {
+  if (!content) return content;
+  const desiredType = sanitizeIdentifier(identifier);
+
+  let out = content.replace(buildTrackerFenceRegex(identifier, "gi"), "");
+  out = out.replace(buildTrackerTagRegex(config.trackerTagName, "gi"), (full, attrsRaw) => {
+    const attrs = parseTagAttributes(String(attrsRaw || ""));
+    const foundType = sanitizeIdentifier(attrs.type || "");
+    if (foundType && foundType !== desiredType) return full;
+    return "";
+  });
+  out = out.replace(/<div\b([^>]*)>[\s\S]*?<\/div>/gi, (full, rawAttrs) => {
+    const attrs = typeof rawAttrs === "string" ? rawAttrs : "";
+    if (!/style\s*=\s*(?:"[^"]*display\s*:\s*none\s*;?[^"]*"|'[^']*display\s*:\s*none\s*;?[^']*')/i.test(attrs)) {
+      return full;
+    }
+    return "";
+  });
+  return out.replace(/\n\s*\n\s*\n/g, "\n\n").trim();
+}
+
 /**
  * Global variant of `stripOldTrackerBlocks`: counts tracker blocks across
  * the entire message array (not per-message) and retains the `keepNewest`
  * most recent ones globally. Older blocks are removed from whichever
  * messages contained them. This matches the user-facing semantics of
  * `retainTrackerCount` — "keep the N most recent tracker snapshots in the
- * LLM context" — whereas the previous per-message implementation could
- * never strip anything once each message only held a single tracker.
+ * LLM context".
+ *
+ * Optimized to scan newest → oldest and stop as soon as `keepNewest` blocks
+ * have been seen, so long chat histories are not fully parsed every turn.
  */
 function stripOldTrackerBlocksGlobal<T extends { content: string }>(
   messages: T[],
@@ -2038,112 +2134,57 @@ function stripOldTrackerBlocksGlobal<T extends { content: string }>(
 ): T[] {
   if (keepNewest < 0) return messages;
 
-  const desiredType = sanitizeIdentifier(identifier);
-
-  type BlockRef = { msgIdx: number; start: number; end: number };
-  const allBlocks: BlockRef[] = [];
-
-  messages.forEach((msg, msgIdx) => {
-    if (!msg || typeof msg.content !== "string") return;
-    const fenceRe = buildTrackerFenceRegex(identifier, "gi");
-    const tagRe = buildTrackerTagRegex(config.trackerTagName, "gi");
-    for (const match of msg.content.matchAll(fenceRe)) {
-      const text = match[0] || "";
-      if (typeof match.index !== "number" || !text) continue;
-      allBlocks.push({ msgIdx, start: match.index, end: match.index + text.length });
-    }
-    for (const match of msg.content.matchAll(tagRe)) {
-      const text = match[0] || "";
-      if (typeof match.index !== "number" || !text) continue;
-      const attrs = parseTagAttributes(match[1] || "");
-      const foundType = sanitizeIdentifier(attrs.type || "");
-      if (foundType && foundType !== desiredType) continue;
-      allBlocks.push({ msgIdx, start: match.index, end: match.index + text.length });
-    }
-    for (const range of legacyHiddenDivTrackerRanges(msg.content)) {
-      allBlocks.push({ msgIdx, start: range.start, end: range.end });
-    }
-  });
-
-  if (allBlocks.length === 0) return messages;
-
-  // Sort chronologically (by message, then by position in message) and
-  // drop duplicates where the fence and tag regex both captured the same
-  // span.
-  allBlocks.sort((a, b) => a.msgIdx - b.msgIdx || a.start - b.start);
-  const deduped: BlockRef[] = [];
-  for (const block of allBlocks) {
-    const prev = deduped[deduped.length - 1];
-    if (prev && prev.msgIdx === block.msgIdx && prev.start === block.start) continue;
-    deduped.push(block);
+  if (keepNewest === 0) {
+    return messages.map((msg) => {
+      if (!msg || typeof msg.content !== "string") return msg;
+      return { ...msg, content: stripAllTrackerBlocks(msg.content, identifier) };
+    });
   }
 
-  const stripUpTo = keepNewest === 0 ? deduped.length : Math.max(0, deduped.length - keepNewest);
-  if (stripUpTo === 0) return messages;
+  let remaining = keepNewest;
+  let cutoffMsgIdx = -1;
+  let keepInCutoff = 0;
 
-  const stripByMessage = new Map<number, Set<number>>();
-  for (let i = 0; i < stripUpTo; i += 1) {
-    const ref = deduped[i];
-    let set = stripByMessage.get(ref.msgIdx);
-    if (!set) {
-      set = new Set<number>();
-      stripByMessage.set(ref.msgIdx, set);
+  // Scan newest → oldest; stop once we have seen enough trackers to satisfy
+  // the retention limit.
+  for (let msgIdx = messages.length - 1; msgIdx >= 0; msgIdx -= 1) {
+    const msg = messages[msgIdx];
+    if (!msg || typeof msg.content !== "string") continue;
+    const count = countMatchingTrackerBlocksInMessage(msg.content);
+    if (count === 0) continue;
+    if (count >= remaining) {
+      cutoffMsgIdx = msgIdx;
+      keepInCutoff = remaining;
+      break;
     }
-    set.add(ref.start);
+    remaining -= count;
   }
+
+  // No cutoff means fewer trackers than keepNewest exist — nothing to strip.
+  if (cutoffMsgIdx < 0) return messages;
 
   return messages.map((msg, msgIdx) => {
     if (!msg || typeof msg.content !== "string") return msg;
-    const stripStarts = stripByMessage.get(msgIdx);
-    if (!stripStarts || stripStarts.size === 0) return msg;
+    if (msgIdx > cutoffMsgIdx) return msg;
+    if (msgIdx < cutoffMsgIdx) {
+      return { ...msg, content: stripAllTrackerBlocks(msg.content, identifier) };
+    }
 
-    const content = msg.content;
-    const fenceRe = buildTrackerFenceRegex(identifier, "gi");
-    const tagRe = buildTrackerTagRegex(config.trackerTagName, "gi");
-    const ranges: Array<{ start: number; end: number; shouldStrip: boolean }> = [];
-
-    for (const match of content.matchAll(fenceRe)) {
-      const text = match[0] || "";
-      if (typeof match.index !== "number" || !text) continue;
-      ranges.push({
-        start: match.index,
-        end: match.index + text.length,
-        shouldStrip: stripStarts.has(match.index),
-      });
-    }
-    for (const match of content.matchAll(tagRe)) {
-      const text = match[0] || "";
-      if (typeof match.index !== "number" || !text) continue;
-      const attrs = parseTagAttributes(match[1] || "");
-      const foundType = sanitizeIdentifier(attrs.type || "");
-      if (foundType && foundType !== desiredType) continue;
-      ranges.push({
-        start: match.index,
-        end: match.index + text.length,
-        shouldStrip: stripStarts.has(match.index),
-      });
-    }
-    for (const range of legacyHiddenDivTrackerRanges(content)) {
-      ranges.push({
-        start: range.start,
-        end: range.end,
-        shouldStrip: stripStarts.has(range.start),
-      });
-    }
-    ranges.sort((a, b) => a.start - b.start);
+    // Cutoff message: keep only the last `keepInCutoff` blocks.
+    const ranges = collectTrackerBlockRanges(msg.content, identifier);
+    if (ranges.length === 0) return msg;
+    const keepStart = Math.max(0, ranges.length - keepInCutoff);
 
     let out = "";
     let cursor = 0;
-    for (const range of ranges) {
-      out += content.slice(cursor, range.start);
-      if (!range.shouldStrip) {
-        out += content.slice(range.start, range.end);
-      }
-      cursor = range.end;
+    for (let i = 0; i < ranges.length; i += 1) {
+      const r = ranges[i];
+      out += msg.content.slice(cursor, r.start);
+      if (i >= keepStart) out += msg.content.slice(r.start, r.end);
+      cursor = r.end;
     }
-    out += content.slice(cursor);
-    const cleaned = out.replace(/\n\s*\n\s*\n/g, "\n\n").trim();
-    return { ...msg, content: cleaned };
+    out += msg.content.slice(cursor);
+    return { ...msg, content: out.replace(/\n\s*\n\s*\n/g, "\n\n").trim() };
   });
 }
 
@@ -2199,15 +2240,20 @@ function countMatchingTrackerBlocksInMessage(content: string): number {
 }
 
 /**
- * Count tracker blocks across the whole message array.  Unlike the old
- * `messagesContainTracker` helper, this counts *all* blocks so we can tell
- * whether the prompt already satisfies the user's `retainTrackerCount`.
+ * Count tracker blocks across the message array, stopping as soon as
+ * `maxNeeded` blocks are found. Since retained trackers are always near the
+ * end of the context, scanning newest → oldest avoids parsing long history.
  */
-function countTrackersInMessages(messages: Array<{ content?: string }>): number {
+function countTrackersInMessages(
+  messages: Array<{ content?: string }>,
+  maxNeeded = Number.MAX_SAFE_INTEGER,
+): number {
   let count = 0;
-  for (const msg of messages) {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const msg = messages[i];
     if (!msg || typeof msg.content !== "string") continue;
     count += countMatchingTrackerBlocksInMessage(msg.content);
+    if (count >= maxNeeded) return count;
   }
   return count;
 }
@@ -2249,7 +2295,8 @@ function tryRegisterInterceptor(): void {
 
       // 2. Count how many tracker blocks remain after stripping.  If we
       //    already have enough, the LLM can reference them directly.
-      const currentCount = countTrackersInMessages(retained);
+      //    We only need to know if it reaches keepNewest, so stop early.
+      const currentCount = countTrackersInMessages(retained, keepNewest);
       if (currentCount >= keepNewest) return retained;
 
       // 3. Otherwise the prompt is short on tracker history (usually because

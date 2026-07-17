@@ -11588,13 +11588,15 @@ function getChatTrackerHistory(chatId) {
     return [];
   return chatTrackerHistory.get(chatId) || [];
 }
-async function normalizeLegacyTrackersInChat(chatId) {
+async function normalizeLegacyTrackersInChat(chatId, scanTail = Number.MAX_SAFE_INTEGER) {
   const messages = await spindle.chat.getMessages(chatId);
   if (!hasPermission("chat_mutation"))
     return messages;
+  const startIdx = Math.max(0, messages.length - Math.max(0, scanTail));
   let repairedMessages = 0;
   let repairedBlocks = 0;
-  for (const msg of messages) {
+  for (let i = startIdx;i < messages.length; i += 1) {
+    const msg = messages[i];
     const normalizedContent = normalizeLegacyHiddenDivTrackers(msg.content);
     const normalizedSwipes = msg.swipes.map((swipe) => normalizeLegacyHiddenDivTrackers(swipe));
     const swipesChanged = normalizedSwipes.some((entry, idx) => entry.content !== msg.swipes[idx]);
@@ -11624,7 +11626,10 @@ async function rehydrateChatTrackerHistory(chatId) {
   if (!chatId)
     return;
   try {
-    const messages = await normalizeLegacyTrackersInChat(chatId);
+    const retainSetting = Number.isFinite(config.retainTrackerCount) ? config.retainTrackerCount : DEFAULT_CONFIG.retainTrackerCount;
+    const historyLimit = Math.max(3, Math.min(20, retainSetting + 2));
+    const scanTail = Math.max(200, historyLimit * 5);
+    const messages = await normalizeLegacyTrackersInChat(chatId, scanTail);
     if (rehydratedChats.has(chatId))
       return;
     rehydratedChats.add(chatId);
@@ -11634,14 +11639,19 @@ async function rehydrateChatTrackerHistory(chatId) {
       chatTrackerHistory.set(chatId, history);
     }
     const known = new Set(history.map((entry) => entry.messageId));
-    for (const msg of messages) {
+    const found = [];
+    for (let i = messages.length - 1;i >= 0 && found.length < historyLimit; i -= 1) {
+      const msg = messages[i];
       if (known.has(msg.id))
         continue;
       const payload = extractTrackerPayloadFromMessage(msg.content);
       if (payload) {
-        history.push({ messageId: msg.id, payload });
+        found.unshift({ messageId: msg.id, payload: payload.trim() });
         known.add(msg.id);
       }
+    }
+    if (found.length > 0) {
+      history.push(...found);
     }
     const order = new Map;
     messages.forEach((msg, idx) => order.set(msg.id, idx));
@@ -12722,115 +12732,120 @@ spindle.on("GENERATION_ENDED", (payload, userId) => {
     enqueueSecondaryGeneration(ctx.chatId, latestAssistant.id);
   })();
 });
+function collectTrackerBlockRanges(content, identifier) {
+  if (!content)
+    return [];
+  const desiredType = sanitizeIdentifier(identifier);
+  const ranges = [];
+  const seenStarts = new Set;
+  const fenceRe = buildTrackerFenceRegex(identifier, "gi");
+  const tagRe = buildTrackerTagRegex(config.trackerTagName, "gi");
+  for (const match of content.matchAll(fenceRe)) {
+    const text = match[0] || "";
+    const start = match.index;
+    if (typeof start !== "number" || !text || seenStarts.has(start))
+      continue;
+    seenStarts.add(start);
+    ranges.push({ start, end: start + text.length });
+  }
+  for (const match of content.matchAll(tagRe)) {
+    const text = match[0] || "";
+    const start = match.index;
+    if (typeof start !== "number" || !text || seenStarts.has(start))
+      continue;
+    const attrs = parseTagAttributes(match[1] || "");
+    const foundType = sanitizeIdentifier(attrs.type || "");
+    if (foundType && foundType !== desiredType)
+      continue;
+    seenStarts.add(start);
+    ranges.push({ start, end: start + text.length });
+  }
+  for (const range of legacyHiddenDivTrackerRanges(content)) {
+    if (seenStarts.has(range.start))
+      continue;
+    seenStarts.add(range.start);
+    ranges.push(range);
+  }
+  ranges.sort((a, b) => a.start - b.start);
+  return ranges;
+}
+function stripAllTrackerBlocks(content, identifier) {
+  if (!content)
+    return content;
+  const desiredType = sanitizeIdentifier(identifier);
+  let out = content.replace(buildTrackerFenceRegex(identifier, "gi"), "");
+  out = out.replace(buildTrackerTagRegex(config.trackerTagName, "gi"), (full, attrsRaw) => {
+    const attrs = parseTagAttributes(String(attrsRaw || ""));
+    const foundType = sanitizeIdentifier(attrs.type || "");
+    if (foundType && foundType !== desiredType)
+      return full;
+    return "";
+  });
+  out = out.replace(/<div\b([^>]*)>[\s\S]*?<\/div>/gi, (full, rawAttrs) => {
+    const attrs = typeof rawAttrs === "string" ? rawAttrs : "";
+    if (!/style\s*=\s*(?:"[^"]*display\s*:\s*none\s*;?[^"]*"|'[^']*display\s*:\s*none\s*;?[^']*')/i.test(attrs)) {
+      return full;
+    }
+    return "";
+  });
+  return out.replace(/\n\s*\n\s*\n/g, `
+
+`).trim();
+}
 function stripOldTrackerBlocksGlobal(messages, identifier, keepNewest) {
   if (keepNewest < 0)
     return messages;
-  const desiredType = sanitizeIdentifier(identifier);
-  const allBlocks = [];
-  messages.forEach((msg, msgIdx) => {
+  if (keepNewest === 0) {
+    return messages.map((msg) => {
+      if (!msg || typeof msg.content !== "string")
+        return msg;
+      return { ...msg, content: stripAllTrackerBlocks(msg.content, identifier) };
+    });
+  }
+  let remaining = keepNewest;
+  let cutoffMsgIdx = -1;
+  let keepInCutoff = 0;
+  for (let msgIdx = messages.length - 1;msgIdx >= 0; msgIdx -= 1) {
+    const msg = messages[msgIdx];
     if (!msg || typeof msg.content !== "string")
-      return;
-    const fenceRe = buildTrackerFenceRegex(identifier, "gi");
-    const tagRe = buildTrackerTagRegex(config.trackerTagName, "gi");
-    for (const match of msg.content.matchAll(fenceRe)) {
-      const text = match[0] || "";
-      if (typeof match.index !== "number" || !text)
-        continue;
-      allBlocks.push({ msgIdx, start: match.index, end: match.index + text.length });
-    }
-    for (const match of msg.content.matchAll(tagRe)) {
-      const text = match[0] || "";
-      if (typeof match.index !== "number" || !text)
-        continue;
-      const attrs = parseTagAttributes(match[1] || "");
-      const foundType = sanitizeIdentifier(attrs.type || "");
-      if (foundType && foundType !== desiredType)
-        continue;
-      allBlocks.push({ msgIdx, start: match.index, end: match.index + text.length });
-    }
-    for (const range of legacyHiddenDivTrackerRanges(msg.content)) {
-      allBlocks.push({ msgIdx, start: range.start, end: range.end });
-    }
-  });
-  if (allBlocks.length === 0)
-    return messages;
-  allBlocks.sort((a, b) => a.msgIdx - b.msgIdx || a.start - b.start);
-  const deduped = [];
-  for (const block of allBlocks) {
-    const prev = deduped[deduped.length - 1];
-    if (prev && prev.msgIdx === block.msgIdx && prev.start === block.start)
       continue;
-    deduped.push(block);
-  }
-  const stripUpTo = keepNewest === 0 ? deduped.length : Math.max(0, deduped.length - keepNewest);
-  if (stripUpTo === 0)
-    return messages;
-  const stripByMessage = new Map;
-  for (let i = 0;i < stripUpTo; i += 1) {
-    const ref = deduped[i];
-    let set2 = stripByMessage.get(ref.msgIdx);
-    if (!set2) {
-      set2 = new Set;
-      stripByMessage.set(ref.msgIdx, set2);
+    const count = countMatchingTrackerBlocksInMessage(msg.content);
+    if (count === 0)
+      continue;
+    if (count >= remaining) {
+      cutoffMsgIdx = msgIdx;
+      keepInCutoff = remaining;
+      break;
     }
-    set2.add(ref.start);
+    remaining -= count;
   }
+  if (cutoffMsgIdx < 0)
+    return messages;
   return messages.map((msg, msgIdx) => {
     if (!msg || typeof msg.content !== "string")
       return msg;
-    const stripStarts = stripByMessage.get(msgIdx);
-    if (!stripStarts || stripStarts.size === 0)
+    if (msgIdx > cutoffMsgIdx)
       return msg;
-    const content = msg.content;
-    const fenceRe = buildTrackerFenceRegex(identifier, "gi");
-    const tagRe = buildTrackerTagRegex(config.trackerTagName, "gi");
-    const ranges = [];
-    for (const match of content.matchAll(fenceRe)) {
-      const text = match[0] || "";
-      if (typeof match.index !== "number" || !text)
-        continue;
-      ranges.push({
-        start: match.index,
-        end: match.index + text.length,
-        shouldStrip: stripStarts.has(match.index)
-      });
+    if (msgIdx < cutoffMsgIdx) {
+      return { ...msg, content: stripAllTrackerBlocks(msg.content, identifier) };
     }
-    for (const match of content.matchAll(tagRe)) {
-      const text = match[0] || "";
-      if (typeof match.index !== "number" || !text)
-        continue;
-      const attrs = parseTagAttributes(match[1] || "");
-      const foundType = sanitizeIdentifier(attrs.type || "");
-      if (foundType && foundType !== desiredType)
-        continue;
-      ranges.push({
-        start: match.index,
-        end: match.index + text.length,
-        shouldStrip: stripStarts.has(match.index)
-      });
-    }
-    for (const range of legacyHiddenDivTrackerRanges(content)) {
-      ranges.push({
-        start: range.start,
-        end: range.end,
-        shouldStrip: stripStarts.has(range.start)
-      });
-    }
-    ranges.sort((a, b) => a.start - b.start);
+    const ranges = collectTrackerBlockRanges(msg.content, identifier);
+    if (ranges.length === 0)
+      return msg;
+    const keepStart = Math.max(0, ranges.length - keepInCutoff);
     let out = "";
     let cursor = 0;
-    for (const range of ranges) {
-      out += content.slice(cursor, range.start);
-      if (!range.shouldStrip) {
-        out += content.slice(range.start, range.end);
-      }
-      cursor = range.end;
+    for (let i = 0;i < ranges.length; i += 1) {
+      const r = ranges[i];
+      out += msg.content.slice(cursor, r.start);
+      if (i >= keepStart)
+        out += msg.content.slice(r.start, r.end);
+      cursor = r.end;
     }
-    out += content.slice(cursor);
-    const cleaned = out.replace(/\n\s*\n\s*\n/g, `
+    out += msg.content.slice(cursor);
+    return { ...msg, content: out.replace(/\n\s*\n\s*\n/g, `
 
-`).trim();
-    return { ...msg, content: cleaned };
+`).trim() };
   });
 }
 function resolveInterceptorChatId(context) {
@@ -12873,12 +12888,15 @@ function countMatchingTrackerBlocksInMessage(content) {
   }
   return count;
 }
-function countTrackersInMessages(messages) {
+function countTrackersInMessages(messages, maxNeeded = Number.MAX_SAFE_INTEGER) {
   let count = 0;
-  for (const msg of messages) {
+  for (let i = messages.length - 1;i >= 0; i -= 1) {
+    const msg = messages[i];
     if (!msg || typeof msg.content !== "string")
       continue;
     count += countMatchingTrackerBlocksInMessage(msg.content);
+    if (count >= maxNeeded)
+      return count;
   }
   return count;
 }
@@ -12907,7 +12925,7 @@ function tryRegisterInterceptor() {
       const retained = stripOldTrackerBlocksGlobal(messages, config.codeBlockIdentifier, keepNewest);
       if (keepNewest === 0)
         return retained;
-      const currentCount = countTrackersInMessages(retained);
+      const currentCount = countTrackersInMessages(retained, keepNewest);
       if (currentCount >= keepNewest)
         return retained;
       const chatId = resolveInterceptorChatId(context);
