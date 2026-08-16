@@ -8492,6 +8492,7 @@ Each character has:
 var pulse_thread_tracker_default = {
   templateName: "Pulse Thread Tracker",
   templateAuthor: "Prolix OCs",
+  trackerDesc: "Narrative character tracker with fertility, womb fullness, semen volume, and refractory gauges.",
   templatePosition: "BOTTOM",
   htmlTemplate: `<!-- TEMPLATE NAME: Pulse Thread Tracker -->
 <!-- AUTHOR: Prolix OCs -->
@@ -8918,7 +8919,7 @@ var pulse_thread_tracker_default = {
 
     .pt-womb-vessel {
         width: 140px;
-        height: 160px;
+        height: 224px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -8993,6 +8994,183 @@ var pulse_thread_tracker_default = {
         stroke-width: 2;
         stroke-linecap: round;
         opacity: 0.88;
+    }
+
+    /* --- FEMALE: Vaginal canal, cervical wall & penetration depth --- */
+    .pt-vag-outline {
+        fill: none;
+        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 65%, white 35%);
+        stroke-width: 4;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        opacity: 0.95;
+        filter: none;
+    }
+
+    .pt-vag-inner {
+        fill: rgba(255,255,255,0.05);
+        stroke: rgba(255,255,255,0.08);
+        stroke-width: 1.5;
+    }
+
+    .pt-vag-rugae {
+        fill: none;
+        stroke: rgba(255,255,255,0.08);
+        stroke-width: 1.5;
+        stroke-linecap: round;
+    }
+
+    .pt-fornix {
+        fill: none;
+        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 38%, transparent);
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        opacity: 0.75;
+    }
+
+    .pt-introitus {
+        fill: none;
+        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 60%, rgba(255,255,255,0.2) 40%);
+        stroke-width: 3.2;
+        stroke-linecap: round;
+    }
+
+    /* Split cervix: womb contents weeping down the canal + a falling drip */
+    .pt-canal-leak {
+        fill: rgba(255,255,255,0.88);
+        transition: y 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .pt-canal-drip {
+        fill: rgba(255,255,255,0.8);
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: canalDrip 2.2s ease-in infinite;
+    }
+
+    @keyframes canalDrip {
+        0% { transform: translateY(0); opacity: 0; }
+        15% { opacity: 0.9; }
+        70% { transform: translateY(26px); opacity: 0.5; }
+        100% { transform: translateY(34px); opacity: 0; }
+    }
+
+    .pt-cervix-collar {
+        fill: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 20%, #241019 80%);
+        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 55%, white 15%);
+        stroke-width: 2.2;
+        transition: fill 600ms ease-out, stroke 600ms ease-out;
+    }
+
+    .pt-cervix-os {
+        fill: #140810;
+        stroke: rgba(255,255,255,0.25);
+        stroke-width: 1.2;
+        transition: r 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), stroke 600ms ease-out, filter 600ms ease-out;
+    }
+
+    .pt-cervix.os-sealed .pt-cervix-os { stroke: #9db8e8; }
+    .pt-cervix.os-firm .pt-cervix-os { stroke: #b9c8e0; }
+    .pt-cervix.os-soft .pt-cervix-os { stroke: #f0a7c8; }
+    .pt-cervix.os-open .pt-cervix-os { stroke: #ff8fb8; }
+    .pt-cervix.os-dilated .pt-cervix-os {
+        stroke: #ff6fa5;
+        filter: drop-shadow(0 0 3px rgba(255,111,165,0.7));
+    }
+    .pt-cervix.os-kissed .pt-cervix-os {
+        stroke: #ffd700;
+        animation: osKissed 2s ease-in-out infinite;
+    }
+    .pt-cervix.os-split .pt-cervix-collar {
+        stroke: #ff4757;
+        fill: color-mix(in srgb, #ff4757 18%, #241019 82%);
+    }
+    .pt-cervix.os-split .pt-cervix-os {
+        stroke: #ff4757;
+        animation: osSplitThrob 1.6s ease-in-out infinite;
+    }
+
+    @keyframes osKissed {
+        0%, 100% { filter: drop-shadow(0 0 3px rgba(255,215,0,0.6)); }
+        50% { filter: drop-shadow(0 0 7px rgba(255,215,0,0.95)); }
+    }
+
+    @keyframes osSplitThrob {
+        0%, 100% { filter: drop-shadow(0 0 4px rgba(255,71,87,0.7)); }
+        50% { filter: drop-shadow(0 0 9px rgba(255,71,87,1)); }
+    }
+
+    .pt-cervix-tear {
+        fill: none;
+        stroke: #ff4757;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        opacity: 0.95;
+        filter: drop-shadow(0 0 3px rgba(255,71,87,0.6));
+    }
+
+    /* Penetrating shaft — geometry driven by vag_depth_pct / anal_depth_pct;
+       fill comes from the per-character skin gradient inline. Layered build:
+       capsule body + coronal ridge band + dome glans. */
+    .pt-shaft {
+        stroke: rgba(0,0,0,0.22);
+        stroke-width: 0.8;
+        transition: y 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .pt-shaft-corona {
+        fill: #d69272;
+        stroke: rgba(0,0,0,0.18);
+        stroke-width: 0.6;
+        transition: cy 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .pt-shaft-glans {
+        fill: #eeb39a;
+        stroke: rgba(0,0,0,0.25);
+        stroke-width: 0.7;
+        transition: cy 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    /* Cervix state chip (panel) reuses the os-* state classes */
+    .pt-os-chip {
+        display: inline-block;
+        padding: 1px 8px;
+        border-radius: 999px;
+        font-size: calc(9.5px * var(--pt-scale));
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        border: 1px solid transparent;
+    }
+
+    .pt-os-chip.os-sealed { color: #a8c6ff; border-color: rgba(112,161,255,0.4); background: rgba(112,161,255,0.14); }
+    .pt-os-chip.os-firm { color: #c3d2e8; border-color: rgba(150,170,200,0.35); background: rgba(150,170,200,0.12); }
+    .pt-os-chip.os-soft { color: #f4b8d2; border-color: rgba(240,167,200,0.4); background: rgba(240,167,200,0.13); }
+    .pt-os-chip.os-open { color: #ffa3c6; border-color: rgba(255,143,184,0.45); background: rgba(255,143,184,0.14); }
+    .pt-os-chip.os-dilated { color: #ff8fb4; border-color: rgba(255,111,165,0.55); background: rgba(255,111,165,0.16); }
+    .pt-os-chip.os-kissed { color: #ffe27a; border-color: rgba(255,215,0,0.55); background: rgba(255,215,0,0.14); }
+    .pt-os-chip.os-split { color: #ff8a94; border-color: rgba(255,71,87,0.65); background: rgba(255,71,87,0.18); animation: osSplitThrob 1.6s ease-in-out infinite; }
+    .pt-os-chip.os-unknown { color: var(--pt-txt-dim); border-color: rgba(255,255,255,0.18); background: rgba(255,255,255,0.06); }
+
+    /* Depth meter: 0-130 scale, dashed marker = the cervix (100 point) */
+    .pt-depth-meter {
+        position: relative;
+    }
+
+    .pt-depth-fill {
+        background: linear-gradient(90deg, #f0c4a8, #ff7aa2);
+    }
+
+    .pt-depth-marker {
+        position: absolute;
+        top: -2px;
+        bottom: -2px;
+        left: 76.9%;
+        width: 0;
+        border-left: 1px dashed rgba(255,255,255,0.65);
+        pointer-events: none;
     }
 
     .pt-fertility-marker {
@@ -9193,7 +9371,7 @@ var pulse_thread_tracker_default = {
     /* --- MALE: Anal & Prostate Vessel --- */
     .pt-anal-vessel {
         width: 140px;
-        height: 160px;
+        height: 180px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -9917,7 +10095,7 @@ var pulse_thread_tracker_default = {
 
                     <div class="pt-bio-zone">
                         <div class="pt-womb-vessel" style="--cycle-accent: {{#if (eq (cycleStage stats) "ovulation")}}var(--cy-ovu){{else if (eq (cycleStage stats) "menstruation")}}var(--cy-men){{else if (eq (cycleStage stats) "follicular")}}var(--cy-fol){{else if (eq (cycleStage stats) "luteal")}}var(--cy-lut){{else}}var(--cy-preg){{/if}};">
-                            <svg class="pt-womb-svg" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+                            <svg class="pt-womb-svg" viewBox="0 0 100 160" aria-hidden="true" focusable="false">
                                 <defs>
                                     <clipPath id="pt-womb-clip-{{@index}}">
                                         <path d="M50 24 C62 24 72 34 72 46 C72 57 66 66 58 74 C54 78 52 83 50 88 C48 83 46 78 42 74 C34 66 28 57 28 46 C28 34 38 24 50 24 Z" />
@@ -9925,6 +10103,21 @@ var pulse_thread_tracker_default = {
                                     <linearGradient id="pt-womb-depth-{{@index}}" x1="0.5" y1="0" x2="0.5" y2="1">
                                         <stop offset="0%" stop-color="#7a3a55" stop-opacity="0.85" />
                                         <stop offset="100%" stop-color="#3a1528" stop-opacity="0.95" />
+                                    </linearGradient>
+                                    <!-- Vaginal canal: os at (50,90) down to the introitus (~y148).
+                                         Shares the accent-driven palette; clip keeps the split-cervix
+                                         leak inside the canal walls. -->
+                                    <clipPath id="pt-vag-clip-{{@index}}">
+                                        <path d="M 42 96 C 37 112, 35 126, 37 138 C 38.5 146, 42 150, 45 152.5 C 48 154.5, 52 154.5, 55 152.5 C 58 150, 61.5 146, 63 138 C 65 126, 63 112, 58 96 C 55.5 100, 44.5 100, 42 96 Z" />
+                                    </clipPath>
+                                    <linearGradient id="pt-vag-depth-{{@index}}" x1="0.5" y1="0" x2="0.5" y2="1">
+                                        <stop offset="0%" stop-color="#6b2a48" stop-opacity="0.85" />
+                                        <stop offset="100%" stop-color="#2a0d20" stop-opacity="0.95" />
+                                    </linearGradient>
+                                    <linearGradient id="pt-shaft-skin-{{@index}}" x1="0" y1="0" x2="1" y2="0">
+                                        <stop offset="0%" stop-color="#f2c9ac" />
+                                        <stop offset="55%" stop-color="#e0a184" />
+                                        <stop offset="100%" stop-color="#bd7a5e" />
                                     </linearGradient>
                                 </defs>
                                 <path class="pt-womb-outline" d="M36 30 C28 22 18 24 14 28 M64 30 C72 22 82 24 86 28 M36 30 C34 36 38 40 42 43 M64 30 C66 36 62 40 58 43 M42 43 C38 38 32 37 28 42 C24 47 27 55 34 58 M58 43 C62 38 68 37 72 42 C76 47 73 55 66 58 M50 24 C62 24 72 34 72 46 C72 57 66 66 58 74 C54 78 52 83 50 88 C48 83 46 78 42 74 C34 66 28 57 28 46 C28 34 38 24 50 24 Z" />
@@ -9937,10 +10130,45 @@ var pulse_thread_tracker_default = {
                                 <circle class="pt-womb-seed" cx="50" cy="56" r="4" />
                                 {{/if}}
                                 <path class="pt-womb-inner" style="fill:url(#pt-womb-depth-{{@index}})" d="M50 24 C62 24 72 34 72 46 C72 57 66 66 58 74 C54 78 52 83 50 88 C48 83 46 78 42 74 C34 66 28 57 28 46 C28 34 38 24 50 24 Z" />
+                                <!-- Vaginal canal walls, interior and rugae -->
+                                <path class="pt-vag-outline" d="M 42 96 C 37 112, 35 126, 37 138 C 38.5 146, 42 150, 45 152.5 C 48 154.5, 52 154.5, 55 152.5 C 58 150, 61.5 146, 63 138 C 65 126, 63 112, 58 96 C 55.5 100, 44.5 100, 42 96 Z" />
+                                <path class="pt-vag-inner" style="fill:url(#pt-vag-depth-{{@index}})" d="M 42 96 C 37 112, 35 126, 37 138 C 38.5 146, 42 150, 45 152.5 C 48 154.5, 52 154.5, 55 152.5 C 58 150, 61.5 146, 63 138 C 65 126, 63 112, 58 96 C 55.5 100, 44.5 100, 42 96 Z" />
+                                <path class="pt-vag-rugae" d="M 37.5 112 Q 50 118 62.5 112 M 36 128 Q 50 134 64 128 M 38.5 142 Q 50 147 61.5 142" />
+                                <!-- Fornix dimples hugging the cervical collar -->
+                                <path class="pt-fornix" d="M 38 96 Q 42 101 47 100 M 62 96 Q 58 101 53 100" />
+                                <!-- Introitus lips -->
+                                <path class="pt-introitus" d="M 44 152 C 44 156, 56 156, 56 152" />
+                                <path class="pt-introitus" d="M 42 153 C 42 158, 58 158, 58 153" />
+                                {{#if (and (eq (cervixState stats) "split") (gt stats.womb_fullness_pct 0))}}
+                                <!-- Split cervix: womb contents leaking down the canal -->
+                                <g clip-path="url(#pt-vag-clip-{{@index}})">
+                                    <rect class="pt-canal-leak" x="0" y="{{subtract 152 (divide (multiply (clampPercent stats.womb_fullness_pct) 52) 100)}}" width="100" height="60" />
+                                </g>
+                                <ellipse class="pt-canal-drip" cx="50" cy="159" rx="1.5" ry="2.5" />
+                                {{/if}}
                                 <g clip-path="url(#pt-womb-clip-{{@index}})">
                                     <rect class="pt-womb-liquid" x="0" y="{{wombFillTop stats.womb_fullness_pct}}" width="100" height="{{wombFillHeight stats.womb_fullness_pct}}" />
                                     <path class="pt-womb-surface" d="M33 {{wombFillTop stats.womb_fullness_pct}} C40 {{add (wombFillTop stats.womb_fullness_pct) 3}} 60 {{add (wombFillTop stats.womb_fullness_pct) 3}} 67 {{wombFillTop stats.womb_fullness_pct}}" />
                                 </g>
+                                <!-- Cervical wall: collar + os aperture keyed to cervix_state_id -->
+                                <g class="pt-cervix {{cervixOsClass stats}}">
+                                    <ellipse class="pt-cervix-collar" cx="50" cy="90" rx="11" ry="7.5" />
+                                    <circle class="pt-cervix-os" cx="50" cy="90" r="{{cervixOsR stats}}" />
+                                    {{#if (eq (cervixState stats) "split")}}
+                                    <path class="pt-cervix-tear" d="M 42 86.5 L 45 90 L 41 92 L 44 95 M 58 86.5 L 55 90 L 59 92 L 56 95" />
+                                    {{/if}}
+                                </g>
+                                {{#if (gt stats.vag_depth_pct 0)}}
+                                <!-- Penetrating shaft: layered phallic build (body + coronal
+                                     ridge + dome glans). Tip advances with vag_depth_pct;
+                                     past 100 the head slips through the split os into the
+                                     womb cavity. -->
+                                <g class="pt-shaft-group">
+                                    <rect class="pt-shaft" style="fill:url(#pt-shaft-skin-{{@index}})" x="43.5" y="{{add (vagShaftTopY stats) 7}}" width="13" height="{{subtract (subtract 158 (vagShaftTopY stats)) 7}}" rx="6.5" />
+                                    <ellipse class="pt-shaft-corona" cx="50" cy="{{add (vagShaftTopY stats) 7}}" rx="8.2" ry="2.6" />
+                                    <ellipse class="pt-shaft-glans" cx="50" cy="{{add (vagShaftTopY stats) 4.6}}" rx="7.2" ry="5.4" />
+                                </g>
+                                {{/if}}
                             </svg>
                         </div>
                         <div class="pt-bio-panel">
@@ -9961,8 +10189,18 @@ var pulse_thread_tracker_default = {
                                 <div class="pt-womb-meter"><div class="pt-womb-meter-fill" style="width: {{clampPercent stats.womb_receptivity_pct}}%"></div></div>
                                 <div class="pt-bio-row">
                                     <span class="pt-bio-key">Cervix</span>
-                                    <span class="pt-bio-value">{{cervixStateLabel stats}}</span>
+                                    <span class="pt-bio-value"><span class="pt-os-chip {{cervixOsClass stats}}">{{cervixStateLabel stats}}</span></span>
                                 </div>
+                                {{#if (gt stats.vag_depth_pct 0)}}
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">Depth</span>
+                                    <span class="pt-bio-value">{{#if (gt stats.vag_depth_pct 100)}}{{stats.vag_depth_pct}}% · womb{{else}}{{clampPercent stats.vag_depth_pct}}%{{/if}}</span>
+                                </div>
+                                <div class="pt-womb-meter pt-depth-meter">
+                                    <div class="pt-womb-meter-fill pt-depth-fill" style="width: {{vagDepthBar stats}}%"></div>
+                                    <span class="pt-depth-marker"></span>
+                                </div>
+                                {{/if}}
                                 <div class="pt-bio-row">
                                     <span class="pt-bio-key">This Cycle</span>
                                     <span class="pt-bio-value">{{#if stats.breeding_count}}{{stats.breeding_count}}×{{else}}0{{/if}}</span>
@@ -10146,7 +10384,7 @@ var pulse_thread_tracker_default = {
                     {{#if (hasAnalTracking stats)}}
                     <div class="pt-bio-zone">
                         <div class="pt-anal-vessel">
-                            <svg class="pt-anal-svg" viewBox="0 0 100 120" aria-hidden="true" focusable="false">
+                            <svg class="pt-anal-svg" viewBox="0 0 100 134" aria-hidden="true" focusable="false">
                                 <defs>
                                     <clipPath id="pt-anal-clip-{{@index}}">
                                         <!-- Main canal path -->
@@ -10156,8 +10394,13 @@ var pulse_thread_tracker_default = {
                                         <stop offset="0%" stop-color="#4a044e" stop-opacity="0.85" />
                                         <stop offset="100%" stop-color="#170123" stop-opacity="0.95" />
                                     </linearGradient>
+                                    <linearGradient id="pt-anal-shaft-skin-{{@index}}" x1="0" y1="0" x2="1" y2="0">
+                                        <stop offset="0%" stop-color="#f2c9ac" />
+                                        <stop offset="55%" stop-color="#e0a184" />
+                                        <stop offset="100%" stop-color="#bd7a5e" />
+                                    </linearGradient>
                                 </defs>
-                                
+
                                 {{#if (hasProstateTracking stats)}}
                                 <!-- Prostate (anterior wall, nestled inside curve) -->
                                 <path class="pt-prostate {{#if (gt stats.prostate_stimulation_pct 50)}}glow{{/if}}" d="M 28 65 C 18 60, 16 75, 22 85 C 28 95, 32 88, 30 75 Z" />
@@ -10165,17 +10408,27 @@ var pulse_thread_tracker_default = {
 
                                 <!-- Outer glow / Outline -->
                                 <path class="pt-anal-outline" d="M 40 15 C 32 30, 24 50, 28 80 C 30 95, 42 105, 45 106 C 48 107, 52 107, 55 106 C 58 105, 70 95, 72 80 C 76 50, 68 30, 60 15 C 55 20, 45 20, 40 15 Z" />
-                                
+
                                 <!-- Inner cavity with depth gradient -->
                                 <path class="pt-anal-inner" style="fill:url(#pt-anal-depth-{{@index}})" d="M 40 15 C 32 30, 24 50, 28 80 C 30 95, 42 105, 45 106 C 48 107, 52 107, 55 106 C 58 105, 70 95, 72 80 C 76 50, 68 30, 60 15 C 55 20, 45 20, 40 15 Z" />
-                                
+
                                 <!-- Muscular Rugae -->
                                 <path class="pt-anal-rugae" d="M 32 35 Q 50 42 68 35 M 26 55 Q 50 64 74 55 M 28 75 Q 50 82 72 75 M 34 92 Q 50 96 66 92" />
-                                
+
                                 <!-- Sphincter (integrated at bottom) -->
                                 <path class="pt-anal-sphincter" d="M 42 105 C 42 110, 58 110, 58 105" />
                                 <path class="pt-anal-sphincter" d="M 40 106 C 40 113, 60 113, 60 106" />
-                                
+
+                                {{#if (gt stats.anal_depth_pct 0)}}
+                                <!-- Penetrating shaft: layered phallic build; enters past the
+                                     sphincter, tip at anal_depth_pct of the canal span -->
+                                <g class="pt-shaft-group">
+                                    <rect class="pt-shaft" style="fill:url(#pt-anal-shaft-skin-{{@index}})" x="43" y="{{add (analShaftTopY stats) 7}}" width="14" height="{{subtract (subtract 132 (analShaftTopY stats)) 7}}" rx="7" />
+                                    <ellipse class="pt-shaft-corona" cx="50" cy="{{add (analShaftTopY stats) 7}}" rx="8.8" ry="2.8" />
+                                    <ellipse class="pt-shaft-glans" cx="50" cy="{{add (analShaftTopY stats) 4.8}}" rx="7.8" ry="5.8" />
+                                </g>
+                                {{/if}}
+
                                 <!-- Semen Liquid -->
                                 <g clip-path="url(#pt-anal-clip-{{@index}})">
                                     <rect class="pt-anal-liquid" x="0" y="{{analFillTop stats.anal_fullness_pct}}" width="100" height="{{analFillHeight stats.anal_fullness_pct}}" />
@@ -10200,6 +10453,13 @@ var pulse_thread_tracker_default = {
                                     <span class="pt-bio-value">{{clampPercent stats.anal_tightness_pct}}%</span>
                                 </div>
                                 <div class="pt-anal-meter"><div class="pt-anal-meter-fill" style="width: {{clampPercent stats.anal_tightness_pct}}%"></div></div>
+                                {{#if (gt stats.anal_depth_pct 0)}}
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">Depth</span>
+                                    <span class="pt-bio-value">{{clampPercent stats.anal_depth_pct}}%</span>
+                                </div>
+                                <div class="pt-anal-meter"><div class="pt-anal-meter-fill" style="width: {{clampPercent stats.anal_depth_pct}}%"></div></div>
+                                {{/if}}
                                 {{#if (hasProstateTracking stats)}}
                                 <div class="pt-bio-row">
                                     <span class="pt-bio-key">Prostate</span>
@@ -10348,16 +10608,17 @@ TEMPLATE VARIABLES (tabbed mode):
     - {{stats.apChange}}, {{stats.dpChange}}, {{stats.tpChange}}, {{stats.cpChange}} — derived by the renderer from the prior tracker block; never emitted by the LLM
     - {{stats.sex}}: 'female', 'male', 'futanari', 'intersex', 'hermaphrodite', 'both', or 'other'
     - {{stats.cycle_stage_id}}, {{stats.cycle_day}}, {{stats.womb_fullness_pct}}, {{stats.womb_receptivity_pct}}
-    - {{stats.cervix_state_id}}, {{stats.breeding_count}}, {{stats.preg}}, {{stats.days_preg}}, {{stats.conception_date}}
+    - {{stats.cervix_state_id}} (0-7; 7=split), {{stats.breeding_count}}, {{stats.preg}}, {{stats.days_preg}}, {{stats.conception_date}}
+    - {{stats.vag_depth_pct}} — current vaginal penetration depth (0-100+; >100 = tip past a split cervix, inside the womb)
     - {{stats.refractory_minutes}}, {{stats.refractory_total}}, {{stats.semen_ml}}, {{stats.semen_capacity_ml}}, {{stats.male_fertility_pct}}
     - {{stats.cup_size}}, {{stats.breast_fullness_pct}}, {{stats.milk_ml}}, {{stats.milk_capacity_ml}}, {{stats.nipple_sensitivity_pct}}, {{stats.lactating}}
   - {{breastGeometry}}: precomputed by the renderer — pathLeft/pathRight, fillTop/Height, apexY/XLeft/XRight, areolaY/R, nippleR, cleavagePath, foldLeftPath/foldRightPath, glossXLeft/XRight/Y/RX/RY, cupLabel
-    - {{stats.anal_fullness_pct}}, {{stats.anal_tightness_pct}}, {{stats.prostate_stimulation_pct}}
+    - {{stats.anal_fullness_pct}}, {{stats.anal_tightness_pct}}, {{stats.anal_depth_pct}} — current anal penetration depth (0-100), {{stats.prostate_stimulation_pct}}
     - {{stats.last_react}}, {{stats.internal_thought}}
     - {{stats.days_since_first_meeting}}, {{stats.inactive}}, {{stats.inactiveReason}}
 -->
 `,
-  sysPrompt: '## NARRATIVE CHARACTER TRACKER (Pulse Thread)\n\nEmit one tracker per turn: a `worldData` object (`current_date` YYYY-MM-DD, `current_time` 24h HH:MM) and a `characters` array.\n\n### RULES\n\n1. **Full schema, every turn.** Emit every field below, always wrapped as `{ "characters": [ {...} ] }` (array even for one character). No renames, omissions, or shortened forms. Migrate values from any older tracker shapes in history into this schema — never reproduce an old layout.\n2. **Deduce, don\'t blank.** Infer missing values from narrative cues (dialogue, actions, time, lore). Use `0` / `""` / `false` only when there is truly no signal. Preserve biology, anatomy, and `bg` across turns unless the narrative explicitly changes them.\n3. **Never track `{{user}}`.** Drop any `{{user}}` entry silently, even from history. Tracker is NPCs only.\n4. **Up to 4 active characters** (excluding `{{user}}`); mark the rest `"inactive": true`.\n5. **Enums are integers**, never strings (`cycle_stage_id`, `cervix_state_id`, `last_react`, `inactiveReason`).\n6. **Don\'t emit derived fields.** The renderer computes stat deltas (`ap`/`dp`/`tp`/`cp` change), bracket labels, and descriptors.\n\n### CANONICAL SCHEMA\n\n```json\n{\n  "worldData": { "current_date": "YYYY-MM-DD", "current_time": "HH:MM" },\n  "characters": [\n    {\n      "name": "Character Name",\n      "ap": 0, "dp": 0, "tp": 0, "cp": 0,\n      "sex": "female",\n      "cycle_stage_id": 0, "cycle_day": 0,\n      "womb_fullness_pct": 0, "womb_receptivity_pct": 0, "cervix_state_id": 0,\n      "cup_size": "", "breast_fullness_pct": 0,\n      "milk_ml": 0, "milk_capacity_ml": 0, "nipple_sensitivity_pct": 0, "lactating": false,\n      "breeding_count": 0,\n      "preg": false, "conceived": false, "days_preg": 0, "conception_date": "",\n      "refractory_minutes": 0, "refractory_total": 0,\n      "semen_ml": 0, "semen_capacity_ml": 0, "male_fertility_pct": 0,\n      "anal_fullness_pct": 0, "anal_tightness_pct": 0, "prostate_stimulation_pct": 0,\n      "last_react": 0, "internal_thought": "",\n      "days_since_first_meeting": 0, "inactive": false, "inactiveReason": 0,\n      "bg": "#808080"\n    }\n  ]\n}\n```\n\n### STAT METERS (hard caps)\n\n| Field | Range | Brackets |\n|---|---|---|\n| **ap** Affection | 0-200 | 0-30 Strangers / 31-60 Acquaintances / 61-90 Friends / 91-120 Romantic / 121-150 Steady / 151-180 Committed / 181-200 Devoted |\n| **dp** Desire | 0-150 | 0-25 Cold / 26-50 Warm / 51-75 Interested / 76-100 Aroused / 101-125 Needy / 126-150 Desperate |\n| **tp** Trust | 0-150 | Falls with lies / broken promises; rises with reliability. |\n| **cp** Contempt | 0-150 | Rises when harmed; high cp drags ap/dp/tp down. |\n\nMove +/- per turn, scaled to the moment.\n\n### ENUMS\n\n- `last_react`: `0` Neutral, `1` Like/Approve, `2` Dislike/Disapprove.\n- `inactiveReason`: `0` active, `1` Asleep, `2` Comatose, `3` Contempt/refusing, `4` Incapacitated, `5` Death.\n- `cycle_stage_id`: `0` unknown, `1` menstruation (d1-5), `2` follicular (d6-13), `3` ovulation (d14-16, peak), `4` luteal (d17-28), `5` pregnancy, `6` rut/heat.\n- `cervix_state_id` (closed→open): `0` unknown, `1` sealed, `2` firm, `3` soft, `4` open, `5` dilated, `6` kissed.\n\n### BIOLOGY\n\n`sex` is lowercase `female` | `male` | `futanari` | `other`; preserve unless biology explicitly changes. **Futanari emit both female and male field groups.** Advance `cycle_day`/`days_preg`/`refractory_minutes` as narrative time passes.\n\n**Female / futanari — cycle & womb**\n- `womb_fullness_pct` / `womb_receptivity_pct` — 0-100. Receptivity is high at ovulation/rut and high arousal, low at menstruation or low arousal.\n- `breeding_count` — internal finishes this cycle; increment per internal ejaculation, reset at a new cycle.\n\n**Conception & pregnancy** (two stages):\n- `conceived: true` — fertilized but not showing. The engine auto-sets this when `womb_fullness_pct > 85%` in a fertile window (ovulation/rut/luteal d≤19), automatic at 100%. **Once true, preserve every turn until pregnancy is confirmed — never revert.**\n- `preg: true` — pregnancy confirmed (test, reveal, missed period, showing). Also set `cycle_stage_id: 5`, `cervix_state_id: 1`, advance `days_preg` daily, preserve `conception_date`.\n- Neither: all conception/pregnancy fields at defaults.\n\n**Female / futanari — breast & lactation** (defaults unless pregnant/postpartum/lactating):\n- `cup_size` — `AA`/`A`–`K`. Cues: flat/tiny→`AA`, petite→`A`, B→`B`, handful→`C`, full→`D`, DD→`DD`, heavy→`F`–`G`, huge→`H`+. UK doubled letters (`FF`/`GG`/…) alias up. Set on first appearance; preserve unless biology changes (puberty, magic, surgery) — **not** with arousal or engorgement.\n- `breast_fullness_pct` — 0-100 engorgement vs. cup. Rises with pregnancy/arousal/milk buildup; drops after nursing/pumping.\n- `milk_ml` / `milk_capacity_ml` — stored vs. max (combined ~100-600 ml). `0` when not lactating.\n- `nipple_sensitivity_pct` — 0-100; rises with arousal/hormones/stimulation, falls fast when it stops.\n- `lactating` — `true` once production begins (mid-to-late pregnancy onward).\n\n**Male / futanari — refractory & semen** (`0` for others):\n- `refractory_minutes` — minutes until ready (`0` = ready); decrement with time. `refractory_total` — length of the current period (`0` if none).\n- `semen_ml` / `semen_capacity_ml` — current vs. max; drops after ejaculation, recovers with rest/arousal.\n- `male_fertility_pct` — 0-100; adjust for rut, recovery, fatigue, magic.\n\n**Anal — all characters** (defaults if no anal content):\n- `anal_fullness_pct` — 0-100 volume inside; rises with insertion/ejaculation, falls with withdrawal/cleanup.\n- `anal_tightness_pct` — 0-100 sphincter resistance; `100` = virgin-tight, drops with use/lube/arousal, recovers with rest.\n- `prostate_stimulation_pct` — 0-100 active stimulation; rises with prostate-angled pressure, falls fast when it stops. Leave `0` without a prostate.\n\n### OTHER FIELDS\n\n- `internal_thought` — one short first-person sentence of current inner monologue; refresh every turn.\n- `days_since_first_meeting` — in-world days since first meeting `{{user}}`.\n- `inactive` / `inactiveReason` — set when asleep, comatose, dead, refusing engagement, or off-scene.\n- `bg` — hex color matching the character\'s vibe; preserve once chosen.\n',
+  sysPrompt: '## NARRATIVE CHARACTER TRACKER (Pulse Thread)\n\nEmit one tracker per turn: a `worldData` object (`current_date` YYYY-MM-DD, `current_time` 24h HH:MM) and a `characters` array.\n\n### RULES\n\n1. **Full schema, every turn.** Emit every field below, always wrapped as `{ "characters": [ {...} ] }` (array even for one character). No renames, omissions, or shortened forms. Migrate values from any older tracker shapes in history into this schema — never reproduce an old layout.\n2. **Deduce, don\'t blank.** Infer missing values from narrative cues (dialogue, actions, time, lore). Use `0` / `""` / `false` only when there is truly no signal. Preserve biology, anatomy, and `bg` across turns unless the narrative explicitly changes them.\n3. **Never track `{{user}}`.** Drop any `{{user}}` entry silently, even from history. Tracker is NPCs only.\n4. **Up to 4 active characters** (excluding `{{user}}`); mark the rest `"inactive": true`.\n5. **Enums are integers**, never strings (`cycle_stage_id`, `cervix_state_id`, `last_react`, `inactiveReason`).\n6. **Don\'t emit derived fields.** The renderer computes stat deltas (`ap`/`dp`/`tp`/`cp` change), bracket labels, and descriptors.\n\n### CANONICAL SCHEMA\n\n```json\n{\n  "worldData": { "current_date": "YYYY-MM-DD", "current_time": "HH:MM" },\n  "characters": [\n    {\n      "name": "Character Name",\n      "ap": 0, "dp": 0, "tp": 0, "cp": 0,\n      "sex": "female",\n      "cycle_stage_id": 0, "cycle_day": 0,\n      "womb_fullness_pct": 0, "womb_receptivity_pct": 0, "cervix_state_id": 0, "vag_depth_pct": 0,\n      "cup_size": "", "breast_fullness_pct": 0,\n      "milk_ml": 0, "milk_capacity_ml": 0, "nipple_sensitivity_pct": 0, "lactating": false,\n      "breeding_count": 0,\n      "preg": false, "conceived": false, "days_preg": 0, "conception_date": "",\n      "refractory_minutes": 0, "refractory_total": 0,\n      "semen_ml": 0, "semen_capacity_ml": 0, "male_fertility_pct": 0,\n      "anal_fullness_pct": 0, "anal_tightness_pct": 0, "anal_depth_pct": 0, "prostate_stimulation_pct": 0,\n      "last_react": 0, "internal_thought": "",\n      "days_since_first_meeting": 0, "inactive": false, "inactiveReason": 0,\n      "bg": "#808080"\n    }\n  ]\n}\n```\n\n### STAT METERS (hard caps)\n\n| Field | Range | Brackets |\n|---|---|---|\n| **ap** Affection | 0-200 | 0-30 Strangers / 31-60 Acquaintances / 61-90 Friends / 91-120 Romantic / 121-150 Steady / 151-180 Committed / 181-200 Devoted |\n| **dp** Desire | 0-150 | 0-25 Cold / 26-50 Warm / 51-75 Interested / 76-100 Aroused / 101-125 Needy / 126-150 Desperate |\n| **tp** Trust | 0-150 | Falls with lies / broken promises; rises with reliability. |\n| **cp** Contempt | 0-150 | Rises when harmed; high cp drags ap/dp/tp down. |\n\nMove +/- per turn, scaled to the moment.\n\n### ENUMS\n\n- `last_react`: `0` Neutral, `1` Like/Approve, `2` Dislike/Disapprove.\n- `inactiveReason`: `0` active, `1` Asleep, `2` Comatose, `3` Contempt/refusing, `4` Incapacitated, `5` Death.\n- `cycle_stage_id`: `0` unknown, `1` menstruation (d1-5), `2` follicular (d6-13), `3` ovulation (d14-16, peak), `4` luteal (d17-28), `5` pregnancy, `6` rut/heat.\n- `cervix_state_id` (closed→open): `0` unknown, `1` sealed, `2` firm, `3` soft, `4` open, `5` dilated, `6` kissed, `7` split (breached — see Split cervix).\n\n### BIOLOGY\n\n`sex` is lowercase `female` | `male` | `futanari` | `other`; preserve unless biology explicitly changes. **Futanari emit both female and male field groups.** Advance `cycle_day`/`days_preg`/`refractory_minutes` as narrative time passes.\n\n**Female / futanari — cycle & womb**\n- `womb_fullness_pct` / `womb_receptivity_pct` — 0-100. Receptivity is high at ovulation/rut and high arousal, low at menstruation or low arousal.\n- `breeding_count` — internal finishes this cycle; increment per internal ejaculation, reset at a new cycle.\n- `vag_depth_pct` — current vaginal penetration depth (0-130). **Transient:** reflects this turn\'s scene, not a lasting state — set from the narrative each turn, `0` whenever nothing is inside. `100` = hilted against the cervix (sustained 95-100 with a partner nudging it tends the cervix toward `6` kissed); values above `100` mean the tip is past a **split** cervix inside the womb (max `130`) and are only valid while `cervix_state_id: 7`.\n\n**Split cervix** (`cervix_state_id: 7` — extreme states only):\n- Set `7` only when the narrative explicitly breaches the cervix — oversized/monstrous partner, brute cervical penetration, fertility magic or transformation. **Never set it casually or as a synonym for "open/dilated".**\n- While split: internal finishes add **directly** to `womb_fullness_pct` (treat ejaculation past the os as full delivery), the conception gate applies aggressively, and `vag_depth_pct` may exceed 100.\n- Split persists across turns until healed or rested (medical care, recovery time, healing magic); then return to the appropriate 1-5 state. Repeated splitting may leave the cervix defaulting to `4` open.\n\n**Conception & pregnancy** (two stages):\n- `conceived: true` — fertilized but not showing. The engine auto-sets this when `womb_fullness_pct > 85%` in a fertile window (ovulation/rut/luteal d≤19), automatic at 100%. **Once true, preserve every turn until pregnancy is confirmed — never revert.**\n- `preg: true` — pregnancy confirmed (test, reveal, missed period, showing). Also set `cycle_stage_id: 5`, `cervix_state_id: 1`, advance `days_preg` daily, preserve `conception_date`.\n- Neither: all conception/pregnancy fields at defaults.\n\n**Female / futanari — breast & lactation** (defaults unless pregnant/postpartum/lactating):\n- `cup_size` — `AA`/`A`–`K`. Cues: flat/tiny→`AA`, petite→`A`, B→`B`, handful→`C`, full→`D`, DD→`DD`, heavy→`F`–`G`, huge→`H`+. UK doubled letters (`FF`/`GG`/…) alias up. Set on first appearance; preserve unless biology changes (puberty, magic, surgery) — **not** with arousal or engorgement.\n- `breast_fullness_pct` — 0-100 engorgement vs. cup. Rises with pregnancy/arousal/milk buildup; drops after nursing/pumping.\n- `milk_ml` / `milk_capacity_ml` — stored vs. max (combined ~100-600 ml). `0` when not lactating.\n- `nipple_sensitivity_pct` — 0-100; rises with arousal/hormones/stimulation, falls fast when it stops.\n- `lactating` — `true` once production begins (mid-to-late pregnancy onward).\n\n**Male / futanari — refractory & semen** (`0` for others):\n- `refractory_minutes` — minutes until ready (`0` = ready); decrement with time. `refractory_total` — length of the current period (`0` if none).\n- `semen_ml` / `semen_capacity_ml` — current vs. max; drops after ejaculation, recovers with rest/arousal.\n- `male_fertility_pct` — 0-100; adjust for rut, recovery, fatigue, magic.\n\n**Anal — all characters** (defaults if no anal content):\n- `anal_fullness_pct` — 0-100 volume inside; rises with insertion/ejaculation, falls with withdrawal/cleanup.\n- `anal_tightness_pct` — 0-100 sphincter resistance; `100` = virgin-tight, drops with use/lube/arousal, recovers with rest.\n- `anal_depth_pct` — 0-100 current penetration depth; `100` = fully hilted. **Transient** like `vag_depth_pct`: set from the scene each turn, `0` after withdrawal. Prostate stimulation climbs when depth exceeds ~70.\n- `prostate_stimulation_pct` — 0-100 active stimulation; rises with prostate-angled pressure, falls fast when it stops. Leave `0` without a prostate.\n\n### OTHER FIELDS\n\n- `internal_thought` — one short first-person sentence of current inner monologue; refresh every turn.\n- `days_since_first_meeting` — in-world days since first meeting `{{user}}`.\n- `inactive` / `inactiveReason` — set when asleep, comatose, dead, refusing engagement, or off-scene.\n- `bg` — hex color matching the character\'s vibe; preserve once chosen.\n',
   customFields: [
     {
       key: "ap",
@@ -10397,7 +10658,11 @@ TEMPLATE VARIABLES (tabbed mode):
     },
     {
       key: "cervix_state_id",
-      description: "[number] Cervix openness enum (most closed → most open): 0=unknown, 1=sealed, 2=firm, 3=soft, 4=open, 5=dilated, 6=kissed. Renderer maps to a display label."
+      description: "[number] Cervix openness enum (most closed → most open): 0=unknown, 1=sealed, 2=firm, 3=soft, 4=open, 5=dilated, 6=kissed, 7=split (breached wall — extreme scenarios only). Renderer maps to a display label."
+    },
+    {
+      key: "vag_depth_pct",
+      description: "[number] Current vaginal penetration depth (0-130). 100 = hilted against the cervix; values above 100 only while cervix_state_id=7 (tip past the split os inside the womb). Transient: reflect the current scene turn and reset to 0 after withdrawal."
     },
     {
       key: "cup_size",
@@ -10472,6 +10737,10 @@ TEMPLATE VARIABLES (tabbed mode):
       description: "[number] Sphincter resistance (0-100). 100 = untouched/virgin tight; drops with stretching, sustained use, lubrication, arousal. Recovers with rest. Preserve baseline per character."
     },
     {
+      key: "anal_depth_pct",
+      description: "[number] Current anal penetration depth (0-100). 100 = fully hilted. Transient: reflect the current scene turn and reset to 0 after withdrawal."
+    },
+    {
       key: "prostate_stimulation_pct",
       description: "[number] Active prostate stimulation level (0-100). Rises with direct pressure / deep penetration / prostate-angled toys; falls quickly when stimulation stops. 0 for characters without a prostate."
     },
@@ -10506,8 +10775,7 @@ TEMPLATE VARIABLES (tabbed mode):
     showThoughtBubble: true,
     hideSimBlocks: true,
     templateFile: "pulse-thread-tracker.html"
-  },
-  trackerDesc: "Narrative character tracker with fertility, womb fullness, semen volume, and refractory gauges."
+  }
 };
 // tracker-card-templates/narrative-weave-simtracker.json
 var narrative_weave_simtracker_default = {
@@ -18359,7 +18627,8 @@ var CERVIX_STATE_BY_ID = {
   3: "soft",
   4: "open",
   5: "dilated",
-  6: "kissed"
+  6: "kissed",
+  7: "split"
 };
 function cycleStage(stats) {
   if (!stats || typeof stats !== "object" || Array.isArray(stats))
@@ -18446,14 +18715,14 @@ function hasFemaleBiology(stats) {
   const record = stats;
   const sex = sexValue(record);
   const stage = cycleStage(record);
-  return ["female", "futanari", "futa", "both", "intersex", "hermaphrodite"].includes(sex) || record.preg === true || record.conceived === true || Number(record.cycle_day) > 0 || Number(record.womb_fullness_pct) > 0 || ["pregnancy", "ovulation", "menstruation", "follicular", "luteal"].includes(stage);
+  return ["female", "futanari", "futa", "both", "intersex", "hermaphrodite"].includes(sex) || record.preg === true || record.conceived === true || Number(record.cycle_day) > 0 || Number(record.womb_fullness_pct) > 0 || Number(record.vag_depth_pct) > 0 || ["pregnancy", "ovulation", "menstruation", "follicular", "luteal"].includes(stage);
 }
 function hasAnalTracking(stats) {
   if (!stats || typeof stats !== "object" || Array.isArray(stats))
     return false;
   const record = stats;
   const sex = sexValue(record);
-  return ["male", "female", "futanari", "futa", "both", "intersex", "hermaphrodite"].includes(sex) || Number(record.anal_fullness_pct) > 0 || Number(record.anal_tightness_pct) > 0 || Number(record.prostate_stimulation_pct) > 0;
+  return ["male", "female", "futanari", "futa", "both", "intersex", "hermaphrodite"].includes(sex) || Number(record.anal_fullness_pct) > 0 || Number(record.anal_tightness_pct) > 0 || Number(record.anal_depth_pct) > 0 || Number(record.prostate_stimulation_pct) > 0;
 }
 function hasProstateTracking(stats) {
   if (!stats || typeof stats !== "object" || Array.isArray(stats))
@@ -18701,6 +18970,57 @@ function semenFillTop(value) {
 function semenFillHeight(value) {
   const pct = clampPercent(value);
   return pct / 100 * 44;
+}
+var CERVIX_OS_RADIUS = {
+  "": 1.6,
+  sealed: 0.6,
+  firm: 1.3,
+  soft: 2.2,
+  open: 3.2,
+  dilated: 4.2,
+  kissed: 4.6,
+  split: 5.4
+};
+var VAG_INTROITUS_Y = 148;
+var VAG_OS_Y = 90;
+var VAG_OVERDRIVE_MAX = 30;
+var VAG_OVERDRIVE_SPAN = 32;
+var ANAL_OPENING_Y = 103;
+var ANAL_DEEP_Y = 22;
+function cervixOsR(stats) {
+  const state = cervixState(stats);
+  return CERVIX_OS_RADIUS[state] ?? CERVIX_OS_RADIUS[""];
+}
+function cervixOsClass(stats) {
+  const state = cervixState(stats);
+  return state ? `os-${state}` : "os-unknown";
+}
+function vagDepthValue(stats) {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats))
+    return 0;
+  const depth = Number(stats.vag_depth_pct);
+  return Number.isFinite(depth) && depth > 0 ? depth : 0;
+}
+function vagShaftTopY(stats) {
+  const depth = vagDepthValue(stats);
+  if (depth <= 0)
+    return VAG_INTROITUS_Y;
+  if (depth <= 100)
+    return VAG_INTROITUS_Y - depth / 100 * (VAG_INTROITUS_Y - VAG_OS_Y);
+  const over = Math.min(depth - 100, VAG_OVERDRIVE_MAX);
+  return VAG_OS_Y - over / VAG_OVERDRIVE_MAX * VAG_OVERDRIVE_SPAN;
+}
+function vagDepthBar(stats) {
+  const depth = vagDepthValue(stats);
+  return Math.round(Math.min(depth, 100 + VAG_OVERDRIVE_MAX) / (100 + VAG_OVERDRIVE_MAX) * 100);
+}
+function analShaftTopY(stats) {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats))
+    return ANAL_OPENING_Y;
+  const depth = clampPercent(stats.anal_depth_pct);
+  if (depth <= 0)
+    return ANAL_OPENING_Y;
+  return ANAL_OPENING_Y - depth / 100 * (ANAL_OPENING_Y - ANAL_DEEP_Y);
 }
 function byId(id) {
   const scoped = panelRoot?.querySelector(`#${id}`);
@@ -19174,6 +19494,8 @@ function registerTemplateHelpers() {
   import_handlebars2.default.registerHelper("cycleStageLabel", cycleStageLabel);
   import_handlebars2.default.registerHelper("cervixState", cervixState);
   import_handlebars2.default.registerHelper("cervixStateLabel", cervixStateLabel);
+  import_handlebars2.default.registerHelper("cervixOsR", cervixOsR);
+  import_handlebars2.default.registerHelper("cervixOsClass", cervixOsClass);
   import_handlebars2.default.registerHelper("fertilityRiskLabel", fertilityRiskLabel);
   import_handlebars2.default.registerHelper("fertilityRiskClass", fertilityRiskClass);
   import_handlebars2.default.registerHelper("hasFertilityTracking", hasFemaleBiology);
@@ -19188,6 +19510,9 @@ function registerTemplateHelpers() {
   import_handlebars2.default.registerHelper("semenPercent", semenPercent);
   import_handlebars2.default.registerHelper("wombFillTop", wombFillTop);
   import_handlebars2.default.registerHelper("wombFillHeight", wombFillHeight);
+  import_handlebars2.default.registerHelper("vagShaftTopY", vagShaftTopY);
+  import_handlebars2.default.registerHelper("vagDepthBar", vagDepthBar);
+  import_handlebars2.default.registerHelper("analShaftTopY", analShaftTopY);
   import_handlebars2.default.registerHelper("hasAnalTracking", hasAnalTracking);
   import_handlebars2.default.registerHelper("hasProstateTracking", hasProstateTracking);
   import_handlebars2.default.registerHelper("hasLactationTracking", hasLactationTracking);

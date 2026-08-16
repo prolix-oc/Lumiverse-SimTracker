@@ -168,6 +168,7 @@ const CERVIX_STATE_BY_ID: Record<number, string> = {
   4: "open",
   5: "dilated",
   6: "kissed",
+  7: "split",
 };
 
 function cycleStage(stats: unknown): string {
@@ -256,6 +257,7 @@ function hasFemaleBiology(stats: unknown): boolean {
     record.conceived === true ||
     Number(record.cycle_day) > 0 ||
     Number(record.womb_fullness_pct) > 0 ||
+    Number(record.vag_depth_pct) > 0 ||
     ["pregnancy", "ovulation", "menstruation", "follicular", "luteal"].includes(stage)
   );
 }
@@ -268,6 +270,7 @@ function hasAnalTracking(stats: unknown): boolean {
     ["male", "female", "futanari", "futa", "both", "intersex", "hermaphrodite"].includes(sex) ||
     Number(record.anal_fullness_pct) > 0 ||
     Number(record.anal_tightness_pct) > 0 ||
+    Number(record.anal_depth_pct) > 0 ||
     Number(record.prostate_stimulation_pct) > 0
   );
 }
@@ -588,6 +591,72 @@ function semenFillTop(value: unknown): number {
 function semenFillHeight(value: unknown): number {
   const pct = clampPercent(value);
   return (pct / 100) * 44;
+}
+
+// ── Cervical os & penetration-depth geometry ─────────────────────────
+//
+// The womb vessel's SVG uses viewBox 0 0 100 160: the uterine cavity spans
+// y≈24-88 (unchanged), the cervical os sits at (50, 90), and the vaginal
+// canal runs down to the introitus at y=148. vag_depth_pct maps onto that
+// span — 100 = hilted at the os. Values past 100 (only valid while the
+// cervix is split) push the tip up into the womb cavity, capped at 130 =
+// mid-cavity beside the pregnancy seed position.
+
+const CERVIX_OS_RADIUS: Record<string, number> = {
+  "": 1.6,
+  sealed: 0.6,
+  firm: 1.3,
+  soft: 2.2,
+  open: 3.2,
+  dilated: 4.2,
+  kissed: 4.6,
+  split: 5.4,
+};
+
+const VAG_INTROITUS_Y = 148;
+const VAG_OS_Y = 90;
+const VAG_OVERDRIVE_MAX = 30;
+const VAG_OVERDRIVE_SPAN = 32;
+
+const ANAL_OPENING_Y = 103;
+const ANAL_DEEP_Y = 22;
+
+function cervixOsR(stats: unknown): number {
+  const state = cervixState(stats);
+  return CERVIX_OS_RADIUS[state] ?? CERVIX_OS_RADIUS[""];
+}
+
+function cervixOsClass(stats: unknown): string {
+  const state = cervixState(stats);
+  return state ? `os-${state}` : "os-unknown";
+}
+
+function vagDepthValue(stats: unknown): number {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return 0;
+  const depth = Number((stats as Record<string, unknown>).vag_depth_pct);
+  return Number.isFinite(depth) && depth > 0 ? depth : 0;
+}
+
+function vagShaftTopY(stats: unknown): number {
+  const depth = vagDepthValue(stats);
+  if (depth <= 0) return VAG_INTROITUS_Y;
+  if (depth <= 100) return VAG_INTROITUS_Y - (depth / 100) * (VAG_INTROITUS_Y - VAG_OS_Y);
+  const over = Math.min(depth - 100, VAG_OVERDRIVE_MAX);
+  return VAG_OS_Y - (over / VAG_OVERDRIVE_MAX) * VAG_OVERDRIVE_SPAN;
+}
+
+function vagDepthBar(stats: unknown): number {
+  // Depth meter scale: 0-130 mapped to 0-100% so the "cervix line" marker
+  // at 100/130 sits at a fixed position on the track.
+  const depth = vagDepthValue(stats);
+  return Math.round((Math.min(depth, 100 + VAG_OVERDRIVE_MAX) / (100 + VAG_OVERDRIVE_MAX)) * 100);
+}
+
+function analShaftTopY(stats: unknown): number {
+  if (!stats || typeof stats !== "object" || Array.isArray(stats)) return ANAL_OPENING_Y;
+  const depth = clampPercent((stats as Record<string, unknown>).anal_depth_pct);
+  if (depth <= 0) return ANAL_OPENING_Y;
+  return ANAL_OPENING_Y - (depth / 100) * (ANAL_OPENING_Y - ANAL_DEEP_Y);
 }
 
 function byId<T extends Element>(id: string): T | null {
@@ -1102,6 +1171,8 @@ function registerTemplateHelpers(): void {
   Handlebars.registerHelper("cycleStageLabel", cycleStageLabel);
   Handlebars.registerHelper("cervixState", cervixState);
   Handlebars.registerHelper("cervixStateLabel", cervixStateLabel);
+  Handlebars.registerHelper("cervixOsR", cervixOsR);
+  Handlebars.registerHelper("cervixOsClass", cervixOsClass);
   Handlebars.registerHelper("fertilityRiskLabel", fertilityRiskLabel);
   Handlebars.registerHelper("fertilityRiskClass", fertilityRiskClass);
   Handlebars.registerHelper("hasFertilityTracking", hasFemaleBiology);
@@ -1116,6 +1187,9 @@ function registerTemplateHelpers(): void {
   Handlebars.registerHelper("semenPercent", semenPercent);
   Handlebars.registerHelper("wombFillTop", wombFillTop);
   Handlebars.registerHelper("wombFillHeight", wombFillHeight);
+  Handlebars.registerHelper("vagShaftTopY", vagShaftTopY);
+  Handlebars.registerHelper("vagDepthBar", vagDepthBar);
+  Handlebars.registerHelper("analShaftTopY", analShaftTopY);
   Handlebars.registerHelper("hasAnalTracking", hasAnalTracking);
   Handlebars.registerHelper("hasProstateTracking", hasProstateTracking);
   Handlebars.registerHelper("hasLactationTracking", hasLactationTracking);
