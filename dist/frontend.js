@@ -18,12 +18,14 @@ var __toESM = (mod, isNodeMode, target) => {
   }
   target = mod != null ? __create(__getProtoOf(mod)) : {};
   const to = isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target;
-  for (let key of __getOwnPropNames(mod))
-    if (!__hasOwnProp.call(to, key))
-      __defProp(to, key, {
-        get: __accessProp.bind(mod, key),
-        enumerable: true
-      });
+  if (mod && typeof mod === "object" || typeof mod === "function") {
+    for (let key of __getOwnPropNames(mod))
+      if (!__hasOwnProp.call(to, key))
+        __defProp(to, key, {
+          get: __accessProp.bind(mod, key),
+          enumerable: true
+        });
+  }
   if (canCache)
     cache.set(mod, to);
   return to;
@@ -31,7 +33,7 @@ var __toESM = (mod, isNodeMode, target) => {
 var __commonJS = (cb, mod) => () => (mod || cb((mod = { exports: {} }).exports, mod), mod.exports);
 
 // node_modules/handlebars/dist/cjs/handlebars/utils.js
-var require_utils = __commonJS((exports) => {
+var require_utils = __commonJS(function(exports) {
   exports.__esModule = true;
   exports.extend = extend;
   exports.indexOf = indexOf;
@@ -127,7 +129,7 @@ var require_utils = __commonJS((exports) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/exception.js
-var require_exception = __commonJS((exports, module) => {
+var require_exception = __commonJS(function(exports, module) {
   exports.__esModule = true;
   var errorProps = ["description", "fileName", "lineNumber", "endLineNumber", "message", "name", "number", "stack"];
   function Exception(message, node) {
@@ -172,7 +174,7 @@ var require_exception = __commonJS((exports, module) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/helpers/block-helper-missing.js
-var require_block_helper_missing = __commonJS((exports, module) => {
+var require_block_helper_missing = __commonJS(function(exports, module) {
   exports.__esModule = true;
   var _utils = require_utils();
   exports.default = function(instance) {
@@ -205,7 +207,7 @@ var require_block_helper_missing = __commonJS((exports, module) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/helpers/each.js
-var require_each = __commonJS((exports, module) => {
+var require_each = __commonJS(function(exports, module) {
   exports.__esModule = true;
   function _interopRequireDefault(obj) {
     return obj && obj.__esModule ? obj : { default: obj };
@@ -286,7 +288,7 @@ var require_each = __commonJS((exports, module) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/helpers/helper-missing.js
-var require_helper_missing = __commonJS((exports, module) => {
+var require_helper_missing = __commonJS(function(exports, module) {
   exports.__esModule = true;
   function _interopRequireDefault(obj) {
     return obj && obj.__esModule ? obj : { default: obj };
@@ -306,7 +308,7 @@ var require_helper_missing = __commonJS((exports, module) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/helpers/if.js
-var require_if = __commonJS((exports, module) => {
+var require_if = __commonJS(function(exports, module) {
   exports.__esModule = true;
   function _interopRequireDefault(obj) {
     return obj && obj.__esModule ? obj : { default: obj };
@@ -343,7 +345,7 @@ var require_if = __commonJS((exports, module) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/helpers/log.js
-var require_log = __commonJS((exports, module) => {
+var require_log = __commonJS(function(exports, module) {
   exports.__esModule = true;
   exports.default = function(instance) {
     instance.registerHelper("log", function() {
@@ -365,7 +367,7 @@ var require_log = __commonJS((exports, module) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/helpers/lookup.js
-var require_lookup = __commonJS((exports, module) => {
+var require_lookup = __commonJS(function(exports, module) {
   exports.__esModule = true;
   exports.default = function(instance) {
     instance.registerHelper("lookup", function(obj, field, options) {
@@ -379,7 +381,7 @@ var require_lookup = __commonJS((exports, module) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/helpers/with.js
-var require_with = __commonJS((exports, module) => {
+var require_with = __commonJS(function(exports, module) {
   exports.__esModule = true;
   function _interopRequireDefault(obj) {
     return obj && obj.__esModule ? obj : { default: obj };
@@ -415,7 +417,7 @@ var require_with = __commonJS((exports, module) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/helpers.js
-var require_helpers = __commonJS((exports) => {
+var require_helpers = __commonJS(function(exports) {
   exports.__esModule = true;
   exports.registerDefaultHelpers = registerDefaultHelpers;
   exports.moveHelperToHooks = moveHelperToHooks;
@@ -456,7 +458,7 @@ var require_helpers = __commonJS((exports) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/decorators/inline.js
-var require_inline = __commonJS((exports, module) => {
+var require_inline = __commonJS(function(exports, module) {
   exports.__esModule = true;
   var _utils = require_utils();
   exports.default = function(instance) {
@@ -480,7 +482,7 @@ var require_inline = __commonJS((exports, module) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/decorators.js
-var require_decorators = __commonJS((exports) => {
+var require_decorators = __commonJS(function(exports) {
   exports.__esModule = true;
   exports.registerDefaultDecorators = registerDefaultDecorators;
   function _interopRequireDefault(obj) {
@@ -494,7 +496,7 @@ var require_decorators = __commonJS((exports) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/logger.js
-var require_logger = __commonJS((exports, module) => {
+var require_logger = __commonJS(function(exports, module) {
   exports.__esModule = true;
   var _utils = require_utils();
   var logger = {
@@ -530,7 +532,7 @@ var require_logger = __commonJS((exports, module) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/internal/create-new-lookup-object.js
-var require_create_new_lookup_object = __commonJS((exports) => {
+var require_create_new_lookup_object = __commonJS(function(exports) {
   exports.__esModule = true;
   exports.createNewLookupObject = createNewLookupObject;
   var _utils = require_utils();
@@ -543,7 +545,7 @@ var require_create_new_lookup_object = __commonJS((exports) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/internal/proto-access.js
-var require_proto_access = __commonJS((exports) => {
+var require_proto_access = __commonJS(function(exports) {
   exports.__esModule = true;
   exports.createProtoAccessControl = createProtoAccessControl;
   exports.resultIsAllowed = resultIsAllowed;
@@ -607,7 +609,7 @@ var require_proto_access = __commonJS((exports) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/base.js
-var require_base = __commonJS((exports) => {
+var require_base = __commonJS(function(exports) {
   exports.__esModule = true;
   exports.HandlebarsEnvironment = HandlebarsEnvironment;
   function _interopRequireDefault(obj) {
@@ -700,7 +702,7 @@ var require_base = __commonJS((exports) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/safe-string.js
-var require_safe_string = __commonJS((exports, module) => {
+var require_safe_string = __commonJS(function(exports, module) {
   exports.__esModule = true;
   function SafeString(string) {
     this.string = string;
@@ -713,7 +715,7 @@ var require_safe_string = __commonJS((exports, module) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/internal/wrapHelper.js
-var require_wrapHelper = __commonJS((exports) => {
+var require_wrapHelper = __commonJS(function(exports) {
   exports.__esModule = true;
   exports.wrapHelper = wrapHelper;
   function wrapHelper(helper, transformOptionsFn) {
@@ -730,7 +732,7 @@ var require_wrapHelper = __commonJS((exports) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/runtime.js
-var require_runtime = __commonJS((exports) => {
+var require_runtime = __commonJS(function(exports) {
   exports.__esModule = true;
   exports.checkRevision = checkRevision;
   exports.template = template;
@@ -1038,7 +1040,7 @@ var require_runtime = __commonJS((exports) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/no-conflict.js
-var require_no_conflict = __commonJS((exports, module) => {
+var require_no_conflict = __commonJS(function(exports, module) {
   exports.__esModule = true;
   exports.default = function(Handlebars) {
     (function() {
@@ -1062,7 +1064,7 @@ var require_no_conflict = __commonJS((exports, module) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars.runtime.js
-var require_handlebars_runtime = __commonJS((exports, module) => {
+var require_handlebars_runtime = __commonJS(function(exports, module) {
   exports.__esModule = true;
   function _interopRequireDefault(obj) {
     return obj && obj.__esModule ? obj : { default: obj };
@@ -1116,7 +1118,7 @@ var require_handlebars_runtime = __commonJS((exports, module) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/compiler/ast.js
-var require_ast = __commonJS((exports, module) => {
+var require_ast = __commonJS(function(exports, module) {
   exports.__esModule = true;
   var AST = {
     helpers: {
@@ -1136,7 +1138,7 @@ var require_ast = __commonJS((exports, module) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/compiler/parser.js
-var require_parser = __commonJS((exports, module) => {
+var require_parser = __commonJS(function(exports, module) {
   exports.__esModule = true;
   var handlebars = function() {
     var parser = {
@@ -1860,7 +1862,7 @@ Expecting ` + expected.join(", ") + ", got '" + (this.terminals_[symbol] || symb
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/compiler/visitor.js
-var require_visitor = __commonJS((exports, module) => {
+var require_visitor = __commonJS(function(exports, module) {
   exports.__esModule = true;
   function _interopRequireDefault(obj) {
     return obj && obj.__esModule ? obj : { default: obj };
@@ -1965,7 +1967,7 @@ var require_visitor = __commonJS((exports, module) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/compiler/whitespace-control.js
-var require_whitespace_control = __commonJS((exports, module) => {
+var require_whitespace_control = __commonJS(function(exports, module) {
   exports.__esModule = true;
   function _interopRequireDefault(obj) {
     return obj && obj.__esModule ? obj : { default: obj };
@@ -2111,7 +2113,7 @@ var require_whitespace_control = __commonJS((exports, module) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/compiler/helpers.js
-var require_helpers2 = __commonJS((exports) => {
+var require_helpers2 = __commonJS(function(exports) {
   exports.__esModule = true;
   exports.SourceLocation = SourceLocation;
   exports.id = id;
@@ -2296,7 +2298,7 @@ var require_helpers2 = __commonJS((exports) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/compiler/base.js
-var require_base2 = __commonJS((exports) => {
+var require_base2 = __commonJS(function(exports) {
   exports.__esModule = true;
   exports.parseWithoutProcessing = parseWithoutProcessing;
   exports.parse = parse;
@@ -2347,7 +2349,7 @@ var require_base2 = __commonJS((exports) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/compiler/compiler.js
-var require_compiler = __commonJS((exports) => {
+var require_compiler = __commonJS(function(exports) {
   exports.__esModule = true;
   exports.Compiler = Compiler;
   exports.precompile = precompile;
@@ -2764,7 +2766,7 @@ var require_compiler = __commonJS((exports) => {
 });
 
 // node_modules/source-map/lib/base64.js
-var require_base64 = __commonJS((exports) => {
+var require_base64 = __commonJS(function(exports) {
   var intToCharMap = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".split("");
   exports.encode = function(number) {
     if (0 <= number && number < intToCharMap.length) {
@@ -2803,7 +2805,7 @@ var require_base64 = __commonJS((exports) => {
 });
 
 // node_modules/source-map/lib/base64-vlq.js
-var require_base64_vlq = __commonJS((exports) => {
+var require_base64_vlq = __commonJS(function(exports) {
   var base64 = require_base64();
   var VLQ_BASE_SHIFT = 5;
   var VLQ_BASE = 1 << VLQ_BASE_SHIFT;
@@ -2855,7 +2857,7 @@ var require_base64_vlq = __commonJS((exports) => {
 });
 
 // node_modules/source-map/lib/util.js
-var require_util = __commonJS((exports) => {
+var require_util = __commonJS(function(exports) {
   function getArg(aArgs, aName, aDefaultValue) {
     if (aName in aArgs) {
       return aArgs[aName];
@@ -3154,7 +3156,7 @@ var require_util = __commonJS((exports) => {
 });
 
 // node_modules/source-map/lib/array-set.js
-var require_array_set = __commonJS((exports) => {
+var require_array_set = __commonJS(function(exports) {
   var util = require_util();
   var has = Object.prototype.hasOwnProperty;
   var hasNativeMap = typeof Map !== "undefined";
@@ -3222,7 +3224,7 @@ var require_array_set = __commonJS((exports) => {
 });
 
 // node_modules/source-map/lib/mapping-list.js
-var require_mapping_list = __commonJS((exports) => {
+var require_mapping_list = __commonJS(function(exports) {
   var util = require_util();
   function generatedPositionAfter(mappingA, mappingB) {
     var lineA = mappingA.generatedLine;
@@ -3259,7 +3261,7 @@ var require_mapping_list = __commonJS((exports) => {
 });
 
 // node_modules/source-map/lib/source-map-generator.js
-var require_source_map_generator = __commonJS((exports) => {
+var require_source_map_generator = __commonJS(function(exports) {
   var base64VLQ = require_base64_vlq();
   var util = require_util();
   var ArraySet = require_array_set().ArraySet;
@@ -3529,7 +3531,7 @@ var require_source_map_generator = __commonJS((exports) => {
 });
 
 // node_modules/source-map/lib/binary-search.js
-var require_binary_search = __commonJS((exports) => {
+var require_binary_search = __commonJS(function(exports) {
   exports.GREATEST_LOWER_BOUND = 1;
   exports.LEAST_UPPER_BOUND = 2;
   function recursiveSearch(aLow, aHigh, aNeedle, aHaystack, aCompare, aBias) {
@@ -3576,7 +3578,7 @@ var require_binary_search = __commonJS((exports) => {
 });
 
 // node_modules/source-map/lib/quick-sort.js
-var require_quick_sort = __commonJS((exports) => {
+var require_quick_sort = __commonJS(function(exports) {
   function swap(ary, x, y) {
     var temp = ary[x];
     ary[x] = ary[y];
@@ -3609,7 +3611,7 @@ var require_quick_sort = __commonJS((exports) => {
 });
 
 // node_modules/source-map/lib/source-map-consumer.js
-var require_source_map_consumer = __commonJS((exports) => {
+var require_source_map_consumer = __commonJS(function(exports) {
   var util = require_util();
   var binarySearch = require_binary_search();
   var ArraySet = require_array_set().ArraySet;
@@ -4178,7 +4180,7 @@ var require_source_map_consumer = __commonJS((exports) => {
 });
 
 // node_modules/source-map/lib/source-node.js
-var require_source_node = __commonJS((exports) => {
+var require_source_node = __commonJS(function(exports) {
   var SourceMapGenerator = require_source_map_generator().SourceMapGenerator;
   var util = require_util();
   var REGEX_NEWLINE = /(\r?\n)/;
@@ -4432,14 +4434,14 @@ var require_source_node = __commonJS((exports) => {
 });
 
 // node_modules/source-map/source-map.js
-var require_source_map = __commonJS((exports) => {
+var require_source_map = __commonJS(function(exports) {
   exports.SourceMapGenerator = require_source_map_generator().SourceMapGenerator;
   exports.SourceMapConsumer = require_source_map_consumer().SourceMapConsumer;
   exports.SourceNode = require_source_node().SourceNode;
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/compiler/code-gen.js
-var require_code_gen = __commonJS((exports, module) => {
+var require_code_gen = __commonJS(function(exports, module) {
   exports.__esModule = true;
   var _utils = require_utils();
   var SourceNode = undefined;
@@ -4572,7 +4574,7 @@ var require_code_gen = __commonJS((exports, module) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars/compiler/javascript-compiler.js
-var require_javascript_compiler = __commonJS((exports, module) => {
+var require_javascript_compiler = __commonJS(function(exports, module) {
   exports.__esModule = true;
   function _interopRequireDefault(obj) {
     return obj && obj.__esModule ? obj : { default: obj };
@@ -5338,7 +5340,7 @@ var require_javascript_compiler = __commonJS((exports, module) => {
 });
 
 // node_modules/handlebars/dist/cjs/handlebars.js
-var require_handlebars = __commonJS((exports, module) => {
+var require_handlebars = __commonJS(function(exports, module) {
   exports.__esModule = true;
   function _interopRequireDefault(obj) {
     return obj && obj.__esModule ? obj : { default: obj };
@@ -10618,7 +10620,7 @@ TEMPLATE VARIABLES (tabbed mode):
     - {{stats.days_since_first_meeting}}, {{stats.inactive}}, {{stats.inactiveReason}}
 -->
 `,
-  sysPrompt: '## NARRATIVE CHARACTER TRACKER (Pulse Thread)\n\nEmit one tracker per turn: a `worldData` object (`current_date` YYYY-MM-DD, `current_time` 24h HH:MM) and a `characters` array.\n\n### RULES\n\n1. **Full schema, every turn.** Emit every field below, always wrapped as `{ "characters": [ {...} ] }` (array even for one character). No renames, omissions, or shortened forms. Migrate values from any older tracker shapes in history into this schema — never reproduce an old layout.\n2. **Deduce, don\'t blank.** Infer missing values from narrative cues (dialogue, actions, time, lore). Use `0` / `""` / `false` only when there is truly no signal. Preserve biology, anatomy, and `bg` across turns unless the narrative explicitly changes them.\n3. **Never track `{{user}}`.** Drop any `{{user}}` entry silently, even from history. Tracker is NPCs only.\n4. **Up to 4 active characters** (excluding `{{user}}`); mark the rest `"inactive": true`.\n5. **Enums are integers**, never strings (`cycle_stage_id`, `cervix_state_id`, `last_react`, `inactiveReason`).\n6. **Don\'t emit derived fields.** The renderer computes stat deltas (`ap`/`dp`/`tp`/`cp` change), bracket labels, and descriptors.\n\n### CANONICAL SCHEMA\n\n```json\n{\n  "worldData": { "current_date": "YYYY-MM-DD", "current_time": "HH:MM" },\n  "characters": [\n    {\n      "name": "Character Name",\n      "ap": 0, "dp": 0, "tp": 0, "cp": 0,\n      "sex": "female",\n      "cycle_stage_id": 0, "cycle_day": 0,\n      "womb_fullness_pct": 0, "womb_receptivity_pct": 0, "cervix_state_id": 0, "vag_depth_pct": 0,\n      "cup_size": "", "breast_fullness_pct": 0,\n      "milk_ml": 0, "milk_capacity_ml": 0, "nipple_sensitivity_pct": 0, "lactating": false,\n      "breeding_count": 0,\n      "preg": false, "conceived": false, "days_preg": 0, "conception_date": "",\n      "refractory_minutes": 0, "refractory_total": 0,\n      "semen_ml": 0, "semen_capacity_ml": 0, "male_fertility_pct": 0,\n      "anal_fullness_pct": 0, "anal_tightness_pct": 0, "anal_depth_pct": 0, "prostate_stimulation_pct": 0,\n      "last_react": 0, "internal_thought": "",\n      "days_since_first_meeting": 0, "inactive": false, "inactiveReason": 0,\n      "bg": "#808080"\n    }\n  ]\n}\n```\n\n### STAT METERS (hard caps)\n\n| Field | Range | Brackets |\n|---|---|---|\n| **ap** Affection | 0-200 | 0-30 Strangers / 31-60 Acquaintances / 61-90 Friends / 91-120 Romantic / 121-150 Steady / 151-180 Committed / 181-200 Devoted |\n| **dp** Desire | 0-150 | 0-25 Cold / 26-50 Warm / 51-75 Interested / 76-100 Aroused / 101-125 Needy / 126-150 Desperate |\n| **tp** Trust | 0-150 | Falls with lies / broken promises; rises with reliability. |\n| **cp** Contempt | 0-150 | Rises when harmed; high cp drags ap/dp/tp down. |\n\nMove +/- per turn, scaled to the moment.\n\n### ENUMS\n\n- `last_react`: `0` Neutral, `1` Like/Approve, `2` Dislike/Disapprove.\n- `inactiveReason`: `0` active, `1` Asleep, `2` Comatose, `3` Contempt/refusing, `4` Incapacitated, `5` Death.\n- `cycle_stage_id`: `0` unknown, `1` menstruation (d1-5), `2` follicular (d6-13), `3` ovulation (d14-16, peak), `4` luteal (d17-28), `5` pregnancy, `6` rut/heat.\n- `cervix_state_id` (closed→open): `0` unknown, `1` sealed, `2` firm, `3` soft, `4` open, `5` dilated, `6` kissed, `7` split (breached — see Split cervix).\n\n### BIOLOGY\n\n`sex` is lowercase `female` | `male` | `futanari` | `other`; preserve unless biology explicitly changes. **Futanari emit both female and male field groups.** Advance `cycle_day`/`days_preg`/`refractory_minutes` as narrative time passes.\n\n**Female / futanari — cycle & womb**\n- `womb_fullness_pct` / `womb_receptivity_pct` — 0-100. Receptivity is high at ovulation/rut and high arousal, low at menstruation or low arousal.\n- `breeding_count` — internal finishes this cycle; increment per internal ejaculation, reset at a new cycle.\n- `vag_depth_pct` — current vaginal penetration depth (0-130). **Transient:** reflects this turn\'s scene, not a lasting state — set from the narrative each turn, `0` whenever nothing is inside. `100` = hilted against the cervix (sustained 95-100 with a partner nudging it tends the cervix toward `6` kissed); values above `100` mean the tip is past a **split** cervix inside the womb (max `130`) and are only valid while `cervix_state_id: 7`.\n\n**Split cervix** (`cervix_state_id: 7` — extreme states only):\n- Set `7` only when the narrative explicitly breaches the cervix — oversized/monstrous partner, brute cervical penetration, fertility magic or transformation. **Never set it casually or as a synonym for "open/dilated".**\n- While split: internal finishes add **directly** to `womb_fullness_pct` (treat ejaculation past the os as full delivery), the conception gate applies aggressively, and `vag_depth_pct` may exceed 100.\n- Split persists across turns until healed or rested (medical care, recovery time, healing magic); then return to the appropriate 1-5 state. Repeated splitting may leave the cervix defaulting to `4` open.\n\n**Conception & pregnancy** (two stages):\n- `conceived: true` — fertilized but not showing. The engine auto-sets this when `womb_fullness_pct > 85%` in a fertile window (ovulation/rut/luteal d≤19), automatic at 100%. **Once true, preserve every turn until pregnancy is confirmed — never revert.**\n- `preg: true` — pregnancy confirmed (test, reveal, missed period, showing). Also set `cycle_stage_id: 5`, `cervix_state_id: 1`, advance `days_preg` daily, preserve `conception_date`.\n- Neither: all conception/pregnancy fields at defaults.\n\n**Female / futanari — breast & lactation** (defaults unless pregnant/postpartum/lactating):\n- `cup_size` — `AA`/`A`–`K`. Cues: flat/tiny→`AA`, petite→`A`, B→`B`, handful→`C`, full→`D`, DD→`DD`, heavy→`F`–`G`, huge→`H`+. UK doubled letters (`FF`/`GG`/…) alias up. Set on first appearance; preserve unless biology changes (puberty, magic, surgery) — **not** with arousal or engorgement.\n- `breast_fullness_pct` — 0-100 engorgement vs. cup. Rises with pregnancy/arousal/milk buildup; drops after nursing/pumping.\n- `milk_ml` / `milk_capacity_ml` — stored vs. max (combined ~100-600 ml). `0` when not lactating.\n- `nipple_sensitivity_pct` — 0-100; rises with arousal/hormones/stimulation, falls fast when it stops.\n- `lactating` — `true` once production begins (mid-to-late pregnancy onward).\n\n**Male / futanari — refractory & semen** (`0` for others):\n- `refractory_minutes` — minutes until ready (`0` = ready); decrement with time. `refractory_total` — length of the current period (`0` if none).\n- `semen_ml` / `semen_capacity_ml` — current vs. max; drops after ejaculation, recovers with rest/arousal.\n- `male_fertility_pct` — 0-100; adjust for rut, recovery, fatigue, magic.\n\n**Anal — all characters** (defaults if no anal content):\n- `anal_fullness_pct` — 0-100 volume inside; rises with insertion/ejaculation, falls with withdrawal/cleanup.\n- `anal_tightness_pct` — 0-100 sphincter resistance; `100` = virgin-tight, drops with use/lube/arousal, recovers with rest.\n- `anal_depth_pct` — 0-100 current penetration depth; `100` = fully hilted. **Transient** like `vag_depth_pct`: set from the scene each turn, `0` after withdrawal. Prostate stimulation climbs when depth exceeds ~70.\n- `prostate_stimulation_pct` — 0-100 active stimulation; rises with prostate-angled pressure, falls fast when it stops. Leave `0` without a prostate.\n\n### OTHER FIELDS\n\n- `internal_thought` — one short first-person sentence of current inner monologue; refresh every turn.\n- `days_since_first_meeting` — in-world days since first meeting `{{user}}`.\n- `inactive` / `inactiveReason` — set when asleep, comatose, dead, refusing engagement, or off-scene.\n- `bg` — hex color matching the character\'s vibe; preserve once chosen.\n',
+  sysPrompt: '## NARRATIVE CHARACTER TRACKER (Pulse Thread)\n\nEmit one tracker per turn: a `worldData` object (`current_date` YYYY-MM-DD, `current_time` 24h HH:MM) and a `characters` array.\n\n### RULES\n\n1. **Full schema, every turn.** Emit every field, always as a `characters` array (even one NPC). No renames, omissions, or shortened forms. Migrate older tracker shapes in history into this schema — never reproduce an old layout.\n2. **Deduce, don\'t blank.** Infer missing values from narrative cues (dialogue, actions, time, lore). Use `0` / `""` / `false` only when there is truly no signal. Preserve biology, anatomy, and `bg` unless the narrative explicitly changes them.\n3. **Never track `{{user}}`.** Drop any `{{user}}` entry silently, even from history. NPCs only.\n4. **Up to 4 active characters**; mark the rest `"inactive": true`.\n5. **Enums are integers**, never strings (`cycle_stage_id`, `cervix_state_id`, `last_react`, `inactiveReason`).\n6. **Don\'t emit derived fields.** The renderer computes stat deltas, bracket labels, and descriptors.\n\n### SCHEMA\n\n{{sim_format}}\n\n### STAT METERS (hard caps)\n\n| Field | Range | Brackets |\n|---|---|---|\n| `ap` Affection | 0-200 | 0-30 Strangers / 31-60 Acquaintances / 61-90 Friends / 91-120 Romantic / 121-150 Steady / 151-180 Committed / 181-200 Devoted |\n| `dp` Desire | 0-150 | 0-25 Cold / 26-50 Warm / 51-75 Interested / 76-100 Aroused / 101-125 Needy / 126-150 Desperate |\n| `tp` Trust | 0-150 | Falls with lies / broken promises; rises with reliability. |\n| `cp` Contempt | 0-150 | Rises when harmed; high cp drags ap/dp/tp down. |\n\nMove +/- per turn, scaled to the moment.\n\n### ENUMS\n\n- `cycle_stage_id`: `0` unknown, `1` menstruation (d1-5), `2` follicular (d6-13), `3` ovulation (d14-16, peak), `4` luteal (d17-28), `5` pregnancy, `6` rut/heat.\n- `cervix_state_id` (closed→open): `0` unknown, `1` sealed, `2` firm, `3` soft, `4` open, `5` dilated, `6` kissed, `7` split (breached — see Split cervix).\n- `last_react`: `0` Neutral, `1` Like/Approve, `2` Dislike/Disapprove.\n- `inactiveReason`: `0` active, `1` Asleep, `2` Comatose, `3` Contempt/refusing, `4` Incapacitated, `5` Death.\n\n### BIOLOGY\n\n`sex` is lowercase `female` (default) | `male` | `futanari` | `other`; preserve unless biology explicitly changes. **Futanari emit both female and male field groups.** Advance `cycle_day` / `days_preg` / `refractory_minutes` as narrative time passes.\n\n**Cycle & womb — female / futanari**\n- `womb_fullness_pct` / `womb_receptivity_pct` — 0-100. Receptivity is high at ovulation/rut and high arousal, low at menstruation or low arousal.\n- `breeding_count` — internal finishes this cycle; increment per internal finish, reset at a new cycle.\n- `vag_depth_pct` — current vaginal penetration depth (0-130). **Transient** (this turn\'s scene, not a lasting state): set each turn from the narrative, `0` when nothing is inside. `100` = hilted against the cervix (sustained 95-100 nudging it tends the cervix toward `6` kissed); above `100` = tip past a **split** cervix inside the womb (max `130`), valid only while `cervix_state_id: 7`.\n\n**Split cervix** (`cervix_state_id: 7` — extreme only):\n- Set `7` only when the narrative explicitly breaches the cervix — oversized/monstrous partner, brute cervical penetration, fertility magic or transformation. **Never set it casually or as a synonym for "open/dilated".**\n- While split: internal finishes add **directly** to `womb_fullness_pct` (ejaculation past the os = full delivery), the conception gate applies aggressively, and `vag_depth_pct` may exceed 100.\n- Split persists until healed or rested (medical care, recovery time, healing magic); then return to the appropriate 1-5 state. Repeated splitting may leave the cervix defaulting to `4` open.\n\n**Conception & pregnancy** (two stages):\n- `conceived: true` — fertilized but not showing. Auto-set by the engine when `womb_fullness_pct > 85%` in a fertile window (ovulation/rut/luteal d≤19), automatic at 100%. **Once true, preserve every turn until pregnancy is confirmed — never revert.**\n- `preg: true` — pregnancy confirmed (test, reveal, missed period, showing). Also set `cycle_stage_id: 5`, `cervix_state_id: 1`, advance `days_preg` daily, preserve `conception_date`.\n- Neither: all conception/pregnancy fields at defaults.\n\n**Breast & lactation — female / futanari** (defaults unless pregnant/postpartum/lactating):\n- `cup_size` — `AA` / `A`–`K`. Cues: flat/tiny→`AA`, petite→`A`, B→`B`, handful→`C`, full→`D`, DD→`DD`, heavy→`F`–`G`, huge→`H`+. UK doubled letters (`FF`/`GG`/…) alias up. Set on first appearance; preserve unless biology changes (puberty, magic, surgery) — **not** with arousal or engorgement.\n- `breast_fullness_pct` — 0-100 engorgement vs. cup. Rises with pregnancy/arousal/milk buildup; drops after nursing/pumping.\n- `milk_ml` / `milk_capacity_ml` — stored vs. max (combined ~100-600 ml). `0` when not lactating.\n- `nipple_sensitivity_pct` — 0-100; rises with arousal/hormones/stimulation, falls fast when it stops.\n- `lactating` — `true` once production begins (mid-to-late pregnancy onward).\n\n**Refractory & semen — male / futanari** (`0` for others):\n- `refractory_minutes` — minutes until ready (`0` = ready); decrement with time. `refractory_total` — length of the current period (`0` if none).\n- `semen_ml` / `semen_capacity_ml` — current vs. max; drops after ejaculation, recovers with rest/arousal.\n- `male_fertility_pct` — 0-100; adjust for rut, recovery, fatigue, magic.\n\n**Anal — all characters** (defaults if no anal content):\n- `anal_fullness_pct` — 0-100 volume inside; rises with insertion/ejaculation, falls with withdrawal/cleanup.\n- `anal_tightness_pct` — 0-100 sphincter resistance; `100` = virgin-tight, drops with use/lube/arousal, recovers with rest.\n- `anal_depth_pct` — 0-100 current penetration depth; `100` = fully hilted. **Transient** like `vag_depth_pct`: set each turn, `0` after withdrawal. Prostate stimulation climbs when depth exceeds ~70.\n- `prostate_stimulation_pct` — 0-100 active stimulation; rises with prostate-angled pressure, falls fast when it stops. `0` without a prostate.\n\n### OTHER FIELDS\n\n- `internal_thought` — one short first-person sentence of current inner monologue; refresh every turn.\n- `days_since_first_meeting` — in-world days since first meeting `{{user}}`.\n- `inactive` / `inactiveReason` — set when asleep, comatose, dead, refusing engagement, or off-scene.\n- `bg` — hex color matching the character\'s vibe; preserve once chosen.\n',
   customFields: [
     {
       key: "ap",
