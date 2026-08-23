@@ -12824,6 +12824,7 @@ function stringify3(value, replacer, options) {
   return new Document(value, _replacer, options).toString(options);
 }
 // src/backend.ts
+spindle.frontendCapabilities?.declare("message_tag_interceptor");
 var FERTILITY_CYCLE_BIAS_VALUES = [
   "random",
   "menstruating",

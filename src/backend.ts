@@ -1,7 +1,17 @@
 import { getTemplatePresetById, getTemplatePresets, mergeTemplatePresets, type TemplatePreset } from "./templatePresets";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
-declare const spindle: import("lumiverse-spindle-types").SpindleAPI;
+declare const spindle: import("lumiverse-spindle-types").SpindleAPI & {
+  frontendCapabilities?: {
+    declare(capability: "message_tag_interceptor"): () => void;
+  };
+};
+
+// Tell the host that chat content is not display-stable until this
+// extension's frontend has attached its configured tag interceptor. The host
+// snapshots this declaration before low-priority frontend hydration, avoiding
+// a first paint of raw tracker JSON on chat load.
+spindle.frontendCapabilities?.declare("message_tag_interceptor");
 
 type FertilityCycleBias =
   | "random"
