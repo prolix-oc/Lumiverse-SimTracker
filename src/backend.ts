@@ -141,6 +141,7 @@ type CommandResultPayload = {
 const runtime = {
   grantedPermissions: new Set<string>(),
   seededPresets: [] as TemplatePreset[],
+  seededPresetsLoaded: false,
 };
 
 function getAllPresets(): TemplatePreset[] {
@@ -614,6 +615,10 @@ async function normalizeLegacyTrackersInChat(
 
 async function rehydrateChatTrackerHistory(chatId: string | null): Promise<void> {
   if (!chatId) return;
+  // Once a chat has been hydrated, MESSAGE_* subscriptions keep this
+  // side-channel current. Avoid pulling and normalizing the entire chat again
+  // just to answer a lightweight "latest tracker" poll on navigation.
+  if (rehydratedChats.has(chatId)) return;
   try {
     // The side-channel only needs enough recent trackers to satisfy the
     // user's retention setting plus a small buffer for the side panel and
@@ -626,7 +631,6 @@ async function rehydrateChatTrackerHistory(chatId: string | null): Promise<void>
     const scanTail = Math.max(200, historyLimit * 5);
 
     const messages = await normalizeLegacyTrackersInChat(chatId, scanTail);
-    if (rehydratedChats.has(chatId)) return;
     rehydratedChats.add(chatId);
 
     let history = chatTrackerHistory.get(chatId);
@@ -1410,12 +1414,14 @@ async function ensureConfigForUser(userId?: string | null): Promise<void> {
 }
 
 async function loadSeededTemplatePresets(): Promise<void> {
+  if (runtime.seededPresetsLoaded) return;
   const seeded: TemplatePreset[] = [];
   try {
     const templatesRoot = "templates";
     const hasTemplatesDir = await spindle.storage.exists(templatesRoot);
     if (!hasTemplatesDir) {
       runtime.seededPresets = [];
+      runtime.seededPresetsLoaded = true;
       return;
     }
 
@@ -1474,6 +1480,7 @@ async function loadSeededTemplatePresets(): Promise<void> {
   }
 
   runtime.seededPresets = seeded;
+  runtime.seededPresetsLoaded = true;
 }
 
 async function saveConfig(userId: string, configToSave: TrackerConfig = config): Promise<void> {
@@ -2628,15 +2635,29 @@ function sendConfigError(userId: string, message: string, operation: "load" | "s
 }
 
 async function sendConfigState(userId: string, configToSend: TrackerConfig = config): Promise<void> {
-  await refreshGrantedPermissions();
-  await loadSeededTemplatePresets();
+  const [, ephemeralPoolStatus] = await Promise.all([
+    loadSeededTemplatePresets(),
+    (async () => {
+      await refreshGrantedPermissions();
+      return getEphemeralPoolStatusSafe();
+    })(),
+  ]);
   spindle.sendToFrontend({
     type: "config",
     config: configToSend,
     grantedPermissions: Array.from(runtime.grantedPermissions),
     requestedPermissions: spindle.manifest?.permissions || [],
     seededPresets: runtime.seededPresets,
-    ephemeralPoolStatus: await getEphemeralPoolStatusSafe(),
+    ephemeralPoolStatus,
+  }, userId);
+}
+
+function sendTagInterceptorConfig(userId: string, configToSend: TrackerConfig = config): void {
+  spindle.sendToFrontend({
+    type: "tag_interceptor_config",
+    tagName: configToSend.trackerTagName,
+    tagType: configToSend.codeBlockIdentifier,
+    removeFromMessage: configToSend.hideSimBlocks,
   }, userId);
 }
 
@@ -2746,6 +2767,10 @@ spindle.onFrontendMessage(async (payload: unknown, userId: string) => {
   if (message.type === "get_config") {
     try {
       await loadConfig(userId);
+      // Unblock chat display before the heavier template/permission/status
+      // bootstrap. The frontend can strip tags immediately and defer rendering
+      // until the authoritative latest-tracker lookup completes.
+      sendTagInterceptorConfig(userId);
       await sendConfigState(userId);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

@@ -1523,14 +1523,23 @@ export function setup(ctx: SpindleFrontendContext) {
   let config: TrackerConfig = { ...DEFAULT_CONFIG };
   let removeHideStyle: (() => void) | null = null;
   let removeTagInterceptor: (() => void) | null = null;
+  let tagInterceptorSignature: string | null = null;
   let previousTrackerData: TrackerData | null = null;
   let latestContent: string | null = null;
   let latestTrackerMessageId: string | null = null;
   let latestTrackerRaw: string | null = null;
   let latestTrackerSourceContent: string | null = null;
   let configReady = false;
-  let pendingTrackerPayload: { raw: string; sourceContent: string; messageId: string | null } | null = null;
+  let pendingTrackerPayload: {
+    raw: string;
+    sourceContent: string;
+    messageId: string | null;
+    chatId: string | null;
+    authoritative: boolean;
+  } | null = null;
+  let awaitingLatestTrackerChatId: string | null = null;
   let initialTrackerRehydrateRequested = false;
+  const latestTrackerRequestsInFlight = new Set<string>();
   const trackerMessageIds = new Set<string>();
   const trackerMessageMounts = new Map<string, Element>();
   type TrackerRenderInputs = {
@@ -1673,6 +1682,12 @@ export function setup(ctx: SpindleFrontendContext) {
   };
 
   const applyTagInterceptor = () => {
+    const signature = JSON.stringify([
+      config.trackerTagName,
+      config.codeBlockIdentifier,
+      config.hideSimBlocks,
+    ]);
+    if (removeTagInterceptor && tagInterceptorSignature === signature) return;
     if (removeTagInterceptor) {
       removeTagInterceptor();
       removeTagInterceptor = null;
@@ -1684,12 +1699,32 @@ export function setup(ctx: SpindleFrontendContext) {
         removeFromMessage: config.hideSimBlocks,
       },
       (payload) => {
-        handleChatSwitch(payload.chatId || null);
+        const payloadChatId = payload.chatId || currentChatId;
+        handleChatSwitch(payloadChatId || null);
         if (typeof payload.content !== "string" || !payload.content.trim()) return;
+        const sourceContent = typeof payload.fullMatch === "string" ? payload.fullMatch : payload.content;
+        const messageId = payload.messageId || null;
+        // Initial chat hydration may mount dozens of historical tracker tags.
+        // They still get stripped, but only the backend-selected latest match
+        // is parsed/rendered and bridged back after rehydration.
+        if (!configReady || (!!payloadChatId && awaitingLatestTrackerChatId === payloadChatId)) {
+          // A late historical mount must not replace the backend-selected
+          // latest entry if that response won the race with full config.
+          if (!pendingTrackerPayload?.authoritative) {
+            pendingTrackerPayload = {
+              raw: payload.content,
+              sourceContent,
+              messageId,
+              chatId: payloadChatId || null,
+              authoritative: false,
+            };
+          }
+          return;
+        }
         handleTrackerPayload(
           payload.content,
-          typeof payload.fullMatch === "string" ? payload.fullMatch : payload.content,
-          payload.messageId || null,
+          sourceContent,
+          messageId,
         );
         ctx.sendToBackend({
           type: "message_tag_intercepted",
@@ -1702,6 +1737,7 @@ export function setup(ctx: SpindleFrontendContext) {
         });
       },
     );
+    tagInterceptorSignature = signature;
   };
 
   const syncControls = () => {
@@ -2069,7 +2105,15 @@ export function setup(ctx: SpindleFrontendContext) {
 
   const handleTrackerPayload = (raw: string, sourceContent: string, messageId: string | null = null) => {
     if (!configReady) {
-      pendingTrackerPayload = { raw, sourceContent, messageId };
+      if (!pendingTrackerPayload?.authoritative) {
+        pendingTrackerPayload = {
+          raw,
+          sourceContent,
+          messageId,
+          chatId: currentChatId,
+          authoritative: false,
+        };
+      }
       return;
     }
     let comparisonData = previousTrackerData;
@@ -2162,22 +2206,55 @@ export function setup(ctx: SpindleFrontendContext) {
     ctx.sendToBackend({ type: "set_config", config });
   };
 
+  const requestLatestTracker = (chatId: string) => {
+    if (latestTrackerRequestsInFlight.has(chatId)) return;
+    latestTrackerRequestsInFlight.add(chatId);
+    awaitingLatestTrackerChatId = chatId;
+    ctx.sendToBackend({ type: "get_latest_tracker", chatId });
+  };
+
   const requestInitialTrackerRehydrate = () => {
     if (initialTrackerRehydrateRequested) return;
-    initialTrackerRehydrateRequested = true;
     try {
       const active = ctx.getActiveChat();
-      if (active?.chatId && !rehydratedChatIds.has(active.chatId)) {
-        rehydratedChatIds.add(active.chatId);
-        ctx.sendToBackend({ type: "get_latest_tracker", chatId: active.chatId });
-      }
+      if (!active?.chatId) return;
+      initialTrackerRehydrateRequested = true;
+      if (!currentChatId) currentChatId = active.chatId;
+      requestLatestTracker(active.chatId);
     } catch {
       // getActiveChat is best-effort; ignore if unavailable.
     }
   };
 
+  const flushPendingTrackerPayload = () => {
+    if (!configReady || awaitingLatestTrackerChatId || !pendingTrackerPayload) return;
+    const pending = pendingTrackerPayload;
+    pendingTrackerPayload = null;
+    if (pending.chatId && currentChatId && pending.chatId !== currentChatId) return;
+    handleTrackerPayload(pending.raw, pending.sourceContent, pending.messageId);
+  };
+
   const backendUnsub = ctx.onBackendMessage((payload: unknown) => {
     const obj = payload as Record<string, unknown>;
+    if (obj?.type === "tag_interceptor_config") {
+      config = {
+        ...config,
+        trackerTagName: typeof obj.tagName === "string"
+          ? sanitizeTagName(obj.tagName)
+          : config.trackerTagName,
+        codeBlockIdentifier: typeof obj.tagType === "string"
+          ? sanitizeIdentifier(obj.tagType)
+          : config.codeBlockIdentifier,
+        hideSimBlocks: typeof obj.removeFromMessage === "boolean"
+          ? obj.removeFromMessage
+          : config.hideSimBlocks,
+      };
+      configTrackerTagNameHint = config.trackerTagName;
+      applyHideStyle();
+      applyTagInterceptor();
+      requestInitialTrackerRehydrate();
+      return;
+    }
     if (obj?.type === "command_result" && obj.payload && typeof obj.payload === "object") {
       showCommandResult(obj.payload as Record<string, unknown>);
       const cmd = (obj.payload as Record<string, unknown>).command;
@@ -2236,6 +2313,13 @@ export function setup(ctx: SpindleFrontendContext) {
       return;
     }
     if (obj?.type === "tracker_history_latest") {
+      const responseChatId = typeof obj.chatId === "string" ? obj.chatId : null;
+      if (responseChatId) latestTrackerRequestsInFlight.delete(responseChatId);
+      if (responseChatId && currentChatId && responseChatId !== currentChatId) return;
+      if (!currentChatId && responseChatId) currentChatId = responseChatId;
+      if (!responseChatId || awaitingLatestTrackerChatId === responseChatId) {
+        awaitingLatestTrackerChatId = null;
+      }
       const entry = obj.entry as { messageId?: unknown; payload?: unknown; previousPayload?: unknown } | null;
       if (entry && typeof entry.payload === "string" && entry.payload.trim()) {
         const msgId = typeof entry.messageId === "string" ? entry.messageId : null;
@@ -2244,7 +2328,10 @@ export function setup(ctx: SpindleFrontendContext) {
         // we already handled that messageId, skip — otherwise we'd flash the
         // message-level render with `previousData` now equal to the latest
         // data (no diffs).
-        if (msgId && trackerMessageIds.has(msgId)) return;
+        if (msgId && trackerMessageIds.has(msgId)) {
+          pendingTrackerPayload = null;
+          return;
+        }
         if (msgId) {
           const previous = typeof entry.previousPayload === "string"
             ? parseTrackerBlock(entry.previousPayload)
@@ -2252,8 +2339,15 @@ export function setup(ctx: SpindleFrontendContext) {
           trackerComparisonBaselines.clear();
           trackerComparisonBaselines.set(msgId, previous);
         }
-        handleTrackerPayload(entry.payload, entry.payload, msgId);
+        pendingTrackerPayload = {
+          raw: entry.payload,
+          sourceContent: entry.payload,
+          messageId: msgId,
+          chatId: responseChatId,
+          authoritative: true,
+        };
       }
+      flushPendingTrackerPayload();
       return;
     }
     if (obj?.type === "permission_changed") {
@@ -2319,15 +2413,12 @@ export function setup(ctx: SpindleFrontendContext) {
       handleContent(latestContent, latestTrackerMessageId);
     } else if (latestTrackerRaw) {
       handleTrackerPayload(latestTrackerRaw, latestTrackerSourceContent || latestTrackerRaw, latestTrackerMessageId);
-    } else if (pendingTrackerPayload) {
-      const pending = pendingTrackerPayload;
-      pendingTrackerPayload = null;
-      handleTrackerPayload(pending.raw, pending.sourceContent, pending.messageId);
     }
     if (shouldResetStatusAfterConfigLoad()) {
       setStatus(DEFAULT_PANEL_STATUS);
     }
     requestInitialTrackerRehydrate();
+    flushPendingTrackerPayload();
     inlineProcessor.processAll();
   });
 
@@ -2336,7 +2427,6 @@ export function setup(ctx: SpindleFrontendContext) {
     else inlineProcessor.processAll();
   };
 
-  const rehydratedChatIds = new Set<string>();
   const extractChatId = (payload: unknown): string | null => {
     if (!payload || typeof payload !== "object") return null;
     const obj = payload as Record<string, unknown>;
@@ -2349,18 +2439,19 @@ export function setup(ctx: SpindleFrontendContext) {
   const handleChatSwitch = (chatId: string | null) => {
     if (!chatId || chatId === currentChatId) return;
     currentChatId = chatId;
+    awaitingLatestTrackerChatId = chatId;
+    pendingTrackerPayload = null;
     updateRegenerateButton();
     resetChatState();
     renderEmpty("When a message includes a tracker tag, cards will appear here.");
-    if (!rehydratedChatIds.has(chatId)) {
-      rehydratedChatIds.add(chatId);
-      ctx.sendToBackend({ type: "get_latest_tracker", chatId });
-    }
+    requestLatestTracker(chatId);
     // Wait two frames for Lumiverse to finish painting the new chat's
     // messages before running the inline-template sweep.
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      inlineProcessor.processAll();
-    }));
+    if (configReady) {
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        inlineProcessor.processAll();
+      }));
+    }
   };
 
   const onEvent = (payload: unknown) => {

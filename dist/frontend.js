@@ -19777,6 +19777,7 @@ function setup(ctx) {
   let config = { ...DEFAULT_CONFIG };
   let removeHideStyle = null;
   let removeTagInterceptor = null;
+  let tagInterceptorSignature = null;
   let previousTrackerData = null;
   let latestContent = null;
   let latestTrackerMessageId = null;
@@ -19784,7 +19785,9 @@ function setup(ctx) {
   let latestTrackerSourceContent = null;
   let configReady = false;
   let pendingTrackerPayload = null;
+  let awaitingLatestTrackerChatId = null;
   let initialTrackerRehydrateRequested = false;
+  const latestTrackerRequestsInFlight = new Set;
   const trackerMessageIds = new Set;
   const trackerMessageMounts = new Map;
   const trackerMessageRenders = new Map;
@@ -19903,6 +19906,13 @@ function setup(ctx) {
     updateRegenerateButton();
   };
   const applyTagInterceptor = () => {
+    const signature = JSON.stringify([
+      config.trackerTagName,
+      config.codeBlockIdentifier,
+      config.hideSimBlocks
+    ]);
+    if (removeTagInterceptor && tagInterceptorSignature === signature)
+      return;
     if (removeTagInterceptor) {
       removeTagInterceptor();
       removeTagInterceptor = null;
@@ -19912,10 +19922,25 @@ function setup(ctx) {
       attrs: { type: config.codeBlockIdentifier },
       removeFromMessage: config.hideSimBlocks
     }, (payload) => {
-      handleChatSwitch(payload.chatId || null);
+      const payloadChatId = payload.chatId || currentChatId;
+      handleChatSwitch(payloadChatId || null);
       if (typeof payload.content !== "string" || !payload.content.trim())
         return;
-      handleTrackerPayload(payload.content, typeof payload.fullMatch === "string" ? payload.fullMatch : payload.content, payload.messageId || null);
+      const sourceContent = typeof payload.fullMatch === "string" ? payload.fullMatch : payload.content;
+      const messageId = payload.messageId || null;
+      if (!configReady || !!payloadChatId && awaitingLatestTrackerChatId === payloadChatId) {
+        if (!pendingTrackerPayload?.authoritative) {
+          pendingTrackerPayload = {
+            raw: payload.content,
+            sourceContent,
+            messageId,
+            chatId: payloadChatId || null,
+            authoritative: false
+          };
+        }
+        return;
+      }
+      handleTrackerPayload(payload.content, sourceContent, messageId);
       ctx.sendToBackend({
         type: "message_tag_intercepted",
         tagName: payload.tagName,
@@ -19926,6 +19951,7 @@ function setup(ctx) {
         isStreaming: payload.isStreaming
       });
     });
+    tagInterceptorSignature = signature;
   };
   const syncControls = () => {
     mountTemplateOptions(config);
@@ -20247,7 +20273,15 @@ function setup(ctx) {
   };
   const handleTrackerPayload = (raw, sourceContent, messageId = null) => {
     if (!configReady) {
-      pendingTrackerPayload = { raw, sourceContent, messageId };
+      if (!pendingTrackerPayload?.authoritative) {
+        pendingTrackerPayload = {
+          raw,
+          sourceContent,
+          messageId,
+          chatId: currentChatId,
+          authoritative: false
+        };
+      }
       return;
     }
     let comparisonData = previousTrackerData;
@@ -20327,20 +20361,50 @@ function setup(ctx) {
   const persistConfig = () => {
     ctx.sendToBackend({ type: "set_config", config });
   };
+  const requestLatestTracker = (chatId) => {
+    if (latestTrackerRequestsInFlight.has(chatId))
+      return;
+    latestTrackerRequestsInFlight.add(chatId);
+    awaitingLatestTrackerChatId = chatId;
+    ctx.sendToBackend({ type: "get_latest_tracker", chatId });
+  };
   const requestInitialTrackerRehydrate = () => {
     if (initialTrackerRehydrateRequested)
       return;
-    initialTrackerRehydrateRequested = true;
     try {
       const active = ctx.getActiveChat();
-      if (active?.chatId && !rehydratedChatIds.has(active.chatId)) {
-        rehydratedChatIds.add(active.chatId);
-        ctx.sendToBackend({ type: "get_latest_tracker", chatId: active.chatId });
-      }
+      if (!active?.chatId)
+        return;
+      initialTrackerRehydrateRequested = true;
+      if (!currentChatId)
+        currentChatId = active.chatId;
+      requestLatestTracker(active.chatId);
     } catch {}
+  };
+  const flushPendingTrackerPayload = () => {
+    if (!configReady || awaitingLatestTrackerChatId || !pendingTrackerPayload)
+      return;
+    const pending = pendingTrackerPayload;
+    pendingTrackerPayload = null;
+    if (pending.chatId && currentChatId && pending.chatId !== currentChatId)
+      return;
+    handleTrackerPayload(pending.raw, pending.sourceContent, pending.messageId);
   };
   const backendUnsub = ctx.onBackendMessage((payload) => {
     const obj = payload;
+    if (obj?.type === "tag_interceptor_config") {
+      config = {
+        ...config,
+        trackerTagName: typeof obj.tagName === "string" ? sanitizeTagName(obj.tagName) : config.trackerTagName,
+        codeBlockIdentifier: typeof obj.tagType === "string" ? sanitizeIdentifier(obj.tagType) : config.codeBlockIdentifier,
+        hideSimBlocks: typeof obj.removeFromMessage === "boolean" ? obj.removeFromMessage : config.hideSimBlocks
+      };
+      configTrackerTagNameHint = config.trackerTagName;
+      applyHideStyle();
+      applyTagInterceptor();
+      requestInitialTrackerRehydrate();
+      return;
+    }
     if (obj?.type === "command_result" && obj.payload && typeof obj.payload === "object") {
       showCommandResult(obj.payload);
       const cmd = obj.payload.command;
@@ -20403,18 +20467,37 @@ function setup(ctx) {
       return;
     }
     if (obj?.type === "tracker_history_latest") {
+      const responseChatId = typeof obj.chatId === "string" ? obj.chatId : null;
+      if (responseChatId)
+        latestTrackerRequestsInFlight.delete(responseChatId);
+      if (responseChatId && currentChatId && responseChatId !== currentChatId)
+        return;
+      if (!currentChatId && responseChatId)
+        currentChatId = responseChatId;
+      if (!responseChatId || awaitingLatestTrackerChatId === responseChatId) {
+        awaitingLatestTrackerChatId = null;
+      }
       const entry = obj.entry;
       if (entry && typeof entry.payload === "string" && entry.payload.trim()) {
         const msgId = typeof entry.messageId === "string" ? entry.messageId : null;
-        if (msgId && trackerMessageIds.has(msgId))
+        if (msgId && trackerMessageIds.has(msgId)) {
+          pendingTrackerPayload = null;
           return;
+        }
         if (msgId) {
           const previous = typeof entry.previousPayload === "string" ? parseTrackerBlock(entry.previousPayload) : null;
           trackerComparisonBaselines.clear();
           trackerComparisonBaselines.set(msgId, previous);
         }
-        handleTrackerPayload(entry.payload, entry.payload, msgId);
+        pendingTrackerPayload = {
+          raw: entry.payload,
+          sourceContent: entry.payload,
+          messageId: msgId,
+          chatId: responseChatId,
+          authoritative: true
+        };
       }
+      flushPendingTrackerPayload();
       return;
     }
     if (obj?.type === "permission_changed") {
@@ -20465,15 +20548,12 @@ function setup(ctx) {
       handleContent(latestContent, latestTrackerMessageId);
     } else if (latestTrackerRaw) {
       handleTrackerPayload(latestTrackerRaw, latestTrackerSourceContent || latestTrackerRaw, latestTrackerMessageId);
-    } else if (pendingTrackerPayload) {
-      const pending = pendingTrackerPayload;
-      pendingTrackerPayload = null;
-      handleTrackerPayload(pending.raw, pending.sourceContent, pending.messageId);
     }
     if (shouldResetStatusAfterConfigLoad()) {
       setStatus(DEFAULT_PANEL_STATUS);
     }
     requestInitialTrackerRehydrate();
+    flushPendingTrackerPayload();
     inlineProcessor.processAll();
   });
   const runInlinePass = (messageId) => {
@@ -20482,7 +20562,6 @@ function setup(ctx) {
     else
       inlineProcessor.processAll();
   };
-  const rehydratedChatIds = new Set;
   const extractChatId = (payload) => {
     if (!payload || typeof payload !== "object")
       return null;
@@ -20497,16 +20576,17 @@ function setup(ctx) {
     if (!chatId || chatId === currentChatId)
       return;
     currentChatId = chatId;
+    awaitingLatestTrackerChatId = chatId;
+    pendingTrackerPayload = null;
     updateRegenerateButton();
     resetChatState();
     renderEmpty("When a message includes a tracker tag, cards will appear here.");
-    if (!rehydratedChatIds.has(chatId)) {
-      rehydratedChatIds.add(chatId);
-      ctx.sendToBackend({ type: "get_latest_tracker", chatId });
+    requestLatestTracker(chatId);
+    if (configReady) {
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        inlineProcessor.processAll();
+      }));
     }
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      inlineProcessor.processAll();
-    }));
   };
   const onEvent = (payload) => {
     handleChatSwitch(extractChatId(payload));

@@ -12870,7 +12870,8 @@ var CONCEPTION_CONFIG = {
 };
 var runtime = {
   grantedPermissions: new Set,
-  seededPresets: []
+  seededPresets: [],
+  seededPresetsLoaded: false
 };
 function getAllPresets() {
   return mergeTemplatePresets(getTemplatePresets(), runtime.seededPresets, config.userPresets);
@@ -13239,13 +13240,13 @@ async function normalizeLegacyTrackersInChat(chatId, scanTail = Number.MAX_SAFE_
 async function rehydrateChatTrackerHistory(chatId) {
   if (!chatId)
     return;
+  if (rehydratedChats.has(chatId))
+    return;
   try {
     const retainSetting = Number.isFinite(config.retainTrackerCount) ? config.retainTrackerCount : DEFAULT_CONFIG.retainTrackerCount;
     const historyLimit = Math.max(3, Math.min(20, retainSetting + 2));
     const scanTail = Math.max(200, historyLimit * 5);
     const messages = await normalizeLegacyTrackersInChat(chatId, scanTail);
-    if (rehydratedChats.has(chatId))
-      return;
     rehydratedChats.add(chatId);
     let history = chatTrackerHistory.get(chatId);
     if (!history) {
@@ -13824,12 +13825,15 @@ async function ensureConfigForUser(userId) {
   await loadConfig(userId);
 }
 async function loadSeededTemplatePresets() {
+  if (runtime.seededPresetsLoaded)
+    return;
   const seeded = [];
   try {
     const templatesRoot = "templates";
     const hasTemplatesDir = await spindle.storage.exists(templatesRoot);
     if (!hasTemplatesDir) {
       runtime.seededPresets = [];
+      runtime.seededPresetsLoaded = true;
       return;
     }
     const visited = new Set;
@@ -13880,6 +13884,7 @@ async function loadSeededTemplatePresets() {
     }
   } catch {}
   runtime.seededPresets = seeded;
+  runtime.seededPresetsLoaded = true;
 }
 async function saveConfig(userId, configToSave = config) {
   if (!userId)
@@ -14721,15 +14726,28 @@ function sendConfigError(userId, message, operation = "load") {
   } catch {}
 }
 async function sendConfigState(userId, configToSend = config) {
-  await refreshGrantedPermissions();
-  await loadSeededTemplatePresets();
+  const [, ephemeralPoolStatus] = await Promise.all([
+    loadSeededTemplatePresets(),
+    (async () => {
+      await refreshGrantedPermissions();
+      return getEphemeralPoolStatusSafe();
+    })()
+  ]);
   spindle.sendToFrontend({
     type: "config",
     config: configToSend,
     grantedPermissions: Array.from(runtime.grantedPermissions),
     requestedPermissions: spindle.manifest?.permissions || [],
     seededPresets: runtime.seededPresets,
-    ephemeralPoolStatus: await getEphemeralPoolStatusSafe()
+    ephemeralPoolStatus
+  }, userId);
+}
+function sendTagInterceptorConfig(userId, configToSend = config) {
+  spindle.sendToFrontend({
+    type: "tag_interceptor_config",
+    tagName: configToSend.trackerTagName,
+    tagType: configToSend.codeBlockIdentifier,
+    removeFromMessage: configToSend.hideSimBlocks
   }, userId);
 }
 async function handleImportPresetFile(payload, userId) {
@@ -14824,6 +14842,7 @@ spindle.onFrontendMessage(async (payload, userId) => {
   if (message.type === "get_config") {
     try {
       await loadConfig(userId);
+      sendTagInterceptorConfig(userId);
       await sendConfigState(userId);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
