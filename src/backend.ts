@@ -913,6 +913,86 @@ function parseTrackerPayload(raw: string): Record<string, unknown> | null {
   return null;
 }
 
+/**
+ * Render tracker data as a compact Markdown tree for prompt context. Tracker
+ * payloads remain JSON/YAML everywhere they need to be parsed or persisted;
+ * this representation is only used at the point where data enters an LLM
+ * prompt or macro.
+ */
+function formatTrackerForPrompt(raw: string): string {
+  const parsed = parseTrackerPayload(raw);
+  if (!parsed) return raw.trim();
+
+  const lines: string[] = [];
+  const indent = (depth: number) => "  ".repeat(depth);
+  const scalar = (value: unknown): string => {
+    if (value === null) return "null";
+    if (typeof value === "string") {
+      const compact = value.replace(/\s*\r?\n\s*/g, " / ").trim();
+      return compact || "(empty)";
+    }
+    return String(value);
+  };
+
+  const appendValue = (key: string, value: unknown, depth: number): void => {
+    const prefix = `${indent(depth)}- ${key}:`;
+    if (Array.isArray(value)) {
+      if (value.length === 0) {
+        lines.push(`${prefix} (none)`);
+        return;
+      }
+      if (value.every((item) => item === null || typeof item !== "object")) {
+        lines.push(`${prefix} ${value.map(scalar).join(", ")}`);
+        return;
+      }
+      lines.push(prefix);
+      value.forEach((item, index) => {
+        if (item && typeof item === "object" && !Array.isArray(item)) {
+          const entries = Object.entries(item as Record<string, unknown>);
+          if (entries.length === 0) {
+            lines.push(`${indent(depth + 1)}- Item ${index + 1}: (empty)`);
+            return;
+          }
+          const preferredIndex = entries.findIndex(([entryKey, entryValue]) =>
+            entryKey === "name" && (entryValue === null || typeof entryValue !== "object")
+          );
+          const firstIndex = preferredIndex >= 0 ? preferredIndex : 0;
+          const [firstKey, firstValue] = entries[firstIndex];
+          const remainingEntries = entries.filter((_, entryIndex) => entryIndex !== firstIndex);
+          if (firstValue === null || typeof firstValue !== "object") {
+            lines.push(`${indent(depth + 1)}- ${firstKey}: ${scalar(firstValue)}`);
+          } else {
+            lines.push(`${indent(depth + 1)}- Item ${index + 1}:`);
+            appendValue(firstKey, firstValue, depth + 2);
+          }
+          remainingEntries.forEach(([childKey, childValue]) => {
+            appendValue(childKey, childValue, depth + 2);
+          });
+          return;
+        }
+        appendValue(`Item ${index + 1}`, item, depth + 1);
+      });
+      return;
+    }
+    if (value && typeof value === "object") {
+      const entries = Object.entries(value as Record<string, unknown>);
+      if (entries.length === 0) {
+        lines.push(`${prefix} (empty)`);
+        return;
+      }
+      lines.push(prefix);
+      entries.forEach(([childKey, childValue]) => appendValue(childKey, childValue, depth + 1));
+      return;
+    }
+    lines.push(`${prefix} ${scalar(value)}`);
+  };
+
+  const entries = Object.entries(parsed);
+  if (entries.length === 0) return "- Tracker: (none yet)";
+  entries.forEach(([key, value]) => appendValue(key, value, 0));
+  return lines.join("\n");
+}
+
 function setDeep(target: Record<string, unknown>, path: string, value: unknown): void {
   const parts = path.split(".").map((p) => p.trim()).filter(Boolean);
   if (parts.length === 0) return;
@@ -1660,7 +1740,7 @@ spindle.registerMacro({
 spindle.registerMacro({
   name: "last_sim_stats",
   category: "extension:silly_sim_tracker",
-  description: "The latest raw tracker block seen in chat",
+  description: "The latest tracker state as a compact Markdown list",
   returnType: "string",
   handler: "",
 });
@@ -1754,8 +1834,9 @@ function pushMacroValues(): void {
   activeSimTrackerMacroContent = simTracker;
   spindle.updateMacroValue("sim_tracker", simTracker);
 
-  // last_sim_stats
-  spindle.updateMacroValue("last_sim_stats", lastSimStats || "{}");
+  // last_sim_stats — expose a prompt-efficient Markdown view while keeping
+  // lastSimStats itself in its parseable JSON/YAML form for commands.
+  spindle.updateMacroValue("last_sim_stats", formatTrackerForPrompt(lastSimStats || "{}"));
 }
 
 // ── Secondary LLM Generation ─────────────────────────────────────────
@@ -1930,13 +2011,13 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
 
     let conversationText = processedPrompt + "\n\n";
     if (historicalTrackers.length === 1) {
-      conversationText += "Previous tracker state:\n" + historicalTrackers[0] + "\n\n";
+      conversationText += "Previous tracker state:\n" + formatTrackerForPrompt(historicalTrackers[0]) + "\n\n";
     } else if (historicalTrackers.length > 1) {
       conversationText += `Previous tracker states (oldest → most recent, ${historicalTrackers.length} shown):\n\n`;
       historicalTrackers.forEach((snap, idx) => {
         const stepsBack = historicalTrackers.length - 1 - idx;
         const label = stepsBack === 0 ? "Most recent" : `${stepsBack} turn${stepsBack === 1 ? "" : "s"} ago`;
-        conversationText += `--- ${label} ---\n${snap}\n\n`;
+        conversationText += `--- ${label} ---\n${formatTrackerForPrompt(snap)}\n\n`;
       });
     }
     conversationText += "Recent conversation:\n\n";
@@ -2250,6 +2331,38 @@ function collectTrackerBlockRanges(content: string, identifier: string): BlockRa
 }
 
 /**
+ * Replace parseable tracker blocks already present in assembled messages with
+ * their prompt-only Markdown representation. This complements side-channel
+ * backfill: prompts are compact whether history came from canonical messages
+ * or from chatTrackerHistory.
+ */
+function formatTrackerBlocksInMessages(messages: any[]): any[] {
+  let output: any[] | null = null;
+  for (let i = 0; i < messages.length; i += 1) {
+    const message = messages[i];
+    if (!message || typeof message.content !== "string") continue;
+    const ranges = collectTrackerBlockRanges(message.content, config.codeBlockIdentifier);
+    if (ranges.length === 0) continue;
+
+    let content = message.content;
+    let changed = false;
+    for (let j = ranges.length - 1; j >= 0; j -= 1) {
+      const range = ranges[j];
+      const block = content.slice(range.start, range.end);
+      const payload = extractTrackerPayloadFromMessage(block);
+      if (!payload) continue;
+      const replacement = `Previous tracker state:\n${formatTrackerForPrompt(payload)}`;
+      content = content.slice(0, range.start) + replacement + content.slice(range.end);
+      changed = true;
+    }
+    if (!changed) continue;
+    if (!output) output = messages.slice();
+    output[i] = { ...message, content };
+  }
+  return output || messages;
+}
+
+/**
  * Remove every tracker block from the content. Used for messages that are
  * entirely outside the retention window.
  */
@@ -2418,18 +2531,18 @@ function countTrackersInMessages(
 }
 
 /**
- * Build the injection block that gets appended to the last assistant
- * message when the assembled context is missing tracker history. Emits
- * the same tag format the main LLM is instructed to produce, so the
- * model sees the block as a continuation of its own previous output
- * rather than as an out-of-band instruction.
+ * Build the prompt-only history block appended when assembled context is
+ * missing tracker history. The stored payload stays parseable, but the LLM
+ * receives a compact Markdown list instead of repeated JSON/YAML syntax.
  */
 function buildTrackerInjectionBlock(entries: TrackerHistoryEntry[]): string {
-  const tagName = sanitizeTagName(config.trackerTagName);
-  const identifier = sanitizeIdentifier(config.codeBlockIdentifier);
-  return entries
-    .map((entry) => `<${tagName} type="${identifier}">\n${entry.payload}\n</${tagName}>`)
+  if (entries.length === 1) {
+    return `Previous tracker state:\n${formatTrackerForPrompt(entries[0].payload)}`;
+  }
+  const snapshots = entries
+    .map((entry, index) => `Snapshot ${index + 1}:\n${formatTrackerForPrompt(entry.payload)}`)
     .join("\n\n");
+  return `Previous tracker states (oldest → newest):\n\n${snapshots}`;
 }
 
 let interceptorRegistered = false;
@@ -2456,14 +2569,14 @@ function tryRegisterInterceptor(): void {
       //    already have enough, the LLM can reference them directly.
       //    We only need to know if it reaches keepNewest, so stop early.
       const currentCount = countTrackersInMessages(retained, keepNewest);
-      if (currentCount >= keepNewest) return retained;
+      if (currentCount >= keepNewest) return formatTrackerBlocksInMessages(retained);
 
       // 3. Otherwise the prompt is short on tracker history (usually because
       //    the frontend's tag interceptor has `removeFromMessage: true`).
       //    Back-fill the difference from the side-channel so the main LLM
       //    still sees the last N tracker states.
       const chatId = resolveInterceptorChatId(context);
-      if (!chatId) return retained;
+      if (!chatId) return formatTrackerBlocksInMessages(retained);
 
       // Ensure the side-channel is primed. Rehydration is idempotent and
       // a no-op after the first call for a given chat.
@@ -2502,7 +2615,7 @@ function tryRegisterInterceptor(): void {
       if (history.length === 0) {
         // No tracker history to inject yet; the first-message fertility hint
         // (if any) is already baked into the {{sim_tracker}} macro value.
-        return retained;
+        return formatTrackerBlocksInMessages(retained);
       }
 
       const existingPayloads = new Set<string>();
@@ -2519,9 +2632,10 @@ function tryRegisterInterceptor(): void {
         .slice(0, needed)
         .reverse(); // back to oldest → newest
 
-      if (toInject.length === 0) return retained;
+      if (toInject.length === 0) return formatTrackerBlocksInMessages(retained);
 
       const block = buildTrackerInjectionBlock(toInject);
+      const promptMessages = formatTrackerBlocksInMessages(retained);
 
       // Prefer appending to the last assistant message in the array so the
       // tracker appears exactly where the LLM would normally have emitted
@@ -2529,8 +2643,8 @@ function tryRegisterInterceptor(): void {
       // system message if there's no assistant message yet (first-turn
       // generation, re-greeting, etc.).
       let lastAssistantIdx = -1;
-      for (let i = retained.length - 1; i >= 0; i -= 1) {
-        const m = retained[i];
+      for (let i = promptMessages.length - 1; i >= 0; i -= 1) {
+        const m = promptMessages[i];
         if (m && m.role === "assistant" && typeof m.content === "string") {
           lastAssistantIdx = i;
           break;
@@ -2538,7 +2652,7 @@ function tryRegisterInterceptor(): void {
       }
 
       if (lastAssistantIdx >= 0) {
-        const injected = retained.slice();
+        const injected = promptMessages.slice();
         const target = injected[lastAssistantIdx];
         const base = typeof target.content === "string" ? target.content.trimEnd() : "";
         injected[lastAssistantIdx] = {
@@ -2553,7 +2667,7 @@ function tryRegisterInterceptor(): void {
 
       // Insert a synthetic system message near the end of the conversation
       // so the LLM still picks up the prior tracker state.
-      const injected = retained.slice();
+      const injected = promptMessages.slice();
       const insertAt = Math.max(0, injected.length - 1);
       injected.splice(insertAt, 0, { role: "system", content: block });
       if (conceptionDirective) {

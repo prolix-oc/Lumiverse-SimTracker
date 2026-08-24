@@ -49,7 +49,7 @@ The `type` attribute matches your configured code-block identifier (default: `si
 
 ### Macros
 - `{{sim_tracker}}` — expands to the active preset's system prompt at send time.
-- `{{last_sim_stats}}` — expands to the most recent tracker payload from this chat's history (survives message deletion via a backend side-channel).
+- `{{last_sim_stats}}` — expands to a compact Markdown list of the most recent tracker state (the parseable payload remains available internally through the backend side-channel).
 
 ### Templates & positioning
 Templates can declare their preferred mount position with an HTML comment at the top:

@@ -13439,6 +13439,78 @@ function parseTrackerPayload(raw) {
   }
   return null;
 }
+function formatTrackerForPrompt(raw) {
+  const parsed = parseTrackerPayload(raw);
+  if (!parsed)
+    return raw.trim();
+  const lines = [];
+  const indent = (depth) => "  ".repeat(depth);
+  const scalar = (value) => {
+    if (value === null)
+      return "null";
+    if (typeof value === "string") {
+      const compact = value.replace(/\s*\r?\n\s*/g, " / ").trim();
+      return compact || "(empty)";
+    }
+    return String(value);
+  };
+  const appendValue = (key, value, depth) => {
+    const prefix = `${indent(depth)}- ${key}:`;
+    if (Array.isArray(value)) {
+      if (value.length === 0) {
+        lines.push(`${prefix} (none)`);
+        return;
+      }
+      if (value.every((item) => item === null || typeof item !== "object")) {
+        lines.push(`${prefix} ${value.map(scalar).join(", ")}`);
+        return;
+      }
+      lines.push(prefix);
+      value.forEach((item, index) => {
+        if (item && typeof item === "object" && !Array.isArray(item)) {
+          const entries2 = Object.entries(item);
+          if (entries2.length === 0) {
+            lines.push(`${indent(depth + 1)}- Item ${index + 1}: (empty)`);
+            return;
+          }
+          const preferredIndex = entries2.findIndex(([entryKey, entryValue]) => entryKey === "name" && (entryValue === null || typeof entryValue !== "object"));
+          const firstIndex = preferredIndex >= 0 ? preferredIndex : 0;
+          const [firstKey, firstValue] = entries2[firstIndex];
+          const remainingEntries = entries2.filter((_, entryIndex) => entryIndex !== firstIndex);
+          if (firstValue === null || typeof firstValue !== "object") {
+            lines.push(`${indent(depth + 1)}- ${firstKey}: ${scalar(firstValue)}`);
+          } else {
+            lines.push(`${indent(depth + 1)}- Item ${index + 1}:`);
+            appendValue(firstKey, firstValue, depth + 2);
+          }
+          remainingEntries.forEach(([childKey, childValue]) => {
+            appendValue(childKey, childValue, depth + 2);
+          });
+          return;
+        }
+        appendValue(`Item ${index + 1}`, item, depth + 1);
+      });
+      return;
+    }
+    if (value && typeof value === "object") {
+      const entries2 = Object.entries(value);
+      if (entries2.length === 0) {
+        lines.push(`${prefix} (empty)`);
+        return;
+      }
+      lines.push(prefix);
+      entries2.forEach(([childKey, childValue]) => appendValue(childKey, childValue, depth + 1));
+      return;
+    }
+    lines.push(`${prefix} ${scalar(value)}`);
+  };
+  const entries = Object.entries(parsed);
+  if (entries.length === 0)
+    return "- Tracker: (none yet)";
+  entries.forEach(([key, value]) => appendValue(key, value, 0));
+  return lines.join(`
+`);
+}
 function setDeep(target, path, value) {
   const parts = path.split(".").map((p) => p.trim()).filter(Boolean);
   if (parts.length === 0)
@@ -14014,7 +14086,7 @@ spindle.registerMacro({
 spindle.registerMacro({
   name: "last_sim_stats",
   category: "extension:silly_sim_tracker",
-  description: "The latest raw tracker block seen in chat",
+  description: "The latest tracker state as a compact Markdown list",
   returnType: "string",
   handler: ""
 });
@@ -14067,7 +14139,7 @@ function pushMacroValues() {
   }
   activeSimTrackerMacroContent = simTracker;
   spindle.updateMacroValue("sim_tracker", simTracker);
-  spindle.updateMacroValue("last_sim_stats", lastSimStats || "{}");
+  spindle.updateMacroValue("last_sim_stats", formatTrackerForPrompt(lastSimStats || "{}"));
 }
 var secondaryGenerationChain = Promise.resolve();
 var queuedSecondaryJobs = new Set;
@@ -14198,7 +14270,7 @@ async function generateTrackerWithSecondaryLLM(chatId, targetMessageId) {
 `;
     if (historicalTrackers.length === 1) {
       conversationText += `Previous tracker state:
-` + historicalTrackers[0] + `
+` + formatTrackerForPrompt(historicalTrackers[0]) + `
 
 `;
     } else if (historicalTrackers.length > 1) {
@@ -14209,7 +14281,7 @@ async function generateTrackerWithSecondaryLLM(chatId, targetMessageId) {
         const stepsBack = historicalTrackers.length - 1 - idx;
         const label = stepsBack === 0 ? "Most recent" : `${stepsBack} turn${stepsBack === 1 ? "" : "s"} ago`;
         conversationText += `--- ${label} ---
-${snap}
+${formatTrackerForPrompt(snap)}
 
 `;
       });
@@ -14449,6 +14521,36 @@ function collectTrackerBlockRanges(content, identifier) {
   ranges.sort((a, b) => a.start - b.start);
   return ranges;
 }
+function formatTrackerBlocksInMessages(messages) {
+  let output = null;
+  for (let i = 0;i < messages.length; i += 1) {
+    const message = messages[i];
+    if (!message || typeof message.content !== "string")
+      continue;
+    const ranges = collectTrackerBlockRanges(message.content, config.codeBlockIdentifier);
+    if (ranges.length === 0)
+      continue;
+    let content = message.content;
+    let changed = false;
+    for (let j = ranges.length - 1;j >= 0; j -= 1) {
+      const range = ranges[j];
+      const block = content.slice(range.start, range.end);
+      const payload = extractTrackerPayloadFromMessage(block);
+      if (!payload)
+        continue;
+      const replacement = `Previous tracker state:
+${formatTrackerForPrompt(payload)}`;
+      content = content.slice(0, range.start) + replacement + content.slice(range.end);
+      changed = true;
+    }
+    if (!changed)
+      continue;
+    if (!output)
+      output = messages.slice();
+    output[i] = { ...message, content };
+  }
+  return output || messages;
+}
 function stripAllTrackerBlocks(content, identifier) {
   if (!content)
     return content;
@@ -14582,13 +14684,17 @@ function countTrackersInMessages(messages, maxNeeded = Number.MAX_SAFE_INTEGER) 
   return count;
 }
 function buildTrackerInjectionBlock(entries) {
-  const tagName = sanitizeTagName(config.trackerTagName);
-  const identifier = sanitizeIdentifier(config.codeBlockIdentifier);
-  return entries.map((entry) => `<${tagName} type="${identifier}">
-${entry.payload}
-</${tagName}>`).join(`
+  if (entries.length === 1) {
+    return `Previous tracker state:
+${formatTrackerForPrompt(entries[0].payload)}`;
+  }
+  const snapshots = entries.map((entry, index) => `Snapshot ${index + 1}:
+${formatTrackerForPrompt(entry.payload)}`).join(`
 
 `);
+  return `Previous tracker states (oldest \u2192 newest):
+
+${snapshots}`;
 }
 var interceptorRegistered = false;
 function tryRegisterInterceptor() {
@@ -14608,10 +14714,10 @@ function tryRegisterInterceptor() {
         return retained;
       const currentCount = countTrackersInMessages(retained, keepNewest);
       if (currentCount >= keepNewest)
-        return retained;
+        return formatTrackerBlocksInMessages(retained);
       const chatId = resolveInterceptorChatId(context);
       if (!chatId)
-        return retained;
+        return formatTrackerBlocksInMessages(retained);
       await rehydrateChatTrackerHistory(chatId);
       const needed = keepNewest - currentCount;
       const preMutationLatest = getRecentChatTrackers(chatId, 1);
@@ -14627,7 +14733,7 @@ function tryRegisterInterceptor() {
       const conceptionDirective = buildConceptionDirective(conceptionNames);
       const history = getRecentChatTrackers(chatId, keepNewest);
       if (history.length === 0) {
-        return retained;
+        return formatTrackerBlocksInMessages(retained);
       }
       const existingPayloads = new Set;
       for (const msg of retained) {
@@ -14639,18 +14745,19 @@ function tryRegisterInterceptor() {
       }
       const toInject = history.slice().reverse().filter((entry) => !existingPayloads.has(entry.payload.trim())).slice(0, needed).reverse();
       if (toInject.length === 0)
-        return retained;
+        return formatTrackerBlocksInMessages(retained);
       const block = buildTrackerInjectionBlock(toInject);
+      const promptMessages = formatTrackerBlocksInMessages(retained);
       let lastAssistantIdx = -1;
-      for (let i = retained.length - 1;i >= 0; i -= 1) {
-        const m = retained[i];
+      for (let i = promptMessages.length - 1;i >= 0; i -= 1) {
+        const m = promptMessages[i];
         if (m && m.role === "assistant" && typeof m.content === "string") {
           lastAssistantIdx = i;
           break;
         }
       }
       if (lastAssistantIdx >= 0) {
-        const injected2 = retained.slice();
+        const injected2 = promptMessages.slice();
         const target = injected2[lastAssistantIdx];
         const base = typeof target.content === "string" ? target.content.trimEnd() : "";
         injected2[lastAssistantIdx] = {
@@ -14664,7 +14771,7 @@ ${block}` : block
         }
         return injected2;
       }
-      const injected = retained.slice();
+      const injected = promptMessages.slice();
       const insertAt = Math.max(0, injected.length - 1);
       injected.splice(insertAt, 0, { role: "system", content: block });
       if (conceptionDirective) {
