@@ -19922,8 +19922,9 @@ function setup(ctx) {
       attrs: { type: config.codeBlockIdentifier },
       removeFromMessage: config.hideSimBlocks
     }, (payload) => {
-      const payloadChatId = payload.chatId || currentChatId;
-      handleChatSwitch(payloadChatId || null);
+      const payloadChatId = payload.chatId || null;
+      if (!isActivityForActiveChat(payloadChatId))
+        return;
       if (typeof payload.content !== "string" || !payload.content.trim())
         return;
       const sourceContent = typeof payload.fullMatch === "string" ? payload.fullMatch : payload.content;
@@ -20441,6 +20442,9 @@ function setup(ctx) {
       return;
     }
     if (obj?.type === "secondary_generation_started") {
+      const responseChatId = typeof obj.chatId === "string" ? obj.chatId : null;
+      if (!isActivityForActiveChat(responseChatId))
+        return;
       setLLMStatus("Generating tracker data...", "generating");
       setStatus("Secondary LLM generating...");
       const startedId = typeof obj.messageId === "string" ? obj.messageId : null;
@@ -20449,6 +20453,9 @@ function setup(ctx) {
       return;
     }
     if (obj?.type === "secondary_generation_complete") {
+      const responseChatId = typeof obj.chatId === "string" ? obj.chatId : null;
+      if (!isActivityForActiveChat(responseChatId))
+        return;
       setLLMStatus("Generation complete");
       const content = typeof obj.content === "string" ? obj.content : null;
       const messageId = typeof obj.messageId === "string" ? obj.messageId : null;
@@ -20459,6 +20466,9 @@ function setup(ctx) {
       return;
     }
     if (obj?.type === "secondary_generation_error") {
+      const responseChatId = typeof obj.chatId === "string" ? obj.chatId : null;
+      if (!isActivityForActiveChat(responseChatId))
+        return;
       const msg = typeof obj.message === "string" ? obj.message : "Generation failed";
       setLLMStatus(msg, "error");
       const errorId = typeof obj.messageId === "string" ? obj.messageId : null;
@@ -20588,8 +20598,26 @@ function setup(ctx) {
       }));
     }
   };
+  const isActivityForActiveChat = (activityChatId) => {
+    let hostActiveChatId = null;
+    try {
+      const active = ctx.getActiveChat();
+      hostActiveChatId = active?.chatId || null;
+    } catch {}
+    if (hostActiveChatId && hostActiveChatId !== currentChatId) {
+      handleChatSwitch(hostActiveChatId);
+    }
+    const activeChatId = hostActiveChatId || currentChatId;
+    if (!activeChatId) {
+      if (activityChatId)
+        handleChatSwitch(activityChatId);
+      return true;
+    }
+    return !activityChatId || activityChatId === activeChatId;
+  };
   const onEvent = (payload) => {
-    handleChatSwitch(extractChatId(payload));
+    if (!isActivityForActiveChat(extractChatId(payload)))
+      return;
     const context = readMessageContext(payload);
     if (!context)
       return;
@@ -20600,7 +20628,8 @@ function setup(ctx) {
     runInlinePass(context.messageId);
   };
   const onSwipe = (payload) => {
-    handleChatSwitch(extractChatId(payload));
+    if (!isActivityForActiveChat(extractChatId(payload)))
+      return;
     const context = readMessageContext(payload);
     if (!context)
       return;
@@ -20625,7 +20654,8 @@ function setup(ctx) {
     runInlinePass(context.messageId);
   };
   const onMessageRendered = (payload) => {
-    handleChatSwitch(extractChatId(payload));
+    if (!isActivityForActiveChat(extractChatId(payload)))
+      return;
     const context = readMessageContext(payload);
     if (!context || context.isUser === true)
       return;
@@ -20639,7 +20669,8 @@ function setup(ctx) {
     runInlinePass(context.messageId);
   };
   const onMessageDeleted = (payload) => {
-    handleChatSwitch(extractChatId(payload));
+    if (!isActivityForActiveChat(extractChatId(payload)))
+      return;
     const context = readMessageContext(payload);
     if (!context || !context.messageId)
       return;

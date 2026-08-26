@@ -1699,8 +1699,13 @@ export function setup(ctx: SpindleFrontendContext) {
         removeFromMessage: config.hideSimBlocks,
       },
       (payload) => {
-        const payloadChatId = payload.chatId || currentChatId;
-        handleChatSwitch(payloadChatId || null);
+        const payloadChatId = payload.chatId || null;
+        // Tag interception also runs for chats generating in the background.
+        // Removing the raw tag is global host behavior, but rendering it is
+        // only valid for the chat the user is actually viewing. In particular,
+        // a background payload must never be treated as navigation: doing so
+        // calls resetChatState() and uninjects the visible chat's tracker.
+        if (!isActivityForActiveChat(payloadChatId)) return;
         if (typeof payload.content !== "string" || !payload.content.trim()) return;
         const sourceContent = typeof payload.fullMatch === "string" ? payload.fullMatch : payload.content;
         const messageId = payload.messageId || null;
@@ -2291,6 +2296,8 @@ export function setup(ctx: SpindleFrontendContext) {
       return;
     }
     if (obj?.type === "secondary_generation_started") {
+      const responseChatId = typeof obj.chatId === "string" ? obj.chatId : null;
+      if (!isActivityForActiveChat(responseChatId)) return;
       setLLMStatus("Generating tracker data...", "generating");
       setStatus("Secondary LLM generating...");
       const startedId = typeof obj.messageId === "string" ? obj.messageId : null;
@@ -2298,6 +2305,8 @@ export function setup(ctx: SpindleFrontendContext) {
       return;
     }
     if (obj?.type === "secondary_generation_complete") {
+      const responseChatId = typeof obj.chatId === "string" ? obj.chatId : null;
+      if (!isActivityForActiveChat(responseChatId)) return;
       setLLMStatus("Generation complete");
       const content = typeof obj.content === "string" ? obj.content : null;
       const messageId = typeof obj.messageId === "string" ? obj.messageId : null;
@@ -2306,6 +2315,8 @@ export function setup(ctx: SpindleFrontendContext) {
       return;
     }
     if (obj?.type === "secondary_generation_error") {
+      const responseChatId = typeof obj.chatId === "string" ? obj.chatId : null;
+      if (!isActivityForActiveChat(responseChatId)) return;
       const msg = typeof obj.message === "string" ? obj.message : "Generation failed";
       setLLMStatus(msg, "error");
       const errorId = typeof obj.messageId === "string" ? obj.messageId : null;
@@ -2454,8 +2465,33 @@ export function setup(ctx: SpindleFrontendContext) {
     }
   };
 
+  const isActivityForActiveChat = (activityChatId: string | null): boolean => {
+    let hostActiveChatId: string | null = null;
+    try {
+      const active = ctx.getActiveChat();
+      hostActiveChatId = active?.chatId || null;
+    } catch {
+      // Fall back to the last explicit CHAT_SWITCHED event on older hosts.
+    }
+
+    // Synchronize to the host's actual selection, never to the chat named by
+    // an arbitrary generation/message event (which may be a queued chat).
+    if (hostActiveChatId && hostActiveChatId !== currentChatId) {
+      handleChatSwitch(hostActiveChatId);
+    }
+
+    const activeChatId = hostActiveChatId || currentChatId;
+    if (!activeChatId) {
+      // Startup fallback for hosts where getActiveChat() is unavailable and
+      // CHAT_SWITCHED has not fired yet.
+      if (activityChatId) handleChatSwitch(activityChatId);
+      return true;
+    }
+    return !activityChatId || activityChatId === activeChatId;
+  };
+
   const onEvent = (payload: unknown) => {
-    handleChatSwitch(extractChatId(payload));
+    if (!isActivityForActiveChat(extractChatId(payload))) return;
     const context = readMessageContext(payload);
     if (!context) return;
     if (context.isUser === true) return;
@@ -2464,7 +2500,7 @@ export function setup(ctx: SpindleFrontendContext) {
   };
 
   const onSwipe = (payload: unknown) => {
-    handleChatSwitch(extractChatId(payload));
+    if (!isActivityForActiveChat(extractChatId(payload))) return;
     const context = readMessageContext(payload);
     if (!context) return;
     if (context.isUser === true) return;
@@ -2493,7 +2529,7 @@ export function setup(ctx: SpindleFrontendContext) {
   };
 
   const onMessageRendered = (payload: unknown) => {
-    handleChatSwitch(extractChatId(payload));
+    if (!isActivityForActiveChat(extractChatId(payload))) return;
     const context = readMessageContext(payload);
     if (!context || context.isUser === true) return;
     retryLatestMessageRenderIntent(context.messageId);
@@ -2511,7 +2547,7 @@ export function setup(ctx: SpindleFrontendContext) {
   };
 
   const onMessageDeleted = (payload: unknown) => {
-    handleChatSwitch(extractChatId(payload));
+    if (!isActivityForActiveChat(extractChatId(payload))) return;
     const context = readMessageContext(payload);
     if (!context || !context.messageId) return;
     // Tear down any local tracker render and forget the message so the
