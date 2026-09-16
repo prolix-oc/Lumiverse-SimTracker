@@ -14,7 +14,8 @@
     "event_tracking",
     "generation",
     "generation_parameters",
-    "app_manipulation"
+    "app_manipulation",
+    "cors_proxy"
   ],
   "entry_backend": "dist/backend.js",
   "entry_frontend": "dist/frontend.js",

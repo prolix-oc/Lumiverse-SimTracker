@@ -18547,7 +18547,14 @@ var DEFAULT_CONFIG = {
   secondaryLLMMessageCount: 5,
   secondaryLLMTemperature: 0.7,
   secondaryLLMStripHTML: true,
-  fertilityCycleBias: "random"
+  fertilityCycleBias: "random",
+  typeSafeEnabled: false,
+  typeSafeApiKey: "",
+  typeSafeModel: "jev-latest",
+  typeSafeQuickAppend: true,
+  typeSafeVerify: true,
+  typeSafeConception: true,
+  typeSafeConfidenceFloor: 0.6
 };
 var BUILTIN_PRESETS = getTemplatePresets();
 var runtimeSeededPresets = [];
@@ -19090,6 +19097,21 @@ var PANEL_HTML = `
         <div id="sst-lumi-llm-status" class="sst-lumi-llm-status"></div>
       </div>
     </details>
+    <details id="sst-lumi-typesafe-section" class="sst-lumi-llm-section">
+      <summary class="sst-lumi-llm-summary">TypeSafe AI Quick Appends (Jev)</summary>
+      <div class="sst-lumi-llm-controls">
+        <label class="sst-lumi-checkbox"><input id="sst-lumi-ts-enable" type="checkbox" />Enable TypeSafe gate &amp; quick appends</label>
+        <label>API Key
+          <input id="sst-lumi-ts-key" type="password" autocomplete="off" spellcheck="false" placeholder="Key from console.typesafe.ai" />
+        </label>
+        <label>Model<input id="sst-lumi-ts-model" type="text" placeholder="jev-latest" /></label>
+        <label class="sst-lumi-checkbox"><input id="sst-lumi-ts-quick" type="checkbox" checked />Quick-append fast lane (minor changes skip the full LLM)</label>
+        <label class="sst-lumi-checkbox"><input id="sst-lumi-ts-verify" type="checkbox" checked />Verify full-LLM appends before applying</label>
+        <label class="sst-lumi-checkbox"><input id="sst-lumi-ts-conception" type="checkbox" checked />Jev decides gray-zone conceptions (replaces the coin flip)</label>
+        <label>Confidence Floor<input id="sst-lumi-ts-confidence" type="number" min="0.3" max="0.95" step="0.05" value="0.6" /></label>
+        <div class="sst-lumi-pack-hint">Requires "Enable secondary LLM generation" plus the cors_proxy permission. One Jev call gates each turn: no change → no append, minor change → numeric patch without an LLM call, anything else (or low confidence) → the full secondary LLM.</div>
+      </div>
+    </details>
     <div id="sst-lumi-body" class="sst-lumi-body"></div>
     <div id="sst-lumi-command" class="sst-lumi-command" style="display:none"></div>
   </section>
@@ -19136,7 +19158,7 @@ var PANEL_CSS = `
   .sst-lumi-llm-summary:hover { background: var(--lumiverse-fill-subtle); }
   .sst-lumi-llm-controls { padding: 0 12px 10px; display: grid; gap: 8px; }
   .sst-lumi-llm-controls label { font-size: 11px; color: var(--lumiverse-text-muted); display: grid; gap: 5px; }
-  .sst-lumi-llm-controls input[type="text"], .sst-lumi-llm-controls input[type="number"], .sst-lumi-llm-controls select { font-size: 12px; padding: 6px 8px; border: 1px solid var(--lumiverse-border); border-radius: 8px; background: var(--lumiverse-fill-subtle); color: var(--lumiverse-text); }
+  .sst-lumi-llm-controls input[type="text"], .sst-lumi-llm-controls input[type="password"], .sst-lumi-llm-controls input[type="number"], .sst-lumi-llm-controls select { font-size: 12px; padding: 6px 8px; border: 1px solid var(--lumiverse-border); border-radius: 8px; background: var(--lumiverse-fill-subtle); color: var(--lumiverse-text); }
   .sst-lumi-llm-model-mount { width: 100%; }
   .sst-tracker-generating { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 0; padding: 4px 10px; font-size: 11px; line-height: 1.4; color: var(--lumiverse-text-muted); background: color-mix(in srgb, var(--lumiverse-accent, #7c6aef) 12%, transparent); border: 1px solid color-mix(in srgb, var(--lumiverse-accent, #7c6aef) 30%, transparent); border-radius: 999px; }
   .sst-tracker-generating::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--lumiverse-accent, #7c6aef); animation: sst-tracker-generating-pulse 1.2s ease-in-out infinite; }
@@ -19992,6 +20014,27 @@ function setup(ctx) {
       llmTemp.value = String(config.secondaryLLMTemperature);
     if (llmStrip)
       llmStrip.checked = config.secondaryLLMStripHTML;
+    const tsEnable = byId("sst-lumi-ts-enable");
+    const tsKey = byId("sst-lumi-ts-key");
+    const tsModel = byId("sst-lumi-ts-model");
+    const tsQuick = byId("sst-lumi-ts-quick");
+    const tsVerify = byId("sst-lumi-ts-verify");
+    const tsConception = byId("sst-lumi-ts-conception");
+    const tsConfidence = byId("sst-lumi-ts-confidence");
+    if (tsEnable)
+      tsEnable.checked = config.typeSafeEnabled;
+    if (tsKey)
+      tsKey.value = config.typeSafeApiKey;
+    if (tsModel)
+      tsModel.value = config.typeSafeModel;
+    if (tsQuick)
+      tsQuick.checked = config.typeSafeQuickAppend;
+    if (tsVerify)
+      tsVerify.checked = config.typeSafeVerify;
+    if (tsConception)
+      tsConception.checked = config.typeSafeConception;
+    if (tsConfidence)
+      tsConfidence.value = String(config.typeSafeConfidenceFloor);
     populateConnectionDropdown();
     ensureModelCombobox()?.update({ value: config.secondaryLLMModel });
     updateRegenerateButton();
@@ -20456,13 +20499,24 @@ function setup(ctx) {
       const responseChatId = typeof obj.chatId === "string" ? obj.chatId : null;
       if (!isActivityForActiveChat(responseChatId))
         return;
-      setLLMStatus("Generation complete");
+      setLLMStatus(obj.via === "typesafe-fast-lane" ? "Tracker appended via TypeSafe quick path" : "Generation complete");
       const content = typeof obj.content === "string" ? obj.content : null;
       const messageId = typeof obj.messageId === "string" ? obj.messageId : null;
       if (messageId)
         hideGeneratingIndicator(messageId);
       if (content)
         handleContent(content, messageId);
+      return;
+    }
+    if (obj?.type === "secondary_generation_skipped") {
+      const responseChatId = typeof obj.chatId === "string" ? obj.chatId : null;
+      if (!isActivityForActiveChat(responseChatId))
+        return;
+      setLLMStatus("No tracker changes needed (TypeSafe gate)");
+      setStatus("Tracker unchanged — TypeSafe gate found no state changes.");
+      const skippedId = typeof obj.messageId === "string" ? obj.messageId : null;
+      if (skippedId)
+        hideGeneratingIndicator(skippedId);
       return;
     }
     if (obj?.type === "secondary_generation_error") {
@@ -20540,7 +20594,14 @@ function setup(ctx) {
       secondaryLLMMessageCount: typeof incoming.secondaryLLMMessageCount === "number" ? incoming.secondaryLLMMessageCount : DEFAULT_CONFIG.secondaryLLMMessageCount,
       secondaryLLMTemperature: typeof incoming.secondaryLLMTemperature === "number" ? incoming.secondaryLLMTemperature : DEFAULT_CONFIG.secondaryLLMTemperature,
       secondaryLLMStripHTML: typeof incoming.secondaryLLMStripHTML === "boolean" ? incoming.secondaryLLMStripHTML : DEFAULT_CONFIG.secondaryLLMStripHTML,
-      fertilityCycleBias: typeof incoming.fertilityCycleBias === "string" && FERTILITY_CYCLE_BIAS_VALUES.includes(incoming.fertilityCycleBias) ? incoming.fertilityCycleBias : DEFAULT_CONFIG.fertilityCycleBias
+      fertilityCycleBias: typeof incoming.fertilityCycleBias === "string" && FERTILITY_CYCLE_BIAS_VALUES.includes(incoming.fertilityCycleBias) ? incoming.fertilityCycleBias : DEFAULT_CONFIG.fertilityCycleBias,
+      typeSafeEnabled: typeof incoming.typeSafeEnabled === "boolean" ? incoming.typeSafeEnabled : DEFAULT_CONFIG.typeSafeEnabled,
+      typeSafeApiKey: typeof incoming.typeSafeApiKey === "string" ? incoming.typeSafeApiKey : DEFAULT_CONFIG.typeSafeApiKey,
+      typeSafeModel: typeof incoming.typeSafeModel === "string" && incoming.typeSafeModel.trim() ? incoming.typeSafeModel.trim() : DEFAULT_CONFIG.typeSafeModel,
+      typeSafeQuickAppend: typeof incoming.typeSafeQuickAppend === "boolean" ? incoming.typeSafeQuickAppend : DEFAULT_CONFIG.typeSafeQuickAppend,
+      typeSafeVerify: typeof incoming.typeSafeVerify === "boolean" ? incoming.typeSafeVerify : DEFAULT_CONFIG.typeSafeVerify,
+      typeSafeConception: typeof incoming.typeSafeConception === "boolean" ? incoming.typeSafeConception : DEFAULT_CONFIG.typeSafeConception,
+      typeSafeConfidenceFloor: typeof incoming.typeSafeConfidenceFloor === "number" && Number.isFinite(incoming.typeSafeConfidenceFloor) ? Math.min(0.95, Math.max(0.3, incoming.typeSafeConfidenceFloor)) : DEFAULT_CONFIG.typeSafeConfidenceFloor
     };
     configReady = true;
     if (configRetryTimer) {
@@ -20772,6 +20833,13 @@ function setup(ctx) {
     const llmMsgCount = byId("sst-lumi-llm-msgcount");
     const llmTemp = byId("sst-lumi-llm-temp");
     const llmStrip = byId("sst-lumi-llm-strip");
+    const tsEnable = byId("sst-lumi-ts-enable");
+    const tsKey = byId("sst-lumi-ts-key");
+    const tsModel = byId("sst-lumi-ts-model");
+    const tsQuick = byId("sst-lumi-ts-quick");
+    const tsVerify = byId("sst-lumi-ts-verify");
+    const tsConception = byId("sst-lumi-ts-conception");
+    const tsConfidence = byId("sst-lumi-ts-confidence");
     config = {
       ...config,
       templateId: selectedTemplate,
@@ -20787,7 +20855,14 @@ function setup(ctx) {
       secondaryLLMMessageCount: Math.max(1, Math.min(50, Math.floor(Number(llmMsgCount?.value) || 5))),
       secondaryLLMTemperature: Math.max(0, Math.min(2, Number(llmTemp?.value) || 0.7)),
       secondaryLLMStripHTML: Boolean(llmStrip?.checked),
-      fertilityCycleBias: FERTILITY_CYCLE_BIAS_VALUES.includes(cycleBiasSelect?.value || "") ? cycleBiasSelect.value : DEFAULT_CONFIG.fertilityCycleBias
+      fertilityCycleBias: FERTILITY_CYCLE_BIAS_VALUES.includes(cycleBiasSelect?.value || "") ? cycleBiasSelect.value : DEFAULT_CONFIG.fertilityCycleBias,
+      typeSafeEnabled: Boolean(tsEnable?.checked),
+      typeSafeApiKey: (tsKey?.value || "").trim(),
+      typeSafeModel: (tsModel?.value || "").trim() || DEFAULT_CONFIG.typeSafeModel,
+      typeSafeQuickAppend: Boolean(tsQuick?.checked),
+      typeSafeVerify: Boolean(tsVerify?.checked),
+      typeSafeConception: Boolean(tsConception?.checked),
+      typeSafeConfidenceFloor: Math.min(0.95, Math.max(0.3, Number(tsConfidence?.value) || DEFAULT_CONFIG.typeSafeConfidenceFloor))
     };
     persistConfig();
     configTrackerTagNameHint = config.trackerTagName;

@@ -1,5 +1,26 @@
 import { getTemplatePresetById, getTemplatePresets, mergeTemplatePresets, type TemplatePreset } from "./templatePresets";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
+import {
+  applyFastLaneAnswers,
+  buildConceptionQuestions,
+  buildFastLanePlan,
+  buildVerifyPlan,
+  evaluateTypeSafe,
+  interpretConceptionAnswers,
+  interpretGate,
+  interpretVerifyAnswers,
+  type ConceptionCandidate,
+  VERIFY_NARRATIVE_CHAR_CAP,
+  type TypeSafeAnswers,
+  type TypeSafeCorsTransport,
+} from "./typesafe";
+
+/**
+ * DI-boundary adapter: routes every TypeSafe call through Lumiverse's CORS
+ * proxy (requires the `cors_proxy` permission). Shared by the fast lane, the
+ * verifier, and the conception gate.
+ */
+const typeSafeCorsTransport: TypeSafeCorsTransport = (url, options) => spindle.cors(url, options);
 
 declare const spindle: import("lumiverse-spindle-types").SpindleAPI & {
   frontendCapabilities?: {
@@ -49,6 +70,13 @@ type TrackerConfig = {
   secondaryLLMTemperature: number;
   secondaryLLMStripHTML: boolean;
   fertilityCycleBias: FertilityCycleBias;
+  typeSafeEnabled: boolean;
+  typeSafeApiKey: string;
+  typeSafeModel: string;
+  typeSafeQuickAppend: boolean;
+  typeSafeVerify: boolean;
+  typeSafeConception: boolean;
+  typeSafeConfidenceFloor: number;
 };
 
 const DEFAULT_CONFIG: TrackerConfig = {
@@ -68,8 +96,15 @@ const DEFAULT_CONFIG: TrackerConfig = {
   secondaryLLMTemperature: 0.7,
   secondaryLLMStripHTML: true,
   fertilityCycleBias: "random",
+  typeSafeEnabled: false,
+  typeSafeApiKey: "",
+  typeSafeModel: "jev-latest",
+  typeSafeQuickAppend: true,
+  typeSafeVerify: true,
+  typeSafeConception: true,
+  typeSafeConfidenceFloor: 0.6,
 };
-
+const TYPE_SAFE_ENCLAVE_KEY = "typesafe_api_key";
 const CONFIG_PATH = "preferences.json";
 
 let config: TrackerConfig = { ...DEFAULT_CONFIG };
@@ -460,6 +495,16 @@ function sanitizeTemperature(value: unknown): number {
   return Math.max(0, Math.min(2, Math.round(value * 100) / 100));
 }
 
+function sanitizeTypeSafeModel(value: unknown): string {
+  const model = sanitizeStr(value, DEFAULT_CONFIG.typeSafeModel);
+  return model || DEFAULT_CONFIG.typeSafeModel;
+}
+
+function sanitizeConfidenceFloor(value: unknown): number {
+  const floor = typeof value === "number" && Number.isFinite(value) ? value : DEFAULT_CONFIG.typeSafeConfidenceFloor;
+  return Math.min(0.95, Math.max(0.3, Math.round(floor * 100) / 100));
+}
+
 function hasPermission(name: string): boolean {
   return runtime.grantedPermissions.has(name);
 }
@@ -745,18 +790,26 @@ function coinFlip(): boolean {
  * array of character names that triggered this turn.
  *
  * Rules:
- *   - Character must be female/futa, ovulating, not already conceived/pregnant.
- *   - womb_fullness_pct must be > threshold (default 80).
- *   - If fullness == autoAt (default 100) the nudge is automatic.
- *   - If threshold < fullness < autoAt, a coin flip decides.
+ *   - Character must be female/futa, in a fertile window, not already
+ *     conceived/pregnant.
+ *   - womb_fullness_pct must be > threshold (default 85).
+ *   - If fullness >= autoAt (default 100) the nudge is automatic.
+ *   - If threshold < fullness < autoAt, the gray zone: TypeSafe weighs the
+ *     tracked fertility factors against the scene narrative (falls back to
+ *     the historical coin flip when TypeSafe is unavailable).
  *   - Once a (chatId, name) pair has been notified, it won't be notified
  *     again until the character is explicitly marked conceived/pregnant
  *     in a tracker payload (which clears the flag).
  */
-function checkConceptionTriggers(chatId: string | null, payload: Record<string, unknown>): string[] {
+async function checkConceptionTriggers(
+  chatId: string | null,
+  payload: Record<string, unknown>,
+  narrative: string,
+): Promise<string[]> {
   if (!chatId) return [];
   const characters = getCharactersFromPayload(payload);
   const triggered: string[] = [];
+  const grayZone: ConceptionCandidate[] = [];
 
   for (const stats of characters) {
     if (!isFemaleOrFuta(stats)) continue;
@@ -771,22 +824,80 @@ function checkConceptionTriggers(chatId: string | null, payload: Record<string, 
     const fullness = Number(stats.womb_fullness_pct);
     if (!Number.isFinite(fullness) || fullness <= CONCEPTION_CONFIG.threshold) continue;
 
-    const key = `${chatId}::${stats.name}`;
+    const name = String(stats.name || "Unknown");
+    const key = `${chatId}::${name}`;
     if (conceptionNotified.has(key)) {
-      // Coin already passed; the LLM dropped `conceived` from its emission.
+      // Gate already passed; the LLM dropped `conceived` from its emission.
       // Re-add to the trigger list so the mutation path re-asserts it.
-      triggered.push(String(stats.name || "Unknown"));
+      triggered.push(name);
       continue;
     }
 
-    const shouldTrigger = fullness >= CONCEPTION_CONFIG.autoAt || coinFlip();
-    if (shouldTrigger) {
+    if (fullness >= CONCEPTION_CONFIG.autoAt) {
       conceptionNotified.add(key);
-      triggered.push(String(stats.name || "Unknown"));
+      triggered.push(name);
+    } else {
+      grayZone.push({ name, stats });
     }
   }
 
+  if (grayZone.length === 0) return triggered;
+  for (const name of await resolveGrayZoneConception(chatId, grayZone, narrative)) {
+    conceptionNotified.add(`${chatId}::${name}`);
+    triggered.push(name);
+  }
   return triggered;
+}
+
+/**
+ * Decide gray-zone conceptions (threshold < fullness < autoAt).  TypeSafe
+ * runs one fan-out call with a fertilization noul per at-risk character,
+ * weighing cycle stage/day, receptivity, breeding count, and cervix state
+ * against the scene narrative.  Any failure mode — disabled toggle, missing
+ * key/permission, timeout, API error — degrades to the historical coin flip.
+ */
+async function resolveGrayZoneConception(
+  chatId: string | null,
+  candidates: ConceptionCandidate[],
+  narrative: string,
+): Promise<string[]> {
+  if (config.typeSafeEnabled && config.typeSafeConception && config.typeSafeApiKey.trim() && hasPermission("cors_proxy")) {
+    try {
+      const plan = buildConceptionQuestions(candidates);
+      const answers = await evaluateTypeSafe(
+        typeSafeCorsTransport,
+        { apiKey: config.typeSafeApiKey.trim(), model: config.typeSafeModel },
+        { scene: narrative.slice(0, VERIFY_NARRATIVE_CHAR_CAP), ...plan.state },
+        plan.questions,
+      );
+      const fired = interpretConceptionAnswers(answers, candidates);
+      await trackEvent(
+        "sst.typesafe.conception_decided",
+        { fired, considered: candidates.map((c) => c.name) },
+        { chatId: chatId ?? undefined },
+      );
+      return fired;
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      spindle.log.warn(`TypeSafe conception gate unavailable, falling back to coin flip: ${detail}`);
+      await trackEvent("sst.typesafe.error", { stage: "conception", error: detail }, { level: "warn", chatId: chatId ?? undefined });
+    }
+  }
+  return candidates.filter(() => coinFlip()).map((c) => c.name);
+}
+
+/**
+ * Freshest scene beat for the conception gate: the last non-empty user
+ * message in the in-flight prompt (that message is what the current scene
+ * is responding to).
+ */
+function latestNarrativeBeat(messages: Array<{ role?: unknown; content?: unknown }>): string {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const msg = messages[i];
+    if (!msg || msg.role !== "user" || typeof msg.content !== "string" || !msg.content.trim()) continue;
+    return msg.content;
+  }
+  return "";
 }
 
 type ConceptionMutation = {
@@ -1476,7 +1587,17 @@ async function loadConfig(userId: string): Promise<void> {
       secondaryLLMTemperature: sanitizeTemperature(parsed.secondaryLLMTemperature),
       secondaryLLMStripHTML: sanitizeBool(parsed.secondaryLLMStripHTML, DEFAULT_CONFIG.secondaryLLMStripHTML),
       fertilityCycleBias: sanitizeFertilityCycleBias(parsed.fertilityCycleBias),
+      typeSafeEnabled: sanitizeBool(parsed.typeSafeEnabled, DEFAULT_CONFIG.typeSafeEnabled),
+      typeSafeApiKey: "", // resolved from the enclave below, never from disk
+      typeSafeModel: sanitizeTypeSafeModel(parsed.typeSafeModel),
+      typeSafeQuickAppend: sanitizeBool(parsed.typeSafeQuickAppend, DEFAULT_CONFIG.typeSafeQuickAppend),
+      typeSafeVerify: sanitizeBool(parsed.typeSafeVerify, DEFAULT_CONFIG.typeSafeVerify),
+      typeSafeConception: sanitizeBool(parsed.typeSafeConception, DEFAULT_CONFIG.typeSafeConception),
+      typeSafeConfidenceFloor: sanitizeConfidenceFloor(parsed.typeSafeConfidenceFloor),
     };
+    // The TypeSafe API key lives in spindle.enclave (AES-256-GCM at rest),
+    // never in preferences.json.
+    config.typeSafeApiKey = await loadTypeSafeApiKey(userId);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     spindle.log.error(`Failed to load SimTracker settings for user ${userId}: ${message}`);
@@ -1565,8 +1686,38 @@ async function loadSeededTemplatePresets(): Promise<void> {
 
 async function saveConfig(userId: string, configToSave: TrackerConfig = config): Promise<void> {
   if (!userId) throw new Error("A user id is required to save SimTracker settings.");
-  await spindle.userStorage.setJson(CONFIG_PATH, configToSave, { indent: 2, userId });
+  // The key is persisted by the enclave, never in preferences.json.
+  await spindle.userStorage.setJson(CONFIG_PATH, { ...configToSave, typeSafeApiKey: "" }, { indent: 2, userId });
 }
+
+/**
+ * Resolve the TypeSafe API key from encrypted enclave storage.  Enclave
+ * failures degrade to an empty key (TypeSafe effectively disabled) rather
+ * than failing the whole config load.
+ */
+async function loadTypeSafeApiKey(userId: string): Promise<string> {
+  try {
+    return (await spindle.enclave.get(TYPE_SAFE_ENCLAVE_KEY, userId)) ?? "";
+  } catch (err) {
+    spindle.log.warn(`Enclave unavailable; TypeSafe key not loaded: ${err instanceof Error ? err.message : String(err)}`);
+  }
+  return "";
+}
+
+/** Persist TypeSafe key changes to the enclave (put on change, delete on clear). */
+async function syncTypeSafeKeyToEnclave(userId: string, nextKey: string, previousKey: string): Promise<void> {
+  const next = nextKey.trim();
+  try {
+    if (next && next !== previousKey) {
+      await spindle.enclave.put(TYPE_SAFE_ENCLAVE_KEY, next, userId);
+    } else if (!next && previousKey) {
+      await spindle.enclave.delete(TYPE_SAFE_ENCLAVE_KEY, userId);
+    }
+  } catch (err) {
+    spindle.log.warn(`Failed to persist the TypeSafe key to the enclave: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
 
 spindle.on("MESSAGE_SENT", (payload: unknown, userId?: string) => {
   void (async () => {
@@ -1898,6 +2049,40 @@ function describeRejectedModelGuidance(model: string): string {
   return `The provider rejected the configured model id \`${model}\`. Open SimTracker settings → Secondary LLM and confirm the override matches a model this connection can serve, or clear the override to fall back to the connection's default.`;
 }
 
+/**
+ * Append a tracker block built from `parsed` to the target message and run
+ * the shared post-append bookkeeping: canonical content update, macro
+ * refresh, and side-channel history record (so the next run sees this
+ * tracker as "most recent" even if the frontend's removeFromMessage strips
+ * it from storage). Used by both the TypeSafe fast lane and the full
+ * secondary-LLM path.
+ */
+async function commitTrackerAppend(
+  chatId: string,
+  targetMessage: { id: string; content: string },
+  parsed: Record<string, unknown>,
+  via: string,
+): Promise<void> {
+  const trackerBlock = formatTrackerPayload(parsed, config.trackerFormat, config.codeBlockIdentifier);
+  const updatedContent = `${targetMessage.content.trimEnd()}\n\n${trackerBlock}`;
+  await spindle.chat.updateMessage(chatId, targetMessage.id, { content: updatedContent });
+
+  lastSimStats = config.trackerFormat === "yaml"
+    ? stringifyYaml(parsed)
+    : JSON.stringify(parsed, null, 2);
+  recordChatTracker(chatId, targetMessage.id, lastSimStats);
+  pushMacroValues();
+
+  spindle.log.info(`Tracker append complete via ${via}`);
+  spindle.sendToFrontend({
+    type: "secondary_generation_complete",
+    chatId,
+    messageId: targetMessage.id,
+    content: updatedContent,
+    via,
+  }, activeUserId || undefined);
+}
+
 async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: string): Promise<void> {
   if (!config.useSecondaryLLM) return;
   if (!hasPermission("generation")) {
@@ -1908,34 +2093,10 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
     spindle.log.warn("Secondary LLM generation requires 'chat_mutation' permission");
     return;
   }
-  // Without `generation_parameters`, Spindle silently strips `parameters`
-  // from the outgoing request — including our model override. The provider
-  // then receives the connection's stored model (often the seed `"string"`)
-  // and 400s. Bail loudly here so the user knows to grant the permission.
-  if (!hasPermission("generation_parameters")) {
-    const guidance = "Secondary LLM generation requires the 'generation_parameters' permission so the configured model id reaches the provider. Grant it in SimTracker's permission prompt and try again.";
-    spindle.log.warn(guidance);
-    spindle.sendToFrontend(
-      { type: "secondary_generation_error", message: guidance, chatId, messageId: targetMessageId },
-      activeUserId || undefined,
-    );
-    return;
-  }
-
-  // ── Pre-flight: validate model & connection ───────────────────────────
-  // The provider call requires a non-empty, non-placeholder model id. If the
-  // user enabled the sidecar without filling this in we bail early with a
-  // clear error rather than emitting a 400 from the upstream API.
+  // Model id for the provider call, validated after the TypeSafe fast lane
+  // (which never reaches the provider). Declared here so the catch block
+  // below can reference it in rejection guidance.
   const trimmedModel = (config.secondaryLLMModel || "").trim();
-  if (SECONDARY_LLM_MODEL_PLACEHOLDERS.has(trimmedModel.toLowerCase())) {
-    const guidance = describeMissingModelGuidance();
-    spindle.log.warn(guidance);
-    spindle.sendToFrontend(
-      { type: "secondary_generation_error", message: guidance, chatId, messageId: targetMessageId },
-      activeUserId || undefined,
-    );
-    return;
-  }
 
   spindle.sendToFrontend(
     { type: "secondary_generation_started", chatId, messageId: targetMessageId },
@@ -1995,6 +2156,95 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
         if (payload) found.unshift(payload); // oldest → newest
       }
       historicalTrackers = found;
+    }
+
+    // ── TypeSafe fast lane: gate + quick append ────────────────────────
+    //
+    // One speculative fan-out Jev call (gate + per-field questions, all
+    // evaluated in parallel) decides whether this message needs no tracker
+    // ("none"), a quick numeric patch of the previous payload ("minor"),
+    // or the full secondary LLM below. Every failure mode — no API key,
+    // missing cors_proxy permission, timeout, API error, low confidence —
+    // falls through to the full path, which is why the provider-specific
+    // pre-flight checks now live below this block.
+    if (config.typeSafeEnabled && config.typeSafeQuickAppend && config.typeSafeApiKey.trim() && hasPermission("cors_proxy")) {
+      const previousPayload = historicalTrackers.length > 0
+        ? parseTrackerPayload(historicalTrackers[historicalTrackers.length - 1])
+        : null;
+      if (previousPayload) {
+        // Same cleaning the full path applies to context messages: strip
+        // tracker blocks, optionally structural HTML.
+        let fastLaneMessage = targetMessage.content
+          .replace(buildTrackerTagRegex(tagName, "ig"), "")
+          .replace(buildTrackerFenceRegex(identifier, "gi"), "");
+        if (config.secondaryLLMStripHTML) fastLaneMessage = stripStructuralHTML(fastLaneMessage);
+        const fields = (Array.isArray(preset.customFields) ? preset.customFields : [])
+          .map((field) => ({
+            key: typeof field?.key === "string" ? field.key : "",
+            description: typeof field?.description === "string" ? field.description : "",
+          }))
+          .filter((field) => field.key);
+        const plan = buildFastLanePlan({ message: fastLaneMessage.trim(), previousPayload, fields });
+        if (plan) {
+          let answers: TypeSafeAnswers | null = null;
+          try {
+            answers = await evaluateTypeSafe(
+              typeSafeCorsTransport,
+              { apiKey: config.typeSafeApiKey.trim(), model: config.typeSafeModel },
+              plan.state,
+              plan.questions,
+            );
+          } catch (err) {
+            const detail = err instanceof Error ? err.message : String(err);
+            spindle.log.warn(`TypeSafe fast lane unavailable, falling back to full secondary LLM: ${detail}`);
+            await trackEvent("sst.typesafe.error", { stage: "fast-lane", error: detail }, { level: "warn", chatId });
+          }
+          if (answers) {
+            const gate = interpretGate(answers, config.typeSafeConfidenceFloor);
+            if (gate === "skip") {
+              spindle.log.info("TypeSafe gate: no tracker changes warranted for this message");
+              await trackEvent("sst.typesafe.gate_skip", { messageId: targetMessageId }, { chatId });
+              spindle.sendToFrontend(
+                { type: "secondary_generation_skipped", chatId, messageId: targetMessageId },
+                activeUserId || undefined,
+              );
+              return;
+            }
+            if (gate === "fast") {
+              const result = applyFastLaneAnswers(previousPayload, plan.directives, answers, config.typeSafeConfidenceFloor);
+              if (result.changed.length > 0) {
+                await commitTrackerAppend(chatId, targetMessage, result.payload, "typesafe-fast-lane");
+                await trackEvent("sst.typesafe.fast_append", { changed: result.changed }, { chatId });
+                return;
+              }
+              // "Minor" turn but nothing crossed the confidence floor to
+              // patch — let the full path capture whatever we couldn't.
+              await trackEvent("sst.typesafe.fast_append_fallback", { reason: "no-confident-changes" }, { chatId });
+            }
+          }
+        }
+      }
+    }
+
+    // Provider-specific pre-flight (moved below the TypeSafe fast lane,
+    // which never reaches the provider and therefore needs neither).
+    if (!hasPermission("generation_parameters")) {
+      const guidance = "Secondary LLM generation requires the 'generation_parameters' permission so the configured model id reaches the provider. Grant it in SimTracker's permission prompt and try again.";
+      spindle.log.warn(guidance);
+      spindle.sendToFrontend(
+        { type: "secondary_generation_error", message: guidance, chatId, messageId: targetMessageId },
+        activeUserId || undefined,
+      );
+      return;
+    }
+    if (SECONDARY_LLM_MODEL_PLACEHOLDERS.has(trimmedModel.toLowerCase())) {
+      const guidance = describeMissingModelGuidance();
+      spindle.log.warn(guidance);
+      spindle.sendToFrontend(
+        { type: "secondary_generation_error", message: guidance, chatId, messageId: targetMessageId },
+        activeUserId || undefined,
+      );
+      return;
     }
 
     const tagRe = buildTrackerTagRegex(tagName, "ig");
@@ -2083,31 +2333,52 @@ async function generateTrackerWithSecondaryLLM(chatId: string, targetMessageId: 
       return;
     }
 
-    const trackerBlock = formatTrackerPayload(parsed, config.trackerFormat, config.codeBlockIdentifier);
-    const updatedContent = `${targetMessage.content.trimEnd()}\n\n${trackerBlock}`;
-    await spindle.chat.updateMessage(chatId, targetMessageId, { content: updatedContent });
+    // ── TypeSafe verification (post-generation gate) ──────────────────
+    //
+    // One fan-out of per-field nouls checks the generated payload against
+    // the narrative and the previous tracker (SDE-cascade style). Any
+    // P(wrong) over threshold rejects the append — a wrong tracker poisons
+    // every subsequent generation via history and macros. Verification
+    // fails open: if TypeSafe is unreachable, append anyway (the full
+    // path's pre-existing behavior).
+    if (config.typeSafeEnabled && config.typeSafeVerify && config.typeSafeApiKey.trim() && hasPermission("cors_proxy") && historicalTrackers.length > 0) {
+      const previousPayload = parseTrackerPayload(historicalTrackers[historicalTrackers.length - 1]);
+      const narrative = cleanedMessages.map((msg) => `${msg.role === "user" ? "User" : "Character"}: ${msg.content}`).join("\n\n");
+      const verifyPlan = previousPayload
+        ? buildVerifyPlan({ narrative, previousPayload, generatedPayload: parsed })
+        : null;
+      if (verifyPlan) {
+        try {
+          const verdict = interpretVerifyAnswers(await evaluateTypeSafe(
+            typeSafeCorsTransport,
+            { apiKey: config.typeSafeApiKey.trim(), model: config.typeSafeModel },
+            verifyPlan.state,
+            verifyPlan.questions,
+          ));
+          if (!verdict.ok) {
+            const message = `TypeSafe verification rejected the generated tracker: ${verdict.reasons.join("; ")}`;
+            spindle.log.warn(message);
+            spindle.sendToFrontend(
+              { type: "secondary_generation_error", message, chatId, messageId: targetMessageId },
+              activeUserId || undefined,
+            );
+            await trackEvent("sst.typesafe.verify_reject", { reasons: verdict.reasons }, { level: "warn", chatId });
+            return;
+          }
+          await trackEvent("sst.typesafe.verify_pass", {}, { chatId });
+        } catch (err) {
+          const detail = err instanceof Error ? err.message : String(err);
+          spindle.log.warn(`TypeSafe verification unavailable, appending anyway: ${detail}`);
+          await trackEvent("sst.typesafe.error", { stage: "verify", error: detail }, { level: "warn", chatId });
+        }
+      }
+    }
 
-    lastSimStats = config.trackerFormat === "yaml"
-      ? stringifyYaml(parsed)
-      : JSON.stringify(parsed, null, 2);
-    // Record the freshly generated tracker in the side-channel so the next
-    // secondary run sees it as "most recent" even if the frontend's
-    // removeFromMessage strips it from canonical storage.
-    recordChatTracker(chatId, targetMessageId, lastSimStats);
-    pushMacroValues();
-
-    spindle.log.info("Secondary LLM generation complete");
+    await commitTrackerAppend(chatId, targetMessage, parsed, "secondary-llm");
     await trackEvent("sst.secondary_generation.complete", {
       connectionId: config.secondaryLLMConnectionId,
       model: config.secondaryLLMModel,
     }, { chatId });
-
-    spindle.sendToFrontend({
-      type: "secondary_generation_complete",
-      chatId,
-      messageId: targetMessageId,
-      content: updatedContent,
-    }, activeUserId || undefined);
   } catch (err) {
     const rawMessage = err instanceof Error ? err.message : String(err);
     // Pre-flight already bailed on empty/placeholder models, so any
@@ -2544,6 +2815,21 @@ function buildTrackerInjectionBlock(entries: TrackerHistoryEntry[]): string {
     .join("\n\n");
   return `Previous tracker states (oldest → newest):\n\n${snapshots}`;
 }
+/**
+ * Splice a system directive just before the final message of the prompt so
+ * the LLM sees it as a trailing instruction. Returns the input array
+ * unchanged when there is no directive.
+ */
+function withTrailingDirective(
+  messages: Array<Record<string, unknown>>,
+  directive: string,
+): Array<Record<string, unknown>> {
+  if (!directive) return messages;
+  const injected = messages.slice();
+  injected.splice(Math.max(0, injected.length - 1), 0, { role: "system", content: directive });
+  return injected;
+}
+
 
 let interceptorRegistered = false;
 
@@ -2565,49 +2851,61 @@ function tryRegisterInterceptor(): void {
       // clean context — skip injection entirely.
       if (keepNewest === 0) return retained;
 
-      // 2. Count how many tracker blocks remain after stripping.  If we
-      //    already have enough, the LLM can reference them directly.
-      //    We only need to know if it reaches keepNewest, so stop early.
-      const currentCount = countTrackersInMessages(retained, keepNewest);
-      if (currentCount >= keepNewest) return formatTrackerBlocksInMessages(retained);
-
-      // 3. Otherwise the prompt is short on tracker history (usually because
-      //    the frontend's tag interceptor has `removeFromMessage: true`).
-      //    Back-fill the difference from the side-channel so the main LLM
-      //    still sees the last N tracker states.
+      // 2. Resolve the chat and prime the side-channel (idempotent) before
+      //    anything reads tracker history.
       const chatId = resolveInterceptorChatId(context);
-      if (!chatId) return formatTrackerBlocksInMessages(retained);
-
-      // Ensure the side-channel is primed. Rehydration is idempotent and
-      // a no-op after the first call for a given chat.
-      await rehydrateChatTrackerHistory(chatId);
-
-      const needed = keepNewest - currentCount;
 
       // ── Conception gate ───────────────────────────────────────────────
-      // Check the very latest tracker for characters in the fertile
-      // window (ovulation / rut / early-luteal) with womb fullness above
-      // threshold. On a coin-flip pass (or auto-pass at 100 %):
+      // Check the very latest tracker for characters in the fertile window
+      // (ovulation / rut / early-luteal) with womb fullness above
+      // threshold. Auto-pass at 100 %; the gray zone below that is decided
+      // by TypeSafe weighing the fertility factors against the scene
+      // narrative (coin flip when TypeSafe is unavailable). On a pass:
       //   1. Plan a mutation of the stored payload to add `conceived: true`.
       //   2. Commit the mutation to chatTrackerHistory so future turns
       //      inherit the authoritative state.
       //   3. Rewrite the matching tracker block in the in-flight messages
-      //      array so the dedup pass below recognises it as the same
-      //      entry and the LLM sees only the mutated version this turn.
+      //      array so the LLM sees only the mutated version this turn.
       //   4. Inject a reminder directive as a belt-and-braces backstop.
-      const preMutationLatest = getRecentChatTrackers(chatId, 1);
-      const latestPayload = preMutationLatest.length > 0
-        ? parseTrackerPayload(preMutationLatest[preMutationLatest.length - 1].payload)
-        : null;
-      const conceptionNames = latestPayload ? checkConceptionTriggers(chatId, latestPayload) : [];
-      if (latestPayload && conceptionNames.length > 0) {
-        const plan = planForcedConception(chatId, conceptionNames, extractCurrentDate(latestPayload));
-        if (plan) {
-          commitForcedConception(chatId, plan);
-          rewriteTrackerInMessages(retained, plan.oldPayload, plan.newPayload);
+      // The gate runs on every interception — including turns where enough
+      // trackers already sit in the prompt — so the mutation and directive
+      // never depend on the back-fill path below.
+      let conceptionDirective = "";
+      if (chatId) {
+        await rehydrateChatTrackerHistory(chatId);
+        const preMutationLatest = getRecentChatTrackers(chatId, 1);
+        const latestPayload = preMutationLatest.length > 0
+          ? parseTrackerPayload(preMutationLatest[preMutationLatest.length - 1].payload)
+          : null;
+        if (latestPayload) {
+          const conceptionNames = await checkConceptionTriggers(chatId, latestPayload, latestNarrativeBeat(retained));
+          if (conceptionNames.length > 0) {
+            const plan = planForcedConception(chatId, conceptionNames, extractCurrentDate(latestPayload));
+            if (plan) {
+              commitForcedConception(chatId, plan);
+              rewriteTrackerInMessages(retained, plan.oldPayload, plan.newPayload);
+            }
+            conceptionDirective = buildConceptionDirective(conceptionNames);
+          }
         }
       }
-      const conceptionDirective = buildConceptionDirective(conceptionNames);
+
+      // 3. Count how many tracker blocks remain after stripping.  If we
+      //    already have enough, the LLM can reference them directly — but
+      //    still deliver any conception directive from the gate above.
+      const currentCount = countTrackersInMessages(retained, keepNewest);
+      if (currentCount >= keepNewest) {
+        return withTrailingDirective(formatTrackerBlocksInMessages(retained), conceptionDirective);
+      }
+
+      // 4. Otherwise the prompt is short on tracker history (usually because
+      //    the frontend's tag interceptor has `removeFromMessage: true`).
+      //    Back-fill the difference from the side-channel so the main LLM
+      //    still sees the last N tracker states.
+      if (!chatId) return formatTrackerBlocksInMessages(retained);
+
+      const needed = keepNewest - currentCount;
+
 
       // Fetch the most recent entries (post-mutation); we may discard
       // duplicates already represented in the assembled prompt.
@@ -2615,7 +2913,7 @@ function tryRegisterInterceptor(): void {
       if (history.length === 0) {
         // No tracker history to inject yet; the first-message fertility hint
         // (if any) is already baked into the {{sim_tracker}} macro value.
-        return formatTrackerBlocksInMessages(retained);
+        return withTrailingDirective(formatTrackerBlocksInMessages(retained), conceptionDirective);
       }
 
       const existingPayloads = new Set<string>();
@@ -2632,7 +2930,7 @@ function tryRegisterInterceptor(): void {
         .slice(0, needed)
         .reverse(); // back to oldest → newest
 
-      if (toInject.length === 0) return formatTrackerBlocksInMessages(retained);
+      if (toInject.length === 0) return withTrailingDirective(formatTrackerBlocksInMessages(retained), conceptionDirective);
 
       const block = buildTrackerInjectionBlock(toInject);
       const promptMessages = formatTrackerBlocksInMessages(retained);
@@ -2659,10 +2957,7 @@ function tryRegisterInterceptor(): void {
           ...target,
           content: base ? `${base}\n\n${block}` : block,
         };
-        if (conceptionDirective) {
-          injected.splice(injected.length - 1, 0, { role: "system", content: conceptionDirective });
-        }
-        return injected;
+        return withTrailingDirective(injected, conceptionDirective);
       }
 
       // Insert a synthetic system message near the end of the conversation
@@ -2670,10 +2965,7 @@ function tryRegisterInterceptor(): void {
       const injected = promptMessages.slice();
       const insertAt = Math.max(0, injected.length - 1);
       injected.splice(insertAt, 0, { role: "system", content: block });
-      if (conceptionDirective) {
-        injected.splice(insertAt + 1, 0, { role: "system", content: conceptionDirective });
-      }
-      return injected;
+      return withTrailingDirective(injected, conceptionDirective);
     }, 90);
     interceptorRegistered = true;
     spindle.log.info("Interceptor registered");
@@ -2893,11 +3185,11 @@ spindle.onFrontendMessage(async (payload: unknown, userId: string) => {
     }
     return;
   }
-
   if (message.type === "set_config") {
     try {
       await ensureConfigForUser(userId);
       const incoming = message.config as Partial<TrackerConfig>;
+      const previousTypeSafeKey = config.typeSafeApiKey.trim();
       config = {
         trackerTagName: sanitizeTagName(incoming?.trackerTagName ?? config.trackerTagName),
         codeBlockIdentifier: sanitizeIdentifier(incoming?.codeBlockIdentifier ?? config.codeBlockIdentifier),
@@ -2915,7 +3207,15 @@ spindle.onFrontendMessage(async (payload: unknown, userId: string) => {
         secondaryLLMTemperature: sanitizeTemperature(incoming?.secondaryLLMTemperature ?? config.secondaryLLMTemperature),
         secondaryLLMStripHTML: sanitizeBool(incoming?.secondaryLLMStripHTML ?? config.secondaryLLMStripHTML, config.secondaryLLMStripHTML),
         fertilityCycleBias: sanitizeFertilityCycleBias(incoming?.fertilityCycleBias ?? config.fertilityCycleBias),
+        typeSafeEnabled: sanitizeBool(incoming?.typeSafeEnabled ?? config.typeSafeEnabled, config.typeSafeEnabled),
+        typeSafeApiKey: sanitizeStr(incoming?.typeSafeApiKey ?? config.typeSafeApiKey, config.typeSafeApiKey),
+        typeSafeModel: sanitizeTypeSafeModel(incoming?.typeSafeModel ?? config.typeSafeModel),
+        typeSafeQuickAppend: sanitizeBool(incoming?.typeSafeQuickAppend ?? config.typeSafeQuickAppend, config.typeSafeQuickAppend),
+        typeSafeVerify: sanitizeBool(incoming?.typeSafeVerify ?? config.typeSafeVerify, config.typeSafeVerify),
+        typeSafeConception: sanitizeBool(incoming?.typeSafeConception ?? config.typeSafeConception, config.typeSafeConception),
+        typeSafeConfidenceFloor: sanitizeConfidenceFloor(incoming?.typeSafeConfidenceFloor ?? config.typeSafeConfidenceFloor),
       };
+      await syncTypeSafeKeyToEnclave(userId, config.typeSafeApiKey, previousTypeSafeKey);
       await saveConfig(userId);
       pushMacroValues();
       await trackEvent("sst.config.updated", {

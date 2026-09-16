@@ -12823,7 +12823,396 @@ function stringify3(value, replacer, options) {
     return value.toString(options);
   return new Document(value, _replacer, options).toString(options);
 }
+// src/trackerData.ts
+function normalizeTrackerData(data) {
+  if (Array.isArray(data.characters)) {
+    return data;
+  }
+  const characters = [];
+  for (const [key, value] of Object.entries(data)) {
+    if (key === "worldData")
+      continue;
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      characters.push({ name: key, ...value });
+    }
+  }
+  return {
+    ...data,
+    characters
+  };
+}
+
+// src/typesafe.ts
+var TYPESAFE_ENDPOINT = "https://api.typesafe.ai/v1/systemone";
+async function evaluateTypeSafe(transport, settings, state, questions, timeoutMs = 20000) {
+  if (!settings.apiKey)
+    throw new Error("TypeSafe API key is not configured");
+  const body = JSON.stringify({ state, model: settings.model, questions });
+  const call = transport(TYPESAFE_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${settings.apiKey}`
+    },
+    body
+  });
+  const timeout = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error(`TypeSafe request timed out after ${timeoutMs}ms`)), timeoutMs);
+  });
+  return extractAnswers(await Promise.race([call, timeout]));
+}
+function truncate(text, max = 300) {
+  return text.length > max ? `${text.slice(0, max)}\u2026` : text;
+}
+function extractAnswers(raw) {
+  let obj = raw;
+  if (typeof obj === "string") {
+    const text = obj;
+    try {
+      obj = JSON.parse(text);
+    } catch {
+      throw new Error(`TypeSafe proxy returned a non-JSON body: ${truncate(text)}`);
+    }
+  }
+  if (!obj || typeof obj !== "object") {
+    throw new Error(`TypeSafe proxy returned an unexpected payload: ${truncate(String(obj))}`);
+  }
+  const rec = obj;
+  for (const key of ["body", "data", "json", "text"]) {
+    const nested = rec[key];
+    if (typeof nested === "string" || nested && typeof nested === "object") {
+      const hasOwn = rec.answers !== undefined;
+      if (!hasOwn)
+        return extractAnswers(nested);
+    }
+  }
+  const answers = rec.answers;
+  if (answers && typeof answers === "object" && !Array.isArray(answers)) {
+    return answers;
+  }
+  const status = typeof rec.status === "number" ? rec.status : null;
+  const ok = typeof rec.ok === "boolean" ? rec.ok : null;
+  if (ok === false || status !== null && status >= 400) {
+    const detail = typeof rec.error === "string" ? rec.error : typeof rec.message === "string" ? rec.message : truncate(JSON.stringify(rec));
+    throw new Error(`TypeSafe HTTP ${status ?? "error"}: ${truncate(detail)}`);
+  }
+  throw new Error(`TypeSafe proxy response missing \`answers\`: ${truncate(JSON.stringify(rec))}`);
+}
+var TYPE_MARKER_RE = /[\[(](?:number|integer|int|float|boolean|bool|string|text|array|list)[\])]/gi;
+var ENUM_PAIR_RE = /(\d+)\s*=\s*([^,;]+)/g;
+var RANGE_RE = /(-?\d+(?:\.\d+)?)\s*(?:to|[-\u2013\u2014])\s*(-?\d+(?:\.\d+)?)/;
+var BOOLEAN_KEYS = { preg: true, inactive: true, alive: true, dead: true };
+function cleanLabel(description) {
+  return description.replace(TYPE_MARKER_RE, " ").replace(/\s+/g, " ").trim();
+}
+function classifyPatchableField(key, description) {
+  const label = cleanLabel(description);
+  const desc = description.toLowerCase();
+  const pairs2 = [];
+  for (const match of description.matchAll(ENUM_PAIR_RE)) {
+    pairs2.push([match[1], match[2].trim()]);
+  }
+  if (pairs2.length >= 2) {
+    const options = {};
+    for (const [code, text] of pairs2)
+      options[code] = text;
+    return { kind: "enum", key, label: label || key, options };
+  }
+  const range = RANGE_RE.exec(description);
+  if (range) {
+    const min = Number(range[1]);
+    const max = Number(range[2]);
+    if (Number.isFinite(min) && Number.isFinite(max) && min !== max) {
+      const [lo, hi] = min < max ? [min, max] : [max, min];
+      return { kind: "scale", key, label: label || key, min: lo, max: hi };
+    }
+  }
+  if (/[\[(](?:boolean|bool)[\])]/.test(desc) || /\btrue\/false\b/.test(desc) || BOOLEAN_KEYS[key.toLowerCase()] === true) {
+    return { kind: "flag", key, label: label || key };
+  }
+  return null;
+}
+var FAST_LANE_MAX_QUESTIONS = 24;
+var FAST_LANE_MAX_CHARACTERS = 4;
+var FAST_LANE_MESSAGE_CHAR_CAP = 8000;
+var GATE_QUESTION_ID = "gate:magnitude";
+var SCALE_LEVELS = [
+  "Sharp decrease from the current value",
+  "Small decrease",
+  "Roughly unchanged",
+  "Small increase",
+  "Sharp increase"
+];
+var GATE_CRITERIA = {
+  none: "Nothing in the message changes any tracked stat; an unchanged tracker append would add nothing",
+  minor: "Only small shifts to existing numeric scales, enum codes, or boolean flags of already-tracked characters",
+  significant: "Changes a full tracker update should capture: prose statuses, thoughts, clothing, location, relationships, or time progression",
+  structural: "Introduces a new character to track, writes one out, or otherwise reshapes the tracked roster"
+};
+function buildFastLanePlan(input) {
+  const characters = normalizeTrackerData(input.previousPayload).characters ?? [];
+  if (characters.length === 0 || characters.length > FAST_LANE_MAX_CHARACTERS)
+    return null;
+  const patchable = input.fields.map((field) => classifyPatchableField(field.key, field.description)).filter((field) => field !== null && field.key !== "conceived");
+  if (patchable.length === 0)
+    return null;
+  const questions = {
+    [GATE_QUESTION_ID]: {
+      type: "choice",
+      instructions: "How much does this message change the tracked state of the characters listed in previous state?",
+      criteria: GATE_CRITERIA
+    }
+  };
+  const directives = [];
+  const trackedCharacters = [];
+  for (const character of characters) {
+    const name = typeof character.name === "string" ? character.name.trim() : "";
+    if (!name)
+      continue;
+    const tracked = { name };
+    for (const field of patchable) {
+      const priorRaw = character[field.key];
+      if (field.kind === "flag") {
+        if (typeof priorRaw !== "boolean")
+          continue;
+        const id = `c${directives.length}:${field.key}`;
+        questions[id] = {
+          type: "noul",
+          instructions: `For ${name}: the "${field.key}" flag (${field.label}) is now true as of this message.`,
+          criteria: {
+            true: `The narrative establishes ${field.key} as true for ${name} at or before this point`,
+            false: `${field.key} remains or becomes false for ${name}`
+          }
+        };
+        directives.push({ id, character: name, field, prior: priorRaw });
+        tracked[field.key] = priorRaw;
+        continue;
+      }
+      const prior = Number(priorRaw);
+      if (!Number.isFinite(prior))
+        continue;
+      if (field.kind === "scale") {
+        const id = `c${directives.length}:${field.key}`;
+        questions[id] = {
+          type: "score",
+          instructions: `For ${name}: new value of "${field.key}" (${field.label}) after this message, given the current value ${prior} on a ${field.min}\u2013${field.max} scale.`,
+          criteria: [...SCALE_LEVELS]
+        };
+        directives.push({ id, character: name, field, prior });
+      } else {
+        const id = `c${directives.length}:${field.key}`;
+        const criteria = {};
+        for (const [code, text] of Object.entries(field.options))
+          criteria[code] = text;
+        const currentLabel = field.options[String(prior)] ?? "unlisted";
+        questions[id] = {
+          type: "choice",
+          instructions: `For ${name}: new "${field.key}" code (${field.label}). Current: ${prior} (${currentLabel}).`,
+          criteria
+        };
+        directives.push({ id, character: name, field, prior });
+      }
+      tracked[field.key] = prior;
+      if (Object.keys(questions).length >= FAST_LANE_MAX_QUESTIONS)
+        break;
+    }
+    trackedCharacters.push(tracked);
+    if (Object.keys(questions).length >= FAST_LANE_MAX_QUESTIONS)
+      break;
+  }
+  if (directives.length === 0)
+    return null;
+  const fieldDefinitions = {};
+  for (const field of patchable)
+    fieldDefinitions[field.key] = field.label;
+  return {
+    state: {
+      message: input.message.slice(0, FAST_LANE_MESSAGE_CHAR_CAP),
+      tracked_characters: trackedCharacters,
+      field_definitions: fieldDefinitions
+    },
+    questions,
+    directives
+  };
+}
+function interpretGate(answers, confidenceFloor) {
+  const gate = answers[GATE_QUESTION_ID];
+  if (!gate || gate.type !== "choice")
+    return "full";
+  if (gate.choice === "none" && gate.confidence >= Math.max(confidenceFloor, 0.7))
+    return "skip";
+  if (gate.choice === "minor" && gate.confidence >= confidenceFloor)
+    return "fast";
+  return "full";
+}
+var FLAG_TRUE_THRESHOLD = 0.8;
+var FLAG_FALSE_THRESHOLD = 0.2;
+var SCALE_STEP_FRACTION = 10;
+function applyFastLaneAnswers(previousPayload, directives, answers, confidenceFloor) {
+  const payload = JSON.parse(JSON.stringify(previousPayload));
+  const changed = [];
+  const targetsFor = (name) => {
+    const targets = [];
+    const list = payload.characters;
+    if (Array.isArray(list)) {
+      const entry = list.find((entry2) => entry2 && typeof entry2 === "object" && typeof entry2.name === "string" && entry2.name.trim().toLowerCase() === name.toLowerCase());
+      if (entry)
+        targets.push(entry);
+    }
+    const keyed = payload[name];
+    if (keyed && typeof keyed === "object" && !Array.isArray(keyed)) {
+      targets.push(keyed);
+    }
+    return targets;
+  };
+  for (const directive of directives) {
+    const answer = answers[directive.id];
+    if (!answer)
+      continue;
+    const targets = targetsFor(directive.character);
+    if (targets.length === 0)
+      continue;
+    let next = null;
+    if (directive.field.kind === "scale" && answer.type === "score") {
+      if (answer.confidence >= confidenceFloor) {
+        const step = (directive.field.max - directive.field.min) / SCALE_STEP_FRACTION;
+        const delta = (answer.score - (SCALE_LEVELS.length - 1) / 2) * step;
+        const clamped = Math.min(directive.field.max, Math.max(directive.field.min, directive.prior + delta));
+        next = Math.round(clamped);
+      }
+    } else if (directive.field.kind === "enum" && answer.type === "choice") {
+      if (answer.confidence >= confidenceFloor && directive.field.options[answer.choice] !== undefined) {
+        const code = Number(answer.choice);
+        if (Number.isFinite(code))
+          next = code;
+      }
+    } else if (directive.field.kind === "flag" && answer.type === "noul") {
+      if (answer.noul >= FLAG_TRUE_THRESHOLD)
+        next = true;
+      else if (answer.noul <= FLAG_FALSE_THRESHOLD)
+        next = false;
+    }
+    if (next === null || next === directive.prior)
+      continue;
+    for (const target of targets)
+      target[directive.field.key] = next;
+    changed.push(`${directive.character}.${directive.field.key}: ${String(directive.prior)} \u2192 ${String(next)}`);
+  }
+  return { payload, changed };
+}
+var VERIFY_MAX_FIELD_QUESTIONS = 10;
+var VERIFY_FIRE_THRESHOLD = 0.7;
+var VERIFY_NARRATIVE_CHAR_CAP = 8000;
+function buildVerifyPlan(input) {
+  const previous = normalizeTrackerData(input.previousPayload).characters ?? [];
+  if (previous.length === 0)
+    return null;
+  const generated = normalizeTrackerData(input.generatedPayload).characters ?? [];
+  const generatedByName = new Map;
+  for (const character of generated) {
+    if (typeof character.name === "string")
+      generatedByName.set(character.name.trim().toLowerCase(), character);
+  }
+  const questions = {};
+  const previousByName = new Map;
+  for (const character of previous) {
+    if (typeof character.name !== "string")
+      continue;
+    previousByName.set(character.name.trim().toLowerCase(), character);
+    const after = generatedByName.get(character.name.trim().toLowerCase());
+    if (!after)
+      continue;
+    for (const [key, oldValue] of Object.entries(character)) {
+      if (key === "name")
+        continue;
+      const newValue = after[key];
+      if (newValue === oldValue)
+        continue;
+      if (typeof oldValue !== "number" && typeof oldValue !== "boolean" && typeof oldValue !== "string")
+        continue;
+      if (typeof newValue !== "number" && typeof newValue !== "boolean" && typeof newValue !== "string")
+        continue;
+      if (Object.keys(questions).length >= VERIFY_MAX_FIELD_QUESTIONS)
+        break;
+      const id = `field:${character.name}:${key}`;
+      questions[id] = {
+        type: "noul",
+        instructions: `The generated tracker sets "${key}" for ${character.name} to "${String(newValue)}" (previously "${String(oldValue)}"). This new value is unsupported by, or contradicts, the narrative.`
+      };
+    }
+  }
+  questions["roster:dropped"] = {
+    type: "noul",
+    instructions: "A character tracked in the previous tracker disappears from the generated tracker without the narrative writing them out."
+  };
+  questions["roster:invented"] = {
+    type: "noul",
+    instructions: "The generated tracker introduces a character or field value that is neither present in the previous tracker nor supported by the narrative."
+  };
+  return {
+    state: {
+      narrative: input.narrative.slice(0, VERIFY_NARRATIVE_CHAR_CAP),
+      previous_tracker: input.previousPayload,
+      generated_tracker: input.generatedPayload
+    },
+    questions
+  };
+}
+function interpretVerifyAnswers(answers, fireThreshold = VERIFY_FIRE_THRESHOLD) {
+  const reasons = [];
+  for (const [id, answer] of Object.entries(answers)) {
+    if (answer.type !== "noul")
+      continue;
+    if (answer.noul >= fireThreshold) {
+      reasons.push(`${id} (P(wrong) = ${answer.noul.toFixed(2)})`);
+    }
+  }
+  return { ok: reasons.length === 0, reasons };
+}
+var CONCEPTION_FIRE_THRESHOLD = 0.5;
+var CONCEPTION_FACTOR_KEYS = [
+  "sex",
+  "cycle_stage_id",
+  "cycle_day",
+  "womb_fullness_pct",
+  "womb_receptivity_pct",
+  "cervix_state_id",
+  "breeding_count"
+];
+function buildConceptionQuestions(candidates) {
+  const factors = {};
+  const questions = {};
+  for (const candidate of candidates) {
+    const summary = CONCEPTION_FACTOR_KEYS.filter((key) => {
+      const value = candidate.stats[key];
+      return value !== undefined && value !== null && value !== "";
+    }).map((key) => `${key}=${String(candidate.stats[key])}`);
+    factors[candidate.name] = summary.join(", ");
+    questions[`conceive:${candidate.name}`] = {
+      type: "noul",
+      instructions: `"${candidate.name}" is in a fertile window with womb fullness in the gray zone (above the 85% threshold, ` + `below the automatic 100%). Given her tracked factors (${summary.join(", ")}) and the scene narrative, ` + `does fertilization occur this turn? Repeated internal finishes (breeding_count), high womb receptivity, ` + `ovulation/rut, and a split cervix (cervix_state_id=7) raise the odds; contraception, low receptivity, ` + `and marginal cycle timing lower them.`,
+      criteria: {
+        true: `Fertilization occurs for ${candidate.name} this turn`,
+        false: `No fertilization for ${candidate.name} this turn`
+      }
+    };
+  }
+  return { state: { tracked_characters: factors }, questions };
+}
+function interpretConceptionAnswers(answers, candidates, fireThreshold = CONCEPTION_FIRE_THRESHOLD) {
+  const fired = [];
+  for (const candidate of candidates) {
+    const answer = answers[`conceive:${candidate.name}`];
+    if (answer?.type !== "noul")
+      continue;
+    if (answer.noul >= fireThreshold)
+      fired.push(candidate.name);
+  }
+  return fired;
+}
+
 // src/backend.ts
+var typeSafeCorsTransport = (url, options) => spindle.cors(url, options);
 spindle.frontendCapabilities?.declare("message_tag_interceptor");
 var FERTILITY_CYCLE_BIAS_VALUES = [
   "random",
@@ -12850,8 +13239,16 @@ var DEFAULT_CONFIG = {
   secondaryLLMMessageCount: 5,
   secondaryLLMTemperature: 0.7,
   secondaryLLMStripHTML: true,
-  fertilityCycleBias: "random"
+  fertilityCycleBias: "random",
+  typeSafeEnabled: false,
+  typeSafeApiKey: "",
+  typeSafeModel: "jev-latest",
+  typeSafeQuickAppend: true,
+  typeSafeVerify: true,
+  typeSafeConception: true,
+  typeSafeConfidenceFloor: 0.6
 };
+var TYPE_SAFE_ENCLAVE_KEY = "typesafe_api_key";
 var CONFIG_PATH = "preferences.json";
 var config = { ...DEFAULT_CONFIG };
 var lastSimStats = "{}";
@@ -13142,6 +13539,14 @@ function sanitizeTemperature(value) {
     return DEFAULT_CONFIG.secondaryLLMTemperature;
   return Math.max(0, Math.min(2, Math.round(value * 100) / 100));
 }
+function sanitizeTypeSafeModel(value) {
+  const model = sanitizeStr(value, DEFAULT_CONFIG.typeSafeModel);
+  return model || DEFAULT_CONFIG.typeSafeModel;
+}
+function sanitizeConfidenceFloor(value) {
+  const floor = typeof value === "number" && Number.isFinite(value) ? value : DEFAULT_CONFIG.typeSafeConfidenceFloor;
+  return Math.min(0.95, Math.max(0.3, Math.round(floor * 100) / 100));
+}
 function hasPermission(name) {
   return runtime.grantedPermissions.has(name);
 }
@@ -13330,11 +13735,12 @@ function isAlreadyConceivedOrPregnant(stats) {
 function coinFlip() {
   return Math.random() < 0.5;
 }
-function checkConceptionTriggers(chatId, payload) {
+async function checkConceptionTriggers(chatId, payload, narrative) {
   if (!chatId)
     return [];
   const characters = getCharactersFromPayload(payload);
   const triggered = [];
+  const grayZone = [];
   for (const stats of characters) {
     if (!isFemaleOrFuta(stats))
       continue;
@@ -13349,18 +13755,51 @@ function checkConceptionTriggers(chatId, payload) {
     const fullness = Number(stats.womb_fullness_pct);
     if (!Number.isFinite(fullness) || fullness <= CONCEPTION_CONFIG.threshold)
       continue;
-    const key = `${chatId}::${stats.name}`;
+    const name = String(stats.name || "Unknown");
+    const key = `${chatId}::${name}`;
     if (conceptionNotified.has(key)) {
-      triggered.push(String(stats.name || "Unknown"));
+      triggered.push(name);
       continue;
     }
-    const shouldTrigger = fullness >= CONCEPTION_CONFIG.autoAt || coinFlip();
-    if (shouldTrigger) {
+    if (fullness >= CONCEPTION_CONFIG.autoAt) {
       conceptionNotified.add(key);
-      triggered.push(String(stats.name || "Unknown"));
+      triggered.push(name);
+    } else {
+      grayZone.push({ name, stats });
     }
   }
+  if (grayZone.length === 0)
+    return triggered;
+  for (const name of await resolveGrayZoneConception(chatId, grayZone, narrative)) {
+    conceptionNotified.add(`${chatId}::${name}`);
+    triggered.push(name);
+  }
   return triggered;
+}
+async function resolveGrayZoneConception(chatId, candidates, narrative) {
+  if (config.typeSafeEnabled && config.typeSafeConception && config.typeSafeApiKey.trim() && hasPermission("cors_proxy")) {
+    try {
+      const plan = buildConceptionQuestions(candidates);
+      const answers = await evaluateTypeSafe(typeSafeCorsTransport, { apiKey: config.typeSafeApiKey.trim(), model: config.typeSafeModel }, { scene: narrative.slice(0, VERIFY_NARRATIVE_CHAR_CAP), ...plan.state }, plan.questions);
+      const fired = interpretConceptionAnswers(answers, candidates);
+      await trackEvent("sst.typesafe.conception_decided", { fired, considered: candidates.map((c) => c.name) }, { chatId: chatId ?? undefined });
+      return fired;
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      spindle.log.warn(`TypeSafe conception gate unavailable, falling back to coin flip: ${detail}`);
+      await trackEvent("sst.typesafe.error", { stage: "conception", error: detail }, { level: "warn", chatId: chatId ?? undefined });
+    }
+  }
+  return candidates.filter(() => coinFlip()).map((c) => c.name);
+}
+function latestNarrativeBeat(messages) {
+  for (let i = messages.length - 1;i >= 0; i -= 1) {
+    const msg = messages[i];
+    if (!msg || msg.role !== "user" || typeof msg.content !== "string" || !msg.content.trim())
+      continue;
+    return msg.content;
+  }
+  return "";
 }
 function planForcedConception(chatId, names, conceptionDate) {
   if (!chatId || names.length === 0)
@@ -13878,8 +14317,16 @@ async function loadConfig(userId) {
       secondaryLLMMessageCount: sanitizeMessageCount(parsed.secondaryLLMMessageCount),
       secondaryLLMTemperature: sanitizeTemperature(parsed.secondaryLLMTemperature),
       secondaryLLMStripHTML: sanitizeBool(parsed.secondaryLLMStripHTML, DEFAULT_CONFIG.secondaryLLMStripHTML),
-      fertilityCycleBias: sanitizeFertilityCycleBias(parsed.fertilityCycleBias)
+      fertilityCycleBias: sanitizeFertilityCycleBias(parsed.fertilityCycleBias),
+      typeSafeEnabled: sanitizeBool(parsed.typeSafeEnabled, DEFAULT_CONFIG.typeSafeEnabled),
+      typeSafeApiKey: "",
+      typeSafeModel: sanitizeTypeSafeModel(parsed.typeSafeModel),
+      typeSafeQuickAppend: sanitizeBool(parsed.typeSafeQuickAppend, DEFAULT_CONFIG.typeSafeQuickAppend),
+      typeSafeVerify: sanitizeBool(parsed.typeSafeVerify, DEFAULT_CONFIG.typeSafeVerify),
+      typeSafeConception: sanitizeBool(parsed.typeSafeConception, DEFAULT_CONFIG.typeSafeConception),
+      typeSafeConfidenceFloor: sanitizeConfidenceFloor(parsed.typeSafeConfidenceFloor)
     };
+    config.typeSafeApiKey = await loadTypeSafeApiKey(userId);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     spindle.log.error(`Failed to load SimTracker settings for user ${userId}: ${message}`);
@@ -13961,7 +14408,27 @@ async function loadSeededTemplatePresets() {
 async function saveConfig(userId, configToSave = config) {
   if (!userId)
     throw new Error("A user id is required to save SimTracker settings.");
-  await spindle.userStorage.setJson(CONFIG_PATH, configToSave, { indent: 2, userId });
+  await spindle.userStorage.setJson(CONFIG_PATH, { ...configToSave, typeSafeApiKey: "" }, { indent: 2, userId });
+}
+async function loadTypeSafeApiKey(userId) {
+  try {
+    return await spindle.enclave.get(TYPE_SAFE_ENCLAVE_KEY, userId) ?? "";
+  } catch (err) {
+    spindle.log.warn(`Enclave unavailable; TypeSafe key not loaded: ${err instanceof Error ? err.message : String(err)}`);
+  }
+  return "";
+}
+async function syncTypeSafeKeyToEnclave(userId, nextKey, previousKey) {
+  const next = nextKey.trim();
+  try {
+    if (next && next !== previousKey) {
+      await spindle.enclave.put(TYPE_SAFE_ENCLAVE_KEY, next, userId);
+    } else if (!next && previousKey) {
+      await spindle.enclave.delete(TYPE_SAFE_ENCLAVE_KEY, userId);
+    }
+  } catch (err) {
+    spindle.log.warn(`Failed to persist the TypeSafe key to the enclave: ${err instanceof Error ? err.message : String(err)}`);
+  }
 }
 spindle.on("MESSAGE_SENT", (payload, userId) => {
   (async () => {
@@ -14196,6 +14663,24 @@ function describeMissingModelGuidance() {
 function describeRejectedModelGuidance(model) {
   return `The provider rejected the configured model id \`${model}\`. Open SimTracker settings \u2192 Secondary LLM and confirm the override matches a model this connection can serve, or clear the override to fall back to the connection's default.`;
 }
+async function commitTrackerAppend(chatId, targetMessage, parsed, via) {
+  const trackerBlock = formatTrackerPayload(parsed, config.trackerFormat, config.codeBlockIdentifier);
+  const updatedContent = `${targetMessage.content.trimEnd()}
+
+${trackerBlock}`;
+  await spindle.chat.updateMessage(chatId, targetMessage.id, { content: updatedContent });
+  lastSimStats = config.trackerFormat === "yaml" ? stringify3(parsed) : JSON.stringify(parsed, null, 2);
+  recordChatTracker(chatId, targetMessage.id, lastSimStats);
+  pushMacroValues();
+  spindle.log.info(`Tracker append complete via ${via}`);
+  spindle.sendToFrontend({
+    type: "secondary_generation_complete",
+    chatId,
+    messageId: targetMessage.id,
+    content: updatedContent,
+    via
+  }, activeUserId || undefined);
+}
 async function generateTrackerWithSecondaryLLM(chatId, targetMessageId) {
   if (!config.useSecondaryLLM)
     return;
@@ -14207,19 +14692,7 @@ async function generateTrackerWithSecondaryLLM(chatId, targetMessageId) {
     spindle.log.warn("Secondary LLM generation requires 'chat_mutation' permission");
     return;
   }
-  if (!hasPermission("generation_parameters")) {
-    const guidance = "Secondary LLM generation requires the 'generation_parameters' permission so the configured model id reaches the provider. Grant it in SimTracker's permission prompt and try again.";
-    spindle.log.warn(guidance);
-    spindle.sendToFrontend({ type: "secondary_generation_error", message: guidance, chatId, messageId: targetMessageId }, activeUserId || undefined);
-    return;
-  }
   const trimmedModel = (config.secondaryLLMModel || "").trim();
-  if (SECONDARY_LLM_MODEL_PLACEHOLDERS.has(trimmedModel.toLowerCase())) {
-    const guidance = describeMissingModelGuidance();
-    spindle.log.warn(guidance);
-    spindle.sendToFrontend({ type: "secondary_generation_error", message: guidance, chatId, messageId: targetMessageId }, activeUserId || undefined);
-    return;
-  }
   spindle.sendToFrontend({ type: "secondary_generation_started", chatId, messageId: targetMessageId }, activeUserId || undefined);
   try {
     await rehydrateChatTrackerHistory(chatId);
@@ -14253,6 +14726,59 @@ async function generateTrackerWithSecondaryLLM(chatId, targetMessageId) {
           found.unshift(payload);
       }
       historicalTrackers = found;
+    }
+    if (config.typeSafeEnabled && config.typeSafeQuickAppend && config.typeSafeApiKey.trim() && hasPermission("cors_proxy")) {
+      const previousPayload = historicalTrackers.length > 0 ? parseTrackerPayload(historicalTrackers[historicalTrackers.length - 1]) : null;
+      if (previousPayload) {
+        let fastLaneMessage = targetMessage.content.replace(buildTrackerTagRegex(tagName, "ig"), "").replace(buildTrackerFenceRegex(identifier, "gi"), "");
+        if (config.secondaryLLMStripHTML)
+          fastLaneMessage = stripStructuralHTML(fastLaneMessage);
+        const fields = (Array.isArray(preset.customFields) ? preset.customFields : []).map((field) => ({
+          key: typeof field?.key === "string" ? field.key : "",
+          description: typeof field?.description === "string" ? field.description : ""
+        })).filter((field) => field.key);
+        const plan = buildFastLanePlan({ message: fastLaneMessage.trim(), previousPayload, fields });
+        if (plan) {
+          let answers = null;
+          try {
+            answers = await evaluateTypeSafe(typeSafeCorsTransport, { apiKey: config.typeSafeApiKey.trim(), model: config.typeSafeModel }, plan.state, plan.questions);
+          } catch (err) {
+            const detail = err instanceof Error ? err.message : String(err);
+            spindle.log.warn(`TypeSafe fast lane unavailable, falling back to full secondary LLM: ${detail}`);
+            await trackEvent("sst.typesafe.error", { stage: "fast-lane", error: detail }, { level: "warn", chatId });
+          }
+          if (answers) {
+            const gate = interpretGate(answers, config.typeSafeConfidenceFloor);
+            if (gate === "skip") {
+              spindle.log.info("TypeSafe gate: no tracker changes warranted for this message");
+              await trackEvent("sst.typesafe.gate_skip", { messageId: targetMessageId }, { chatId });
+              spindle.sendToFrontend({ type: "secondary_generation_skipped", chatId, messageId: targetMessageId }, activeUserId || undefined);
+              return;
+            }
+            if (gate === "fast") {
+              const result2 = applyFastLaneAnswers(previousPayload, plan.directives, answers, config.typeSafeConfidenceFloor);
+              if (result2.changed.length > 0) {
+                await commitTrackerAppend(chatId, targetMessage, result2.payload, "typesafe-fast-lane");
+                await trackEvent("sst.typesafe.fast_append", { changed: result2.changed }, { chatId });
+                return;
+              }
+              await trackEvent("sst.typesafe.fast_append_fallback", { reason: "no-confident-changes" }, { chatId });
+            }
+          }
+        }
+      }
+    }
+    if (!hasPermission("generation_parameters")) {
+      const guidance = "Secondary LLM generation requires the 'generation_parameters' permission so the configured model id reaches the provider. Grant it in SimTracker's permission prompt and try again.";
+      spindle.log.warn(guidance);
+      spindle.sendToFrontend({ type: "secondary_generation_error", message: guidance, chatId, messageId: targetMessageId }, activeUserId || undefined);
+      return;
+    }
+    if (SECONDARY_LLM_MODEL_PLACEHOLDERS.has(trimmedModel.toLowerCase())) {
+      const guidance = describeMissingModelGuidance();
+      spindle.log.warn(guidance);
+      spindle.sendToFrontend({ type: "secondary_generation_error", message: guidance, chatId, messageId: targetMessageId }, activeUserId || undefined);
+      return;
     }
     const tagRe = buildTrackerTagRegex(tagName, "ig");
     const fenceRe = buildTrackerFenceRegex(identifier, "gi");
@@ -14332,25 +14858,35 @@ Based on the above conversation${hasHistory ? " and the previous tracker state(s
       spindle.sendToFrontend({ type: "secondary_generation_error", message: "LLM response was not valid tracker data", chatId, messageId: targetMessageId }, activeUserId || undefined);
       return;
     }
-    const trackerBlock = formatTrackerPayload(parsed, config.trackerFormat, config.codeBlockIdentifier);
-    const updatedContent = `${targetMessage.content.trimEnd()}
+    if (config.typeSafeEnabled && config.typeSafeVerify && config.typeSafeApiKey.trim() && hasPermission("cors_proxy") && historicalTrackers.length > 0) {
+      const previousPayload = parseTrackerPayload(historicalTrackers[historicalTrackers.length - 1]);
+      const narrative = cleanedMessages.map((msg) => `${msg.role === "user" ? "User" : "Character"}: ${msg.content}`).join(`
 
-${trackerBlock}`;
-    await spindle.chat.updateMessage(chatId, targetMessageId, { content: updatedContent });
-    lastSimStats = config.trackerFormat === "yaml" ? stringify3(parsed) : JSON.stringify(parsed, null, 2);
-    recordChatTracker(chatId, targetMessageId, lastSimStats);
-    pushMacroValues();
-    spindle.log.info("Secondary LLM generation complete");
+`);
+      const verifyPlan = previousPayload ? buildVerifyPlan({ narrative, previousPayload, generatedPayload: parsed }) : null;
+      if (verifyPlan) {
+        try {
+          const verdict = interpretVerifyAnswers(await evaluateTypeSafe(typeSafeCorsTransport, { apiKey: config.typeSafeApiKey.trim(), model: config.typeSafeModel }, verifyPlan.state, verifyPlan.questions));
+          if (!verdict.ok) {
+            const message = `TypeSafe verification rejected the generated tracker: ${verdict.reasons.join("; ")}`;
+            spindle.log.warn(message);
+            spindle.sendToFrontend({ type: "secondary_generation_error", message, chatId, messageId: targetMessageId }, activeUserId || undefined);
+            await trackEvent("sst.typesafe.verify_reject", { reasons: verdict.reasons }, { level: "warn", chatId });
+            return;
+          }
+          await trackEvent("sst.typesafe.verify_pass", {}, { chatId });
+        } catch (err) {
+          const detail = err instanceof Error ? err.message : String(err);
+          spindle.log.warn(`TypeSafe verification unavailable, appending anyway: ${detail}`);
+          await trackEvent("sst.typesafe.error", { stage: "verify", error: detail }, { level: "warn", chatId });
+        }
+      }
+    }
+    await commitTrackerAppend(chatId, targetMessage, parsed, "secondary-llm");
     await trackEvent("sst.secondary_generation.complete", {
       connectionId: config.secondaryLLMConnectionId,
       model: config.secondaryLLMModel
     }, { chatId });
-    spindle.sendToFrontend({
-      type: "secondary_generation_complete",
-      chatId,
-      messageId: targetMessageId,
-      content: updatedContent
-    }, activeUserId || undefined);
   } catch (err) {
     const rawMessage = err instanceof Error ? err.message : String(err);
     const looksLikeModelError = /\bmodel\b/i.test(rawMessage) && /(missing|invalid|empty|required|not.*found)/i.test(rawMessage);
@@ -14696,6 +15232,13 @@ ${formatTrackerForPrompt(entry.payload)}`).join(`
 
 ${snapshots}`;
 }
+function withTrailingDirective(messages, directive) {
+  if (!directive)
+    return messages;
+  const injected = messages.slice();
+  injected.splice(Math.max(0, injected.length - 1), 0, { role: "system", content: directive });
+  return injected;
+}
 var interceptorRegistered = false;
 function tryRegisterInterceptor() {
   if (interceptorRegistered)
@@ -14712,28 +15255,34 @@ function tryRegisterInterceptor() {
       const retained = stripOldTrackerBlocksGlobal(messages, config.codeBlockIdentifier, keepNewest);
       if (keepNewest === 0)
         return retained;
-      const currentCount = countTrackersInMessages(retained, keepNewest);
-      if (currentCount >= keepNewest)
-        return formatTrackerBlocksInMessages(retained);
       const chatId = resolveInterceptorChatId(context);
-      if (!chatId)
-        return formatTrackerBlocksInMessages(retained);
-      await rehydrateChatTrackerHistory(chatId);
-      const needed = keepNewest - currentCount;
-      const preMutationLatest = getRecentChatTrackers(chatId, 1);
-      const latestPayload = preMutationLatest.length > 0 ? parseTrackerPayload(preMutationLatest[preMutationLatest.length - 1].payload) : null;
-      const conceptionNames = latestPayload ? checkConceptionTriggers(chatId, latestPayload) : [];
-      if (latestPayload && conceptionNames.length > 0) {
-        const plan = planForcedConception(chatId, conceptionNames, extractCurrentDate(latestPayload));
-        if (plan) {
-          commitForcedConception(chatId, plan);
-          rewriteTrackerInMessages(retained, plan.oldPayload, plan.newPayload);
+      let conceptionDirective = "";
+      if (chatId) {
+        await rehydrateChatTrackerHistory(chatId);
+        const preMutationLatest = getRecentChatTrackers(chatId, 1);
+        const latestPayload = preMutationLatest.length > 0 ? parseTrackerPayload(preMutationLatest[preMutationLatest.length - 1].payload) : null;
+        if (latestPayload) {
+          const conceptionNames = await checkConceptionTriggers(chatId, latestPayload, latestNarrativeBeat(retained));
+          if (conceptionNames.length > 0) {
+            const plan = planForcedConception(chatId, conceptionNames, extractCurrentDate(latestPayload));
+            if (plan) {
+              commitForcedConception(chatId, plan);
+              rewriteTrackerInMessages(retained, plan.oldPayload, plan.newPayload);
+            }
+            conceptionDirective = buildConceptionDirective(conceptionNames);
+          }
         }
       }
-      const conceptionDirective = buildConceptionDirective(conceptionNames);
+      const currentCount = countTrackersInMessages(retained, keepNewest);
+      if (currentCount >= keepNewest) {
+        return withTrailingDirective(formatTrackerBlocksInMessages(retained), conceptionDirective);
+      }
+      if (!chatId)
+        return formatTrackerBlocksInMessages(retained);
+      const needed = keepNewest - currentCount;
       const history = getRecentChatTrackers(chatId, keepNewest);
       if (history.length === 0) {
-        return formatTrackerBlocksInMessages(retained);
+        return withTrailingDirective(formatTrackerBlocksInMessages(retained), conceptionDirective);
       }
       const existingPayloads = new Set;
       for (const msg of retained) {
@@ -14745,7 +15294,7 @@ function tryRegisterInterceptor() {
       }
       const toInject = history.slice().reverse().filter((entry) => !existingPayloads.has(entry.payload.trim())).slice(0, needed).reverse();
       if (toInject.length === 0)
-        return formatTrackerBlocksInMessages(retained);
+        return withTrailingDirective(formatTrackerBlocksInMessages(retained), conceptionDirective);
       const block = buildTrackerInjectionBlock(toInject);
       const promptMessages = formatTrackerBlocksInMessages(retained);
       let lastAssistantIdx = -1;
@@ -14766,18 +15315,12 @@ function tryRegisterInterceptor() {
 
 ${block}` : block
         };
-        if (conceptionDirective) {
-          injected2.splice(injected2.length - 1, 0, { role: "system", content: conceptionDirective });
-        }
-        return injected2;
+        return withTrailingDirective(injected2, conceptionDirective);
       }
       const injected = promptMessages.slice();
       const insertAt = Math.max(0, injected.length - 1);
       injected.splice(insertAt, 0, { role: "system", content: block });
-      if (conceptionDirective) {
-        injected.splice(insertAt + 1, 0, { role: "system", content: conceptionDirective });
-      }
-      return injected;
+      return withTrailingDirective(injected, conceptionDirective);
     }, 90);
     interceptorRegistered = true;
     spindle.log.info("Interceptor registered");
@@ -14962,6 +15505,7 @@ spindle.onFrontendMessage(async (payload, userId) => {
     try {
       await ensureConfigForUser(userId);
       const incoming = message.config;
+      const previousTypeSafeKey = config.typeSafeApiKey.trim();
       config = {
         trackerTagName: sanitizeTagName(incoming?.trackerTagName ?? config.trackerTagName),
         codeBlockIdentifier: sanitizeIdentifier(incoming?.codeBlockIdentifier ?? config.codeBlockIdentifier),
@@ -14978,8 +15522,16 @@ spindle.onFrontendMessage(async (payload, userId) => {
         secondaryLLMMessageCount: sanitizeMessageCount(incoming?.secondaryLLMMessageCount ?? config.secondaryLLMMessageCount),
         secondaryLLMTemperature: sanitizeTemperature(incoming?.secondaryLLMTemperature ?? config.secondaryLLMTemperature),
         secondaryLLMStripHTML: sanitizeBool(incoming?.secondaryLLMStripHTML ?? config.secondaryLLMStripHTML, config.secondaryLLMStripHTML),
-        fertilityCycleBias: sanitizeFertilityCycleBias(incoming?.fertilityCycleBias ?? config.fertilityCycleBias)
+        fertilityCycleBias: sanitizeFertilityCycleBias(incoming?.fertilityCycleBias ?? config.fertilityCycleBias),
+        typeSafeEnabled: sanitizeBool(incoming?.typeSafeEnabled ?? config.typeSafeEnabled, config.typeSafeEnabled),
+        typeSafeApiKey: sanitizeStr(incoming?.typeSafeApiKey ?? config.typeSafeApiKey, config.typeSafeApiKey),
+        typeSafeModel: sanitizeTypeSafeModel(incoming?.typeSafeModel ?? config.typeSafeModel),
+        typeSafeQuickAppend: sanitizeBool(incoming?.typeSafeQuickAppend ?? config.typeSafeQuickAppend, config.typeSafeQuickAppend),
+        typeSafeVerify: sanitizeBool(incoming?.typeSafeVerify ?? config.typeSafeVerify, config.typeSafeVerify),
+        typeSafeConception: sanitizeBool(incoming?.typeSafeConception ?? config.typeSafeConception, config.typeSafeConception),
+        typeSafeConfidenceFloor: sanitizeConfidenceFloor(incoming?.typeSafeConfidenceFloor ?? config.typeSafeConfidenceFloor)
       };
+      await syncTypeSafeKeyToEnclave(userId, config.typeSafeApiKey, previousTypeSafeKey);
       await saveConfig(userId);
       pushMacroValues();
       await trackEvent("sst.config.updated", {
