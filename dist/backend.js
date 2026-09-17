@@ -3131,7 +3131,6 @@ var pulse_thread_tracker_default = {
         --pt-border: var(--lcs-glass-border, var(--lumiverse-border, rgba(255, 255, 255, 0.10)));
         --pt-border-hover: var(--lcs-glass-border-hover, var(--lumiverse-border-hover, rgba(255, 255, 255, 0.16)));
         --pt-blur: min(var(--lcs-glass-soft-blur, 6px), 8px);
-        --pt-shadow: var(--lumiverse-shadow-lg, 0 24px 60px -12px rgba(0, 0, 0, 0.7));
         --pt-radius: calc(var(--lcs-radius, 14px) + 12px);
         --pt-radius-sm: calc(var(--lcs-radius-sm, 8px) + 4px);
         --pt-radius-xs: var(--lcs-radius-sm, 8px);
@@ -3173,7 +3172,7 @@ var pulse_thread_tracker_default = {
         overflow: hidden;
         isolation: isolate;
         contain: layout style paint;
-        box-shadow: var(--pt-shadow), var(--lumiverse-highlight-inset, inset 0 1px 0 rgba(255, 255, 255, 0.08));
+        box-shadow: var(--lumiverse-highlight-inset, inset 0 1px 0 rgba(255, 255, 255, 0.08));
         border: 1px solid var(--pt-border);
         background: linear-gradient(
             180deg,
@@ -3579,20 +3578,53 @@ var pulse_thread_tracker_default = {
     .pt-womb-ovary.pulse {
         fill: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 40%, rgba(255,255,255,0.16));
         stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 72%, rgba(255,255,255,0.22));
-        filter: drop-shadow(0 0 4px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 55%, transparent));
+        filter: drop-shadow(0 0 6px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 70%, transparent));
         animation: ovaryPulse 2.4s ease-in-out infinite;
+    }
+
+    /* Conception halo: an expanding ring behind each ovary. It sits at opacity 0
+       unless .pulse (isConceived) is present, so non-conceived characters are
+       untouched. The static scale/opacity on .pulse is the visible fallback when
+       animations are disabled (see the prefers-reduced-motion block above). */
+    .pt-womb-ovary-halo {
+        fill: none;
+        stroke: transparent;
+        stroke-width: 1.2;
+        opacity: 0;
+        /* Same fill-box anchoring as the ovary, so the ring breathes in place. */
+        transform-box: fill-box;
+        transform-origin: center;
+    }
+
+    .pt-womb-ovary-halo.pulse {
+        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 88%, white 12%);
+        transform: scale(1.45);
+        opacity: 0.32;
+        animation: ovaryHalo 2.4s ease-out infinite;
     }
 
     @keyframes ovaryPulse {
         0%, 100% {
             transform: scale(1);
             opacity: 1;
-            filter: drop-shadow(0 0 3px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 45%, transparent));
+            filter: drop-shadow(0 0 5px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 60%, transparent));
         }
         50% {
-            transform: scale(1.06);
-            opacity: 0.96;
-            filter: drop-shadow(0 0 7px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 70%, transparent));
+            transform: scale(1.14);
+            opacity: 1;
+            filter: drop-shadow(0 0 10px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 95%, transparent));
+        }
+    }
+
+    @keyframes ovaryHalo {
+        0% {
+            transform: scale(0.9);
+            opacity: 0.55;
+        }
+        60%, 100% {
+            /* r=5 at scale 2.15 stays inside the 100x160 viewBox for cx=14 and cx=86. */
+            transform: scale(2.15);
+            opacity: 0;
         }
     }
 
@@ -4737,8 +4769,10 @@ var pulse_thread_tracker_default = {
                                     </linearGradient>
                                 </defs>
                                 <path class="pt-womb-outline" d="M36 30 C28 22 18 24 14 28 M64 30 C72 22 82 24 86 28 M36 30 C34 36 38 40 42 43 M64 30 C66 36 62 40 58 43 M42 43 C38 38 32 37 28 42 C24 47 27 55 34 58 M58 43 C62 38 68 37 72 42 C76 47 73 55 66 58 M50 24 C62 24 72 34 72 46 C72 57 66 66 58 74 C54 78 52 83 50 88 C48 83 46 78 42 74 C34 66 28 57 28 46 C28 34 38 24 50 24 Z" />
+                                <circle class="pt-womb-ovary-halo {{#if (isConceived stats)}}pulse{{/if}}" cx="14" cy="30" r="5" />
                                 <circle class="pt-womb-ovary {{#if (isConceived stats)}}pulse{{/if}}" cx="14" cy="30" r="5" />
                                 {{#unless (or stats.preg (eq (cycleStage stats) "pregnancy"))}}
+                                <circle class="pt-womb-ovary-halo {{#if (isConceived stats)}}pulse{{/if}}" cx="86" cy="30" r="5" />
                                 <circle class="pt-womb-ovary {{#if (isConceived stats)}}pulse{{/if}}" cx="86" cy="30" r="5" />
                                 {{/unless}}
                                 {{#if (or stats.preg (eq (cycleStage stats) "pregnancy"))}}
@@ -7182,8 +7216,8 @@ function toJS(value, arg, ctx) {
       return value.toJSON(arg, ctx);
     const data = { aliasCount: 0, count: 1, res: undefined };
     ctx.anchors.set(value, data);
-    ctx.onCreate = (res2) => {
-      data.res = res2;
+    ctx.onCreate = (res) => {
+      data.res = res;
       delete ctx.onCreate;
     };
     const res = value.toJSON(arg, ctx);
@@ -7220,8 +7254,8 @@ class NodeBase {
     };
     const res = toJS(this, "", ctx);
     if (typeof onAnchor === "function")
-      for (const { count, res: res2 } of ctx.anchors.values())
-        onAnchor(res2, count);
+      for (const { count, res } of ctx.anchors.values())
+        onAnchor(res, count);
     return typeof reviver === "function" ? applyReviver(reviver, { "": res }, "", res) : res;
   }
 }
@@ -7391,10 +7425,10 @@ function createNode(value, tagName, ctx) {
       value = value.toJSON();
     }
     if (!value || typeof value !== "object") {
-      const node2 = new Scalar(value);
+      const node = new Scalar(value);
       if (ref)
-        ref.node = node2;
-      return node2;
+        ref.node = node;
+      return node;
     }
     tagObj = value instanceof Map ? schema[MAP] : (Symbol.iterator in Object(value)) ? schema[SEQ] : schema[MAP];
   }
@@ -7627,17 +7661,17 @@ function foldFlowLines(text, indent, mode = "flow", { indentAtStart, lineWidth =
   if (onFold)
     onFold();
   let res = text.slice(0, folds[0]);
-  for (let i2 = 0;i2 < folds.length; ++i2) {
-    const fold = folds[i2];
-    const end2 = folds[i2 + 1] || text.length;
+  for (let i = 0;i < folds.length; ++i) {
+    const fold = folds[i];
+    const end = folds[i + 1] || text.length;
     if (fold === 0)
       res = `
-${indent}${text.slice(0, end2)}`;
+${indent}${text.slice(0, end)}`;
     else {
       if (mode === FOLD_QUOTED && escapedFolds[fold])
         res += `${text[fold]}\\`;
       res += `
-${indent}${text.slice(fold + 1, end2)}`;
+${indent}${text.slice(fold + 1, end)}`;
     }
   }
   return res;
@@ -8232,15 +8266,15 @@ function mergeValue(ctx, map, value) {
   if (!isMap(source))
     throw new Error("Merge sources must be maps or map aliases");
   const srcMap = source.toJSON(null, ctx, Map);
-  for (const [key, value2] of srcMap) {
+  for (const [key, value] of srcMap) {
     if (map instanceof Map) {
       if (!map.has(key))
-        map.set(key, value2);
+        map.set(key, value);
     } else if (map instanceof Set) {
       map.add(key);
     } else if (!Object.prototype.hasOwnProperty.call(map, key)) {
       Object.defineProperty(map, key, {
-        value: value2,
+        value,
         writable: true,
         enumerable: true,
         configurable: true
@@ -8336,8 +8370,8 @@ class Pair {
 // node_modules/yaml/browser/dist/stringify/stringifyCollection.js
 function stringifyCollection(collection, ctx, options) {
   const flow = ctx.inFlow ?? collection.flow;
-  const stringify2 = flow ? stringifyFlowCollection : stringifyBlockCollection;
-  return stringify2(collection, ctx, options);
+  const stringify = flow ? stringifyFlowCollection : stringifyBlockCollection;
+  return stringify(collection, ctx, options);
 }
 function stringifyBlockCollection({ comment, items }, ctx, { blockItemPrefix, flowChars, itemIndent, onChompKeep, onComment }) {
   const { indent, options: { commentString } } = ctx;
@@ -8346,13 +8380,13 @@ function stringifyBlockCollection({ comment, items }, ctx, { blockItemPrefix, fl
   const lines = [];
   for (let i = 0;i < items.length; ++i) {
     const item = items[i];
-    let comment2 = null;
+    let comment = null;
     if (isNode(item)) {
       if (!chompKeep && item.spaceBefore)
         lines.push("");
       addCommentBefore(ctx, lines, item.commentBefore, chompKeep);
       if (item.comment)
-        comment2 = item.comment;
+        comment = item.comment;
     } else if (isPair(item)) {
       const ik = isNode(item.key) ? item.key : null;
       if (ik) {
@@ -8362,12 +8396,12 @@ function stringifyBlockCollection({ comment, items }, ctx, { blockItemPrefix, fl
       }
     }
     chompKeep = false;
-    let str2 = stringify(item, itemCtx, () => comment2 = null, () => chompKeep = true);
-    if (comment2)
-      str2 += lineComment(str2, itemIndent, commentString(comment2));
-    if (chompKeep && comment2)
+    let str = stringify(item, itemCtx, () => comment = null, () => chompKeep = true);
+    if (comment)
+      str += lineComment(str, itemIndent, commentString(comment));
+    if (chompKeep && comment)
       chompKeep = false;
-    lines.push(blockItemPrefix + str2);
+    lines.push(blockItemPrefix + str);
   }
   let str;
   if (lines.length === 0) {
@@ -8595,10 +8629,10 @@ var map = {
   default: true,
   nodeClass: YAMLMap,
   tag: "tag:yaml.org,2002:map",
-  resolve(map2, onError) {
-    if (!isMap(map2))
+  resolve(map, onError) {
+    if (!isMap(map))
       onError("Expected a mapping for this tag");
-    return map2;
+    return map;
   },
   createNode: (schema, obj, ctx) => YAMLMap.from(schema, obj, ctx)
 };
@@ -8692,10 +8726,10 @@ var seq = {
   default: true,
   nodeClass: YAMLSeq,
   tag: "tag:yaml.org,2002:seq",
-  resolve(seq2, onError) {
-    if (!isSeq(seq2))
+  resolve(seq, onError) {
+    if (!isSeq(seq))
       onError("Expected a sequence for this tag");
-    return seq2;
+    return seq;
   },
   createNode: (schema, obj, ctx) => YAMLSeq.from(schema, obj, ctx)
 };
@@ -8923,10 +8957,10 @@ var binary = {
 };
 
 // node_modules/yaml/browser/dist/schema/yaml-1.1/pairs.js
-function resolvePairs(seq2, onError) {
-  if (isSeq(seq2)) {
-    for (let i = 0;i < seq2.items.length; ++i) {
-      let item = seq2.items[i];
+function resolvePairs(seq, onError) {
+  if (isSeq(seq)) {
+    for (let i = 0;i < seq.items.length; ++i) {
+      let item = seq.items[i];
       if (isPair(item))
         continue;
       else if (isMap(item)) {
@@ -8943,15 +8977,15 @@ ${cn.comment}` : item.comment;
         }
         item = pair;
       }
-      seq2.items[i] = isPair(item) ? item : new Pair(item);
+      seq.items[i] = isPair(item) ? item : new Pair(item);
     }
   } else
     onError("Expected a sequence for this tag");
-  return seq2;
+  return seq;
 }
-function createPairs(schema3, iterable, ctx) {
+function createPairs(schema, iterable, ctx) {
   const { replacer } = ctx;
-  const pairs = new YAMLSeq(schema3);
+  const pairs = new YAMLSeq(schema);
   pairs.tag = "tag:yaml.org,2002:pairs";
   let i = 0;
   if (iterable && Symbol.iterator in Object(iterable))
@@ -9002,9 +9036,9 @@ class YAMLOMap extends YAMLSeq {
   toJSON(_, ctx) {
     if (!ctx)
       return super.toJSON(_);
-    const map2 = new Map;
+    const map = new Map;
     if (ctx?.onCreate)
-      ctx.onCreate(map2);
+      ctx.onCreate(map);
     for (const pair of this.items) {
       let key, value;
       if (isPair(pair)) {
@@ -9013,16 +9047,16 @@ class YAMLOMap extends YAMLSeq {
       } else {
         key = toJS(pair, "", ctx);
       }
-      if (map2.has(key))
+      if (map.has(key))
         throw new Error("Ordered maps must not include duplicate keys");
-      map2.set(key, value);
+      map.set(key, value);
     }
-    return map2;
+    return map;
   }
-  static from(schema3, iterable, ctx) {
-    const pairs2 = createPairs(schema3, iterable, ctx);
+  static from(schema, iterable, ctx) {
+    const pairs = createPairs(schema, iterable, ctx);
     const omap = new this;
-    omap.items = pairs2.items;
+    omap.items = pairs.items;
     return omap;
   }
 }
@@ -9033,10 +9067,10 @@ var omap = {
   nodeClass: YAMLOMap,
   default: false,
   tag: "tag:yaml.org,2002:omap",
-  resolve(seq2, onError) {
-    const pairs2 = resolvePairs(seq2, onError);
+  resolve(seq, onError) {
+    const pairs = resolvePairs(seq, onError);
     const seenKeys = [];
-    for (const { key } of pairs2.items) {
+    for (const { key } of pairs.items) {
       if (isScalar(key)) {
         if (seenKeys.includes(key.value)) {
           onError(`Ordered maps must not include duplicate keys: ${key.value}`);
@@ -9045,9 +9079,9 @@ var omap = {
         }
       }
     }
-    return Object.assign(new YAMLOMap, pairs2);
+    return Object.assign(new YAMLOMap, pairs);
   },
-  createNode: (schema3, iterable, ctx) => YAMLOMap.from(schema3, iterable, ctx)
+  createNode: (schema, iterable, ctx) => YAMLOMap.from(schema, iterable, ctx)
 };
 
 // node_modules/yaml/browser/dist/schema/yaml-1.1/bool.js
@@ -9132,8 +9166,8 @@ function intResolve2(str, offset, radix, { intAsBigInt }) {
         str = `0x${str}`;
         break;
     }
-    const n2 = BigInt(str);
-    return sign === "-" ? BigInt(-1) * n2 : n2;
+    const n = BigInt(str);
+    return sign === "-" ? BigInt(-1) * n : n;
   }
   const n = parseInt(str, radix);
   return sign === "-" ? -1 * n : n;
@@ -9184,8 +9218,8 @@ var intHex2 = {
 
 // node_modules/yaml/browser/dist/schema/yaml-1.1/set.js
 class YAMLSet extends YAMLMap {
-  constructor(schema3) {
-    super(schema3);
+  constructor(schema) {
+    super(schema);
     this.tag = YAMLSet.tag;
   }
   add(key) {
@@ -9225,9 +9259,9 @@ class YAMLSet extends YAMLMap {
     else
       throw new Error("Set items must all have null values");
   }
-  static from(schema3, iterable, ctx) {
+  static from(schema, iterable, ctx) {
     const { replacer } = ctx;
-    const set = new this(schema3);
+    const set = new this(schema);
     if (iterable && Symbol.iterator in Object(iterable))
       for (let value of iterable) {
         if (typeof replacer === "function")
@@ -9244,16 +9278,16 @@ var set = {
   nodeClass: YAMLSet,
   default: false,
   tag: "tag:yaml.org,2002:set",
-  createNode: (schema3, iterable, ctx) => YAMLSet.from(schema3, iterable, ctx),
-  resolve(map2, onError) {
-    if (isMap(map2)) {
-      if (map2.hasAllNullValues(true))
-        return Object.assign(new YAMLSet, map2);
+  createNode: (schema, iterable, ctx) => YAMLSet.from(schema, iterable, ctx),
+  resolve(map, onError) {
+    if (isMap(map)) {
+      if (map.hasAllNullValues(true))
+        return Object.assign(new YAMLSet, map);
       else
         onError("Set items must all have null values");
     } else
       onError("Expected a mapping for this tag");
-    return map2;
+    return map;
   }
 };
 
@@ -9262,7 +9296,7 @@ function parseSexagesimal(str, asBigInt) {
   const sign = str[0];
   const parts = sign === "-" || sign === "+" ? str.substring(1) : str;
   const num = (n) => asBigInt ? BigInt(n) : Number(n);
-  const res = parts.replace(/_/g, "").split(":").reduce((res2, p) => res2 * num(60) + num(p), num(0));
+  const res = parts.replace(/_/g, "").split(":").reduce((res, p) => res * num(60) + num(p), num(0));
   return sign === "-" ? num(-1) * res : res;
 }
 function stringifySexagesimal(node) {
@@ -9416,16 +9450,16 @@ function getTags(customTags, schemaName, addMergeTag) {
   }
   if (addMergeTag)
     tags = tags.concat(merge);
-  return tags.reduce((tags2, tag) => {
+  return tags.reduce((tags, tag) => {
     const tagObj = typeof tag === "string" ? tagsByName[tag] : tag;
     if (!tagObj) {
       const tagName = JSON.stringify(tag);
       const keys = Object.keys(tagsByName).map((key) => JSON.stringify(key)).join(", ");
       throw new Error(`Unknown custom tag ${tagName}; use one of ${keys}`);
     }
-    if (!tags2.includes(tagObj))
-      tags2.push(tagObj);
-    return tags2;
+    if (!tags.includes(tagObj))
+      tags.push(tagObj);
+    return tags;
   }, []);
 }
 
@@ -9433,11 +9467,11 @@ function getTags(customTags, schemaName, addMergeTag) {
 var sortMapEntriesByKey = (a, b) => a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
 
 class Schema {
-  constructor({ compat, customTags, merge: merge2, resolveKnownTags, schema: schema4, sortMapEntries, toStringDefaults }) {
+  constructor({ compat, customTags, merge, resolveKnownTags, schema, sortMapEntries, toStringDefaults }) {
     this.compat = Array.isArray(compat) ? getTags(compat, "compat") : compat ? getTags(null, compat) : null;
-    this.name = typeof schema4 === "string" && schema4 || "core";
+    this.name = typeof schema === "string" && schema || "core";
     this.knownTags = resolveKnownTags ? coreKnownTags : {};
-    this.tags = getTags(customTags, this.name, merge2);
+    this.tags = getTags(customTags, this.name, merge);
     this.toStringOptions = toStringDefaults ?? null;
     Object.defineProperty(this, MAP, { value: map });
     Object.defineProperty(this, SCALAR, { value: string });
@@ -9722,8 +9756,8 @@ class Document {
     };
     const res = toJS(this.contents, jsonArg ?? "", ctx);
     if (typeof onAnchor === "function")
-      for (const { count, res: res2 } of ctx.anchors.values())
-        onAnchor(res2, count);
+      for (const { count, res } of ctx.anchors.values())
+        onAnchor(res, count);
     return typeof reviver === "function" ? applyReviver(reviver, { "": res }, "", res) : res;
   }
   toJSON(jsonArg, onAnchor) {
@@ -9992,7 +10026,7 @@ function mapIncludes(ctx, items, search) {
 var startColMsg = "All mapping items must start at the same column";
 function resolveBlockMap({ composeNode, composeEmptyNode }, ctx, bm, onError, tag) {
   const NodeClass = tag?.nodeClass ?? YAMLMap;
-  const map2 = new NodeClass(ctx.schema);
+  const map = new NodeClass(ctx.schema);
   if (ctx.atRoot)
     ctx.atRoot = false;
   let offset = bm.offset;
@@ -10018,11 +10052,11 @@ function resolveBlockMap({ composeNode, composeEmptyNode }, ctx, bm, onError, ta
       if (!keyProps.anchor && !keyProps.tag && !sep) {
         commentEnd = keyProps.end;
         if (keyProps.comment) {
-          if (map2.comment)
-            map2.comment += `
+          if (map.comment)
+            map.comment += `
 ` + keyProps.comment;
           else
-            map2.comment = keyProps.comment;
+            map.comment = keyProps.comment;
         }
         continue;
       }
@@ -10038,7 +10072,7 @@ function resolveBlockMap({ composeNode, composeEmptyNode }, ctx, bm, onError, ta
     if (ctx.schema.compat)
       flowIndentCheck(bm.indent, key, onError);
     ctx.atKey = false;
-    if (mapIncludes(ctx, map2.items, keyNode))
+    if (mapIncludes(ctx, map.items, keyNode))
       onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
     const valueProps = resolveProps(sep ?? [], {
       indicator: "map-value-ind",
@@ -10063,7 +10097,7 @@ function resolveBlockMap({ composeNode, composeEmptyNode }, ctx, bm, onError, ta
       const pair = new Pair(keyNode, valueNode);
       if (ctx.options.keepSourceTokens)
         pair.srcToken = collItem;
-      map2.items.push(pair);
+      map.items.push(pair);
     } else {
       if (implicitKey)
         onError(keyNode.range, "MISSING_CHAR", "Implicit map keys need to be followed by map values");
@@ -10077,19 +10111,19 @@ function resolveBlockMap({ composeNode, composeEmptyNode }, ctx, bm, onError, ta
       const pair = new Pair(keyNode);
       if (ctx.options.keepSourceTokens)
         pair.srcToken = collItem;
-      map2.items.push(pair);
+      map.items.push(pair);
     }
   }
   if (commentEnd && commentEnd < offset)
     onError(commentEnd, "IMPOSSIBLE", "Map comment with trailing content");
-  map2.range = [bm.offset, offset, commentEnd ?? offset];
-  return map2;
+  map.range = [bm.offset, offset, commentEnd ?? offset];
+  return map;
 }
 
 // node_modules/yaml/browser/dist/compose/resolve-block-seq.js
 function resolveBlockSeq({ composeNode, composeEmptyNode }, ctx, bs, onError, tag) {
   const NodeClass = tag?.nodeClass ?? YAMLSeq;
-  const seq2 = new NodeClass(ctx.schema);
+  const seq = new NodeClass(ctx.schema);
   if (ctx.atRoot)
     ctx.atRoot = false;
   if (ctx.atKey)
@@ -10114,7 +10148,7 @@ function resolveBlockSeq({ composeNode, composeEmptyNode }, ctx, bs, onError, ta
       } else {
         commentEnd = props.end;
         if (props.comment)
-          seq2.comment = props.comment;
+          seq.comment = props.comment;
         continue;
       }
     }
@@ -10122,10 +10156,10 @@ function resolveBlockSeq({ composeNode, composeEmptyNode }, ctx, bs, onError, ta
     if (ctx.schema.compat)
       flowIndentCheck(bs.indent, value, onError);
     offset = node.range[2];
-    seq2.items.push(node);
+    seq.items.push(node);
   }
-  seq2.range = [bs.offset, offset, commentEnd ?? offset];
-  return seq2;
+  seq.range = [bs.offset, offset, commentEnd ?? offset];
+  return seq;
 }
 
 // node_modules/yaml/browser/dist/compose/resolve-end.js
@@ -10169,9 +10203,9 @@ function resolveEnd(end, offset, reqSpace, onError) {
 var blockMsg = "Block collections are not allowed within flow collections";
 var isBlock = (token) => token && (token.type === "block-map" || token.type === "block-seq");
 function resolveFlowCollection({ composeNode, composeEmptyNode }, ctx, fc, onError, tag) {
-  const isMap2 = fc.start.source === "{";
-  const fcName = isMap2 ? "flow map" : "flow sequence";
-  const NodeClass = tag?.nodeClass ?? (isMap2 ? YAMLMap : YAMLSeq);
+  const isMap = fc.start.source === "{";
+  const fcName = isMap ? "flow map" : "flow sequence";
+  const NodeClass = tag?.nodeClass ?? (isMap ? YAMLMap : YAMLSeq);
   const coll = new NodeClass(ctx.schema);
   coll.flow = true;
   const atRoot = ctx.atRoot;
@@ -10208,7 +10242,7 @@ function resolveFlowCollection({ composeNode, composeEmptyNode }, ctx, fc, onErr
         offset = props.end;
         continue;
       }
-      if (!isMap2 && ctx.options.strict && containsNewline(key))
+      if (!isMap && ctx.options.strict && containsNewline(key))
         onError(key, "MULTILINE_IMPLICIT_KEY", "Implicit keys of flow sequence pairs need to be on a single line");
     }
     if (i === 0) {
@@ -10245,7 +10279,7 @@ function resolveFlowCollection({ composeNode, composeEmptyNode }, ctx, fc, onErr
         }
       }
     }
-    if (!isMap2 && !sep && !props.found) {
+    if (!isMap && !sep && !props.found) {
       const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep, null, props, onError);
       coll.items.push(valueNode);
       offset = valueNode.range[2];
@@ -10268,7 +10302,7 @@ function resolveFlowCollection({ composeNode, composeEmptyNode }, ctx, fc, onErr
         startOnNewline: false
       });
       if (valueProps.found) {
-        if (!isMap2 && !props.found && ctx.options.strict) {
+        if (!isMap && !props.found && ctx.options.strict) {
           if (sep)
             for (const st of sep) {
               if (st === valueProps.found)
@@ -10301,23 +10335,23 @@ function resolveFlowCollection({ composeNode, composeEmptyNode }, ctx, fc, onErr
       const pair = new Pair(keyNode, valueNode);
       if (ctx.options.keepSourceTokens)
         pair.srcToken = collItem;
-      if (isMap2) {
-        const map2 = coll;
-        if (mapIncludes(ctx, map2.items, keyNode))
+      if (isMap) {
+        const map = coll;
+        if (mapIncludes(ctx, map.items, keyNode))
           onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
-        map2.items.push(pair);
+        map.items.push(pair);
       } else {
-        const map2 = new YAMLMap(ctx.schema);
-        map2.flow = true;
-        map2.items.push(pair);
+        const map = new YAMLMap(ctx.schema);
+        map.flow = true;
+        map.items.push(pair);
         const endRange = (valueNode ?? keyNode).range;
-        map2.range = [keyNode.range[0], endRange[1], endRange[2]];
-        coll.items.push(map2);
+        map.range = [keyNode.range[0], endRange[1], endRange[2]];
+        coll.items.push(map);
       }
       offset = valueNode ? valueNode.range[2] : valueProps.end;
     }
   }
-  const expectedEnd = isMap2 ? "}" : "]";
+  const expectedEnd = isMap ? "}" : "]";
   const [ce, ...ee] = fc.end;
   let cePos = offset;
   if (ce?.source === expectedEnd)
@@ -10414,12 +10448,12 @@ function resolveBlockScalar(ctx, scalar, onError) {
       break;
   }
   if (chompStart === 0) {
-    const value2 = header.chomp === "+" && lines.length > 0 ? `
+    const value = header.chomp === "+" && lines.length > 0 ? `
 `.repeat(Math.max(1, lines.length - 1)) : "";
-    let end2 = start + header.length;
+    let end = start + header.length;
     if (scalar.source)
-      end2 += scalar.source.length;
-    return { value: value2, type, comment: header.comment, range: [start, end2, end2] };
+      end += scalar.source.length;
+    return { value, type, comment: header.comment, range: [start, end, end] };
   }
   let trimIndent = scalar.indent + header.indent;
   let offset = scalar.offset + header.length;
@@ -10831,11 +10865,11 @@ function composeScalar(ctx, token, tagToken, onError) {
     scalar.comment = comment;
   return scalar;
 }
-function findScalarTagByName(schema4, value, tagName, tagToken, onError) {
+function findScalarTagByName(schema, value, tagName, tagToken, onError) {
   if (tagName === "!")
-    return schema4[SCALAR];
+    return schema[SCALAR];
   const matchWithTest = [];
-  for (const tag of schema4.tags) {
+  for (const tag of schema.tags) {
     if (!tag.collection && tag.tag === tagName) {
       if (tag.default && tag.test)
         matchWithTest.push(tag);
@@ -10846,18 +10880,18 @@ function findScalarTagByName(schema4, value, tagName, tagToken, onError) {
   for (const tag of matchWithTest)
     if (tag.test?.test(value))
       return tag;
-  const kt = schema4.knownTags[tagName];
+  const kt = schema.knownTags[tagName];
   if (kt && !kt.collection) {
-    schema4.tags.push(Object.assign({}, kt, { default: false, test: undefined }));
+    schema.tags.push(Object.assign({}, kt, { default: false, test: undefined }));
     return kt;
   }
   onError(tagToken, "TAG_RESOLVE_FAILED", `Unresolved tag: ${tagName}`, tagName !== "tag:yaml.org,2002:str");
-  return schema4[SCALAR];
+  return schema[SCALAR];
 }
-function findScalarTagByTest({ atKey, directives, schema: schema4 }, value, token, onError) {
-  const tag = schema4.tags.find((tag2) => (tag2.default === true || atKey && tag2.default === "key") && tag2.test?.test(value)) || schema4[SCALAR];
-  if (schema4.compat) {
-    const compat = schema4.compat.find((tag2) => tag2.default && tag2.test?.test(value)) ?? schema4[SCALAR];
+function findScalarTagByTest({ atKey, directives, schema }, value, token, onError) {
+  const tag = schema.tags.find((tag) => (tag.default === true || atKey && tag.default === "key") && tag.test?.test(value)) || schema[SCALAR];
+  if (schema.compat) {
+    const compat = schema.compat.find((tag) => tag.default && tag.test?.test(value)) ?? schema[SCALAR];
     if (tag.tag !== compat.tag) {
       const ts = directives.tagString(tag.tag);
       const cs = directives.tagString(compat.tag);
@@ -11684,18 +11718,18 @@ class Lexer {
     let indent = 0;
     let ch;
     loop:
-      for (let i2 = this.pos;ch = this.buffer[i2]; ++i2) {
+      for (let i = this.pos;ch = this.buffer[i]; ++i) {
         switch (ch) {
           case " ":
             indent += 1;
             break;
           case `
 `:
-            nl = i2;
+            nl = i;
             indent = 0;
             break;
           case "\r": {
-            const next = this.buffer[i2 + 1];
+            const next = this.buffer[i + 1];
             if (!next && !this.atEnd)
               return this.setNext("block-scalar");
             if (next === `
@@ -11738,16 +11772,16 @@ class Lexer {
       nl = i - 1;
     } else if (!this.blockScalarKeep) {
       do {
-        let i2 = nl - 1;
-        let ch2 = this.buffer[i2];
-        if (ch2 === "\r")
-          ch2 = this.buffer[--i2];
-        const lastChar = i2;
-        while (ch2 === " ")
-          ch2 = this.buffer[--i2];
-        if (ch2 === `
-` && i2 >= this.pos && i2 + 1 + indent > lastChar)
-          nl = i2;
+        let i = nl - 1;
+        let ch = this.buffer[i];
+        if (ch === "\r")
+          ch = this.buffer[--i];
+        const lastChar = i;
+        while (ch === " ")
+          ch = this.buffer[--i];
+        if (ch === `
+` && i >= this.pos && i + 1 + indent > lastChar)
+          nl = i;
         else
           break;
       } while (true);
@@ -12265,14 +12299,14 @@ class Parser {
         delete scalar.end;
       } else
         sep = [this.sourceToken];
-      const map2 = {
+      const map = {
         type: "block-map",
         offset: scalar.offset,
         indent: scalar.indent,
         items: [{ start, key: scalar, sep }]
       };
       this.onKeyLine = true;
-      this.stack[this.stack.length - 1] = map2;
+      this.stack[this.stack.length - 1] = map;
     } else
       yield* this.lineEnd(scalar);
   }
@@ -12303,8 +12337,8 @@ class Parser {
         yield* this.step();
     }
   }
-  *blockMap(map2) {
-    const it = map2.items[map2.items.length - 1];
+  *blockMap(map) {
+    const it = map.items[map.items.length - 1];
     switch (this.type) {
       case "newline":
         this.onKeyLine = false;
@@ -12314,7 +12348,7 @@ class Parser {
           if (last?.type === "comment")
             end?.push(this.sourceToken);
           else
-            map2.items.push({ start: [this.sourceToken] });
+            map.items.push({ start: [this.sourceToken] });
         } else if (it.sep) {
           it.sep.push(this.sourceToken);
         } else {
@@ -12324,17 +12358,17 @@ class Parser {
       case "space":
       case "comment":
         if (it.value) {
-          map2.items.push({ start: [this.sourceToken] });
+          map.items.push({ start: [this.sourceToken] });
         } else if (it.sep) {
           it.sep.push(this.sourceToken);
         } else {
-          if (this.atIndentedComment(it.start, map2.indent)) {
-            const prev = map2.items[map2.items.length - 2];
+          if (this.atIndentedComment(it.start, map.indent)) {
+            const prev = map.items[map.items.length - 2];
             const end = prev?.value?.end;
             if (Array.isArray(end)) {
               Array.prototype.push.apply(end, it.start);
               end.push(this.sourceToken);
-              map2.items.pop();
+              map.items.pop();
               return;
             }
           }
@@ -12342,8 +12376,8 @@ class Parser {
         }
         return;
     }
-    if (this.indent >= map2.indent) {
-      const atMapIndent = !this.onKeyLine && this.indent === map2.indent;
+    if (this.indent >= map.indent) {
+      const atMapIndent = !this.onKeyLine && this.indent === map.indent;
       const atNextItem = atMapIndent && (it.sep || it.explicitKey) && this.type !== "seq-item-ind";
       let start = [];
       if (atNextItem && it.sep && !it.value) {
@@ -12357,7 +12391,7 @@ class Parser {
             case "space":
               break;
             case "comment":
-              if (st.indent > map2.indent)
+              if (st.indent > map.indent)
                 nl.length = 0;
               break;
             default:
@@ -12372,7 +12406,7 @@ class Parser {
         case "tag":
           if (atNextItem || it.value) {
             start.push(this.sourceToken);
-            map2.items.push({ start });
+            map.items.push({ start });
             this.onKeyLine = true;
           } else if (it.sep) {
             it.sep.push(this.sourceToken);
@@ -12386,7 +12420,7 @@ class Parser {
             it.explicitKey = true;
           } else if (atNextItem || it.value) {
             start.push(this.sourceToken);
-            map2.items.push({ start, explicitKey: true });
+            map.items.push({ start, explicitKey: true });
           } else {
             this.stack.push({
               type: "block-map",
@@ -12403,16 +12437,16 @@ class Parser {
               if (includesToken(it.start, "newline")) {
                 Object.assign(it, { key: null, sep: [this.sourceToken] });
               } else {
-                const start2 = getFirstKeyStartProps(it.start);
+                const start = getFirstKeyStartProps(it.start);
                 this.stack.push({
                   type: "block-map",
                   offset: this.offset,
                   indent: this.indent,
-                  items: [{ start: start2, key: null, sep: [this.sourceToken] }]
+                  items: [{ start, key: null, sep: [this.sourceToken] }]
                 });
               }
             } else if (it.value) {
-              map2.items.push({ start: [], key: null, sep: [this.sourceToken] });
+              map.items.push({ start: [], key: null, sep: [this.sourceToken] });
             } else if (includesToken(it.sep, "map-value-ind")) {
               this.stack.push({
                 type: "block-map",
@@ -12421,7 +12455,7 @@ class Parser {
                 items: [{ start, key: null, sep: [this.sourceToken] }]
               });
             } else if (isFlowToken(it.key) && !includesToken(it.sep, "newline")) {
-              const start2 = getFirstKeyStartProps(it.start);
+              const start = getFirstKeyStartProps(it.start);
               const key = it.key;
               const sep = it.sep;
               sep.push(this.sourceToken);
@@ -12431,7 +12465,7 @@ class Parser {
                 type: "block-map",
                 offset: this.offset,
                 indent: this.indent,
-                items: [{ start: start2, key, sep }]
+                items: [{ start, key, sep }]
               });
             } else if (start.length > 0) {
               it.sep = it.sep.concat(start, this.sourceToken);
@@ -12442,7 +12476,7 @@ class Parser {
             if (!it.sep) {
               Object.assign(it, { key: null, sep: [this.sourceToken] });
             } else if (it.value || atNextItem) {
-              map2.items.push({ start, key: null, sep: [this.sourceToken] });
+              map.items.push({ start, key: null, sep: [this.sourceToken] });
             } else if (includesToken(it.sep, "map-value-ind")) {
               this.stack.push({
                 type: "block-map",
@@ -12462,7 +12496,7 @@ class Parser {
         case "double-quoted-scalar": {
           const fs = this.flowScalar(this.type);
           if (atNextItem || it.value) {
-            map2.items.push({ start, key: fs, sep: [] });
+            map.items.push({ start, key: fs, sep: [] });
             this.onKeyLine = true;
           } else if (it.sep) {
             this.stack.push(fs);
@@ -12473,7 +12507,7 @@ class Parser {
           return;
         }
         default: {
-          const bv = this.startBlockValue(map2);
+          const bv = this.startBlockValue(map);
           if (bv) {
             if (bv.type === "block-seq") {
               if (!it.explicitKey && it.sep && !includesToken(it.sep, "newline")) {
@@ -12486,7 +12520,7 @@ class Parser {
                 return;
               }
             } else if (atMapIndent) {
-              map2.items.push({ start });
+              map.items.push({ start });
             }
             this.stack.push(bv);
             return;
@@ -12497,8 +12531,8 @@ class Parser {
     yield* this.pop();
     yield* this.step();
   }
-  *blockSequence(seq2) {
-    const it = seq2.items[seq2.items.length - 1];
+  *blockSequence(seq) {
+    const it = seq.items[seq.items.length - 1];
     switch (this.type) {
       case "newline":
         if (it.value) {
@@ -12507,22 +12541,22 @@ class Parser {
           if (last?.type === "comment")
             end?.push(this.sourceToken);
           else
-            seq2.items.push({ start: [this.sourceToken] });
+            seq.items.push({ start: [this.sourceToken] });
         } else
           it.start.push(this.sourceToken);
         return;
       case "space":
       case "comment":
         if (it.value)
-          seq2.items.push({ start: [this.sourceToken] });
+          seq.items.push({ start: [this.sourceToken] });
         else {
-          if (this.atIndentedComment(it.start, seq2.indent)) {
-            const prev = seq2.items[seq2.items.length - 2];
+          if (this.atIndentedComment(it.start, seq.indent)) {
+            const prev = seq.items[seq.items.length - 2];
             const end = prev?.value?.end;
             if (Array.isArray(end)) {
               Array.prototype.push.apply(end, it.start);
               end.push(this.sourceToken);
-              seq2.items.pop();
+              seq.items.pop();
               return;
             }
           }
@@ -12531,21 +12565,21 @@ class Parser {
         return;
       case "anchor":
       case "tag":
-        if (it.value || this.indent <= seq2.indent)
+        if (it.value || this.indent <= seq.indent)
           break;
         it.start.push(this.sourceToken);
         return;
       case "seq-item-ind":
-        if (this.indent !== seq2.indent)
+        if (this.indent !== seq.indent)
           break;
         if (it.value || includesToken(it.start, "seq-item-ind"))
-          seq2.items.push({ start: [this.sourceToken] });
+          seq.items.push({ start: [this.sourceToken] });
         else
           it.start.push(this.sourceToken);
         return;
     }
-    if (this.indent > seq2.indent) {
-      const bv = this.startBlockValue(seq2);
+    if (this.indent > seq.indent) {
+      const bv = this.startBlockValue(seq);
       if (bv) {
         this.stack.push(bv);
         return;
@@ -12627,14 +12661,14 @@ class Parser {
         fixFlowSeqItems(fc);
         const sep = fc.end.splice(1, fc.end.length);
         sep.push(this.sourceToken);
-        const map2 = {
+        const map = {
           type: "block-map",
           offset: fc.offset,
           indent: fc.indent,
           items: [{ start, key: fc, sep }]
         };
         this.onKeyLine = true;
-        this.stack[this.stack.length - 1] = map2;
+        this.stack[this.stack.length - 1] = map;
       } else {
         yield* this.lineEnd(fc);
       }
@@ -12908,13 +12942,13 @@ function cleanLabel(description) {
 function classifyPatchableField(key, description) {
   const label = cleanLabel(description);
   const desc = description.toLowerCase();
-  const pairs2 = [];
+  const pairs = [];
   for (const match of description.matchAll(ENUM_PAIR_RE)) {
-    pairs2.push([match[1], match[2].trim()]);
+    pairs.push([match[1], match[2].trim()]);
   }
-  if (pairs2.length >= 2) {
+  if (pairs.length >= 2) {
     const options = {};
-    for (const [code, text] of pairs2)
+    for (const [code, text] of pairs)
       options[code] = text;
     return { kind: "enum", key, label: label || key, options };
   }
@@ -13055,7 +13089,7 @@ function applyFastLaneAnswers(previousPayload, directives, answers, confidenceFl
     const targets = [];
     const list = payload.characters;
     if (Array.isArray(list)) {
-      const entry = list.find((entry2) => entry2 && typeof entry2 === "object" && typeof entry2.name === "string" && entry2.name.trim().toLowerCase() === name.toLowerCase());
+      const entry = list.find((entry) => entry && typeof entry === "object" && typeof entry.name === "string" && entry.name.trim().toLowerCase() === name.toLowerCase());
       if (entry)
         targets.push(entry);
     }
@@ -13745,9 +13779,9 @@ async function checkConceptionTriggers(chatId, payload, narrative) {
     if (!isFemaleOrFuta(stats))
       continue;
     if (isAlreadyConceivedOrPregnant(stats)) {
-      const key2 = `${chatId}::${stats.name}`;
-      if (conceptionNotified.has(key2))
-        conceptionNotified.delete(key2);
+      const key = `${chatId}::${stats.name}`;
+      if (conceptionNotified.has(key))
+        conceptionNotified.delete(key);
       continue;
     }
     if (!isInFertileWindow(stats))
@@ -13907,15 +13941,15 @@ function formatTrackerForPrompt(raw) {
       lines.push(prefix);
       value.forEach((item, index) => {
         if (item && typeof item === "object" && !Array.isArray(item)) {
-          const entries2 = Object.entries(item);
-          if (entries2.length === 0) {
+          const entries = Object.entries(item);
+          if (entries.length === 0) {
             lines.push(`${indent(depth + 1)}- Item ${index + 1}: (empty)`);
             return;
           }
-          const preferredIndex = entries2.findIndex(([entryKey, entryValue]) => entryKey === "name" && (entryValue === null || typeof entryValue !== "object"));
+          const preferredIndex = entries.findIndex(([entryKey, entryValue]) => entryKey === "name" && (entryValue === null || typeof entryValue !== "object"));
           const firstIndex = preferredIndex >= 0 ? preferredIndex : 0;
-          const [firstKey, firstValue] = entries2[firstIndex];
-          const remainingEntries = entries2.filter((_, entryIndex) => entryIndex !== firstIndex);
+          const [firstKey, firstValue] = entries[firstIndex];
+          const remainingEntries = entries.filter((_, entryIndex) => entryIndex !== firstIndex);
           if (firstValue === null || typeof firstValue !== "object") {
             lines.push(`${indent(depth + 1)}- ${firstKey}: ${scalar(firstValue)}`);
           } else {
@@ -13932,13 +13966,13 @@ function formatTrackerForPrompt(raw) {
       return;
     }
     if (value && typeof value === "object") {
-      const entries2 = Object.entries(value);
-      if (entries2.length === 0) {
+      const entries = Object.entries(value);
+      if (entries.length === 0) {
         lines.push(`${prefix} (empty)`);
         return;
       }
       lines.push(prefix);
-      entries2.forEach(([childKey, childValue]) => appendValue(childKey, childValue, depth + 1));
+      entries.forEach(([childKey, childValue]) => appendValue(childKey, childValue, depth + 1));
       return;
     }
     lines.push(`${prefix} ${scalar(value)}`);
@@ -14152,10 +14186,10 @@ async function mutateChatForCommand(command, arg1, ctx) {
       };
     }
     const block = makeStarterTrackerBlock();
-    const updatedContent2 = `${target.content.trimEnd()}
+    const updatedContent = `${target.content.trimEnd()}
 
 ${block}`;
-    await spindle.chat.updateMessage(ctx.chatId, target.id, { content: updatedContent2 });
+    await spindle.chat.updateMessage(ctx.chatId, target.id, { content: updatedContent });
     await trackEvent("sst.command.add", { mode: "chat_mutation" }, { chatId: ctx.chatId });
     return {
       command: "sst-add",
@@ -14234,8 +14268,8 @@ async function handleSlashCommand(content, ctx) {
         mode: "fallback"
       });
     }
-    const parsed2 = parseTrackerPayload(lastSimStats);
-    if (!parsed2) {
+    const parsed = parseTrackerPayload(lastSimStats);
+    if (!parsed) {
       return buildCommandResponse({
         command: "sst-convert",
         ok: false,
@@ -14243,26 +14277,26 @@ async function handleSlashCommand(content, ctx) {
         mode: "fallback"
       });
     }
-    const block2 = formatTrackerPayload(parsed2, target, config.codeBlockIdentifier);
-    lastSimStats = target === "yaml" ? stringify3(parsed2) : JSON.stringify(parsed2, null, 2);
+    const block = formatTrackerPayload(parsed, target, config.codeBlockIdentifier);
+    lastSimStats = target === "yaml" ? stringify3(parsed) : JSON.stringify(parsed, null, 2);
     pushMacroValues();
     await trackEvent("sst.command.convert", { mode: "fallback", format: target }, ctx.chatId ? { chatId: ctx.chatId } : undefined);
     return buildCommandResponse({
       command: "sst-convert",
       ok: true,
       message: `Converted latest tracker to ${target.toUpperCase()}.`,
-      block: block2,
+      block,
       mode: "fallback"
     });
   }
   if (command === "/sst-add") {
-    const block2 = makeStarterTrackerBlock();
+    const block = makeStarterTrackerBlock();
     await trackEvent("sst.command.add", { mode: "fallback" }, ctx.chatId ? { chatId: ctx.chatId } : undefined);
     return buildCommandResponse({
       command: "sst-add",
       ok: true,
       message: "Generated a starter tracker tag.",
-      block: block2,
+      block,
       mode: "fallback"
     });
   }
@@ -14756,10 +14790,10 @@ async function generateTrackerWithSecondaryLLM(chatId, targetMessageId) {
               return;
             }
             if (gate === "fast") {
-              const result2 = applyFastLaneAnswers(previousPayload, plan.directives, answers, config.typeSafeConfidenceFloor);
-              if (result2.changed.length > 0) {
-                await commitTrackerAppend(chatId, targetMessage, result2.payload, "typesafe-fast-lane");
-                await trackEvent("sst.typesafe.fast_append", { changed: result2.changed }, { chatId });
+              const result = applyFastLaneAnswers(previousPayload, plan.directives, answers, config.typeSafeConfidenceFloor);
+              if (result.changed.length > 0) {
+                await commitTrackerAppend(chatId, targetMessage, result.payload, "typesafe-fast-lane");
+                await trackEvent("sst.typesafe.fast_append", { changed: result.changed }, { chatId });
                 return;
               }
               await trackEvent("sst.typesafe.fast_append_fallback", { reason: "no-confident-changes" }, { chatId });
@@ -15306,16 +15340,16 @@ function tryRegisterInterceptor() {
         }
       }
       if (lastAssistantIdx >= 0) {
-        const injected2 = promptMessages.slice();
-        const target = injected2[lastAssistantIdx];
+        const injected = promptMessages.slice();
+        const target = injected[lastAssistantIdx];
         const base = typeof target.content === "string" ? target.content.trimEnd() : "";
-        injected2[lastAssistantIdx] = {
+        injected[lastAssistantIdx] = {
           ...target,
           content: base ? `${base}
 
 ${block}` : block
         };
-        return withTrailingDirective(injected2, conceptionDirective);
+        return withTrailingDirective(injected, conceptionDirective);
       }
       const injected = promptMessages.slice();
       const insertAt = Math.max(0, injected.length - 1);
