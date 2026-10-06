@@ -9982,6 +9982,18 @@ var pulse_thread_tracker_default = {
     .fill-tru { background: linear-gradient(90deg, var(--pt-tru), #7efcf6); }
     .fill-con { background: linear-gradient(90deg, var(--pt-con), #aabbcc); }
 
+    /* Negative values: mirrored deficit fill anchored to the right edge, growing leftward */
+    .pt-track-fill.fill-neg {
+        margin-left: auto;
+        background: linear-gradient(90deg, #ff9d8f, #e74c3c);
+    }
+
+    .pt-track-fill.fill-neg::after {
+        right: auto;
+        left: 0;
+        background: linear-gradient(90deg, rgba(255,255,255,0.28), transparent);
+    }
+
     .pt-stat-val {
         font-size: calc(11px * var(--pt-scale));
         font-weight: 700;
@@ -10741,7 +10753,13 @@ var pulse_thread_tracker_default = {
                         <div class="pt-orbit-ring {{#if (gt stats.apChange 0)}}orbit-pos{{else}}orbit-neg{{/if}}"></div>
                         {{/unless}}{{/if}}
                     </div>
-                    <div class="pt-track-bg"><div class="pt-track-fill fill-aff" style="width: {{divide stats.ap 2}}%"></div></div>
+                    <div class="pt-track-bg">
+                        {{#if (lt stats.ap 0)}}
+                        <div class="pt-track-fill fill-neg" style="width: {{divide (abs stats.ap) 2}}%"></div>
+                        {{else}}
+                        <div class="pt-track-fill fill-aff" style="width: {{divide stats.ap 2}}%"></div>
+                        {{/if}}
+                    </div>
                     <div class="pt-stat-val">
                         {{stats.ap}}
                         {{#if stats.apChange}}{{#unless (eq stats.apChange 0)}}
@@ -10757,7 +10775,13 @@ var pulse_thread_tracker_default = {
                         <div class="pt-orbit-ring {{#if (gt stats.dpChange 0)}}orbit-pos{{else}}orbit-neg{{/if}}"></div>
                         {{/unless}}{{/if}}
                     </div>
-                    <div class="pt-track-bg"><div class="pt-track-fill fill-des" style="width: {{divide stats.dp 1.5}}%"></div></div>
+                    <div class="pt-track-bg">
+                        {{#if (lt stats.dp 0)}}
+                        <div class="pt-track-fill fill-neg" style="width: {{divide (abs stats.dp) 1.5}}%"></div>
+                        {{else}}
+                        <div class="pt-track-fill fill-des" style="width: {{divide stats.dp 1.5}}%"></div>
+                        {{/if}}
+                    </div>
                     <div class="pt-stat-val">
                         {{stats.dp}}
                         {{#if stats.dpChange}}{{#unless (eq stats.dpChange 0)}}
@@ -10773,7 +10797,13 @@ var pulse_thread_tracker_default = {
                         <div class="pt-orbit-ring {{#if (gt stats.tpChange 0)}}orbit-pos{{else}}orbit-neg{{/if}}"></div>
                         {{/unless}}{{/if}}
                     </div>
-                    <div class="pt-track-bg"><div class="pt-track-fill fill-tru" style="width: {{divide stats.tp 1.5}}%"></div></div>
+                    <div class="pt-track-bg">
+                        {{#if (lt stats.tp 0)}}
+                        <div class="pt-track-fill fill-neg" style="width: {{divide (abs stats.tp) 1.5}}%"></div>
+                        {{else}}
+                        <div class="pt-track-fill fill-tru" style="width: {{divide stats.tp 1.5}}%"></div>
+                        {{/if}}
+                    </div>
                     <div class="pt-stat-val">
                         {{stats.tp}}
                         {{#if stats.tpChange}}{{#unless (eq stats.tpChange 0)}}
