@@ -389,55 +389,156 @@ function fmtCoord(n: number): string {
   return r.toFixed(2).replace(/\.?0+$/, "");
 }
 
+function breastMetrics(xS: number, yS: number) {
+  const topY = 39;
+  const height = 16 + 40 * yS;
+  const bottomY = topY + height;
+  const apexY = topY + height * 0.62;
+  const innerY = topY + height * 0.58;
+  const innerOffset = Math.max(0.75, 5.4 - (xS - 0.55) * 6.2);
+  const outerOffset = 15 + 25.5 * xS;
+  const width = outerOffset - innerOffset;
+  const bottomOffset = innerOffset + width * 0.52;
+  const topOffset = innerOffset + width * 0.49;
+  return { topY, height, bottomY, apexY, innerY, innerOffset, outerOffset, width, bottomOffset, topOffset };
+}
+
 function buildBreastPath(side: "left" | "right", xS: number, yS: number): string {
-  // Sign convention: -1 anchors the breast on the left half of the
-  // viewBox, +1 mirrors to the right. Inward = toward center (50).
   const sgn = side === "left" ? -1 : 1;
   const center = 50;
-  const top_y = 38;
-  const apex_y = top_y + 26 * yS;
-  const bottom_y = top_y + 52 * yS;
+  const m = breastMetrics(xS, yS);
 
-  const top_x = center + sgn * 18;
-  const outer_x = center + sgn * 40 * xS;
-  const bottom_x = center + sgn * 20;
-  const inner_x = center + sgn * 4;
+  const topX = center + sgn * m.topOffset;
+  const outerX = center + sgn * m.outerOffset;
+  const bottomX = center + sgn * m.bottomOffset;
+  const innerX = center + sgn * m.innerOffset;
 
-  // Segment 1: top → outer apex
-  const c1a_x = top_x + (outer_x - top_x) * 0.45;
-  const c1a_y = top_y;
-  const c1b_x = outer_x + (-sgn) * 2;
-  const c1b_y = apex_y - 16 * yS;
-  // Segment 2: outer apex → bottom
-  const c2a_x = outer_x + sgn * 2;
-  const c2a_y = apex_y + 16 * yS;
-  const c2b_x = bottom_x + sgn * 14 * xS;
-  const c2b_y = bottom_y;
-  // Segment 3: bottom → inner apex
-  const c3a_x = bottom_x + (-sgn) * 12 * xS;
-  const c3a_y = bottom_y;
-  const c3b_x = inner_x;
-  const c3b_y = apex_y + 16 * yS;
-  // Segment 4: inner apex → top
-  const c4a_x = inner_x;
-  const c4a_y = apex_y - 14 * yS;
-  const c4b_x = top_x + (-sgn) * 8;
-  const c4b_y = top_y;
+  // G1-continuous anatomical rounded teardrop: horizontal tangents across the
+  // upper-chest dome (no pinched triangular point), sweeping into a lush
+  // gravity-rounded lower pole and natural medial cleavage.
+  const c1aX = topX + sgn * m.width * 0.36;
+  const c1aY = m.topY;
+  const c1bX = outerX + sgn * m.width * 0.01;
+  const c1bY = m.apexY - m.height * 0.34;
+
+  const c2aX = outerX + sgn * m.width * 0.05;
+  const c2aY = m.apexY + m.height * 0.25;
+  const c2bX = bottomX + sgn * m.width * 0.36;
+  const c2bY = m.bottomY + m.height * 0.02;
+
+  const c3aX = bottomX - sgn * m.width * 0.36;
+  const c3aY = m.bottomY + m.height * 0.01;
+  const c3bX = innerX - sgn * m.width * 0.02;
+  const c3bY = m.innerY + m.height * 0.26;
+
+  const c4aX = innerX + sgn * m.width * 0.02;
+  const c4aY = m.innerY - m.height * 0.34;
+  const c4bX = topX - sgn * m.width * 0.34;
+  const c4bY = m.topY;
 
   const F = fmtCoord;
   return [
-    `M ${F(top_x)} ${F(top_y)}`,
-    `C ${F(c1a_x)} ${F(c1a_y)}, ${F(c1b_x)} ${F(c1b_y)}, ${F(outer_x)} ${F(apex_y)}`,
-    `C ${F(c2a_x)} ${F(c2a_y)}, ${F(c2b_x)} ${F(c2b_y)}, ${F(bottom_x)} ${F(bottom_y)}`,
-    `C ${F(c3a_x)} ${F(c3a_y)}, ${F(c3b_x)} ${F(c3b_y)}, ${F(inner_x)} ${F(apex_y)}`,
-    `C ${F(c4a_x)} ${F(c4a_y)}, ${F(c4b_x)} ${F(c4b_y)}, ${F(top_x)} ${F(top_y)}`,
+    `M ${F(topX)} ${F(m.topY)}`,
+    `C ${F(c1aX)} ${F(c1aY)}, ${F(c1bX)} ${F(c1bY)}, ${F(outerX)} ${F(m.apexY)}`,
+    `C ${F(c2aX)} ${F(c2aY)}, ${F(c2bX)} ${F(c2bY)}, ${F(bottomX)} ${F(m.bottomY)}`,
+    `C ${F(c3aX)} ${F(c3aY)}, ${F(c3bX)} ${F(c3bY)}, ${F(innerX)} ${F(m.innerY)}`,
+    `C ${F(c4aX)} ${F(c4aY)}, ${F(c4bX)} ${F(c4bY)}, ${F(topX)} ${F(m.topY)}`,
     "Z",
+  ].join(" ");
+}
+
+function buildBreastContourPath(side: "left" | "right", xS: number, yS: number): string {
+  // Open sculptural rim sweeping from the lateral axillary slope around the
+  // full lower pole and curving softly up into the cleavage valley — leaves
+  // the upper chest wall smoothly blended without an artificial oval cap.
+  const sgn = side === "left" ? -1 : 1;
+  const center = 50;
+  const m = breastMetrics(xS, yS);
+
+  const startX = center + sgn * (m.outerOffset - m.width * 0.12);
+  const startY = m.topY + m.height * 0.24;
+  const outerX = center + sgn * m.outerOffset;
+  const bottomX = center + sgn * m.bottomOffset;
+  const innerX = center + sgn * m.innerOffset;
+  const endX = center + sgn * (m.innerOffset + m.width * 0.12);
+  const endY = m.topY + m.height * 0.30;
+
+  const F = fmtCoord;
+  return [
+    `M ${F(startX)} ${F(startY)}`,
+    `C ${F(outerX - sgn * m.width * 0.02)} ${F(m.apexY - m.height * 0.22)}, ${F(outerX + sgn * m.width * 0.01)} ${F(m.apexY - m.height * 0.06)}, ${F(outerX)} ${F(m.apexY)}`,
+    `C ${F(outerX + sgn * m.width * 0.05)} ${F(m.apexY + m.height * 0.24)}, ${F(bottomX + sgn * m.width * 0.36)} ${F(m.bottomY + m.height * 0.02)}, ${F(bottomX)} ${F(m.bottomY)}`,
+    `C ${F(bottomX - sgn * m.width * 0.36)} ${F(m.bottomY + m.height * 0.01)}, ${F(innerX - sgn * m.width * 0.02)} ${F(m.innerY + m.height * 0.25)}, ${F(innerX)} ${F(m.innerY)}`,
+    `C ${F(innerX)} ${F(m.innerY - m.height * 0.14)}, ${F(innerX + sgn * m.width * 0.04)} ${F(m.topY + m.height * 0.38)}, ${F(endX)} ${F(endY)}`,
+  ].join(" ");
+}
+
+function buildBreastUnderShadePath(side: "left" | "right", xS: number, yS: number): string {
+  // Crescent underside ambient-occlusion shadow cradling the lower pole for 3D weight.
+  const sgn = side === "left" ? -1 : 1;
+  const center = 50;
+  const m = breastMetrics(xS, yS);
+  const outerX = center + sgn * m.outerOffset;
+  const bottomX = center + sgn * m.bottomOffset;
+  const innerX = center + sgn * m.innerOffset;
+  const F = fmtCoord;
+  return [
+    `M ${F(outerX)} ${F(m.apexY + m.height * 0.02)}`,
+    `C ${F(outerX + sgn * m.width * 0.05)} ${F(m.apexY + m.height * 0.24)}, ${F(bottomX + sgn * m.width * 0.36)} ${F(m.bottomY + m.height * 0.02)}, ${F(bottomX)} ${F(m.bottomY)}`,
+    `C ${F(bottomX - sgn * m.width * 0.36)} ${F(m.bottomY + m.height * 0.01)}, ${F(innerX - sgn * m.width * 0.02)} ${F(m.innerY + m.height * 0.25)}, ${F(innerX)} ${F(m.innerY + m.height * 0.04)}`,
+    `Q ${F(bottomX)} ${F(m.bottomY - m.height * 0.15)}, ${F(outerX)} ${F(m.apexY + m.height * 0.02)}`,
+    "Z",
+  ].join(" ");
+}
+
+function buildBreastSpecularPath(side: "left" | "right", xS: number, yS: number): string {
+  // Curved upper-dome specular ribbon following the convex surface.
+  const sgn = side === "left" ? -1 : 1;
+  const center = 50;
+  const m = breastMetrics(xS, yS);
+  const p1X = center + sgn * (m.innerOffset + m.width * 0.26);
+  const p1Y = m.topY + m.height * 0.32;
+  const p2X = center + sgn * (m.innerOffset + m.width * 0.72);
+  const p2Y = m.topY + m.height * 0.44;
+  const ctrlX = center + sgn * (m.innerOffset + m.width * 0.54);
+  const ctrlY = m.topY + m.height * 0.22;
+  const F = fmtCoord;
+  return `M ${F(p1X)} ${F(p1Y)} Q ${F(ctrlX)} ${F(ctrlY)} ${F(p2X)} ${F(p2Y)}`;
+}
+
+function buildBreastDuctPath(side: "left" | "right", apexX: number, areolaY: number, xS: number, yS: number): string {
+  const sgn = side === "left" ? -1 : 1;
+  const m = breastMetrics(xS, yS);
+  const rX = m.width * 0.36;
+  const rY = m.height * 0.32;
+  const F = fmtCoord;
+  return [
+    // Upper-outer lobule branch
+    `M ${F(apexX)} ${F(areolaY)} Q ${F(apexX + sgn * rX * 0.42)} ${F(areolaY - rY * 0.64)} ${F(apexX + sgn * rX * 0.78)} ${F(areolaY - rY * 1.12)}`,
+    // Upper-central branch
+    `M ${F(apexX)} ${F(areolaY)} Q ${F(apexX + sgn * rX * 0.06)} ${F(areolaY - rY * 0.68)} ${F(apexX - sgn * rX * 0.08)} ${F(areolaY - rY * 1.18)}`,
+    // Upper-medial branch
+    `M ${F(apexX)} ${F(areolaY)} Q ${F(apexX - sgn * rX * 0.34)} ${F(areolaY - rY * 0.62)} ${F(apexX - sgn * rX * 0.62)} ${F(areolaY - rY * 0.92)}`,
+    // Lateral branch
+    `M ${F(apexX)} ${F(areolaY)} Q ${F(apexX + sgn * rX * 0.66)} ${F(areolaY - rY * 0.14)} ${F(apexX + sgn * rX * 0.94)} ${F(areolaY - rY * 0.32)}`,
+    // Lower-outer branch
+    `M ${F(apexX)} ${F(areolaY)} Q ${F(apexX + sgn * rX * 0.50)} ${F(areolaY + rY * 0.32)} ${F(apexX + sgn * rX * 0.68)} ${F(areolaY + rY * 0.56)}`,
+    // Lower-medial branch
+    `M ${F(apexX)} ${F(areolaY)} Q ${F(apexX - sgn * rX * 0.44)} ${F(areolaY + rY * 0.24)} ${F(apexX - sgn * rX * 0.64)} ${F(areolaY + rY * 0.46)}`,
   ].join(" ");
 }
 
 interface BreastGeometry {
   pathLeft: string;
   pathRight: string;
+  contourLeftPath: string;
+  contourRightPath: string;
+  underShadeLeftPath: string;
+  underShadeRightPath: string;
+  specularLeftPath: string;
+  specularRightPath: string;
+  ductLeftPath: string;
+  ductRightPath: string;
   fillTop: number;
   fillHeight: number;
   fillSurfaceMid: number;
@@ -448,6 +549,11 @@ interface BreastGeometry {
   areolaY: number;
   areolaR: number;
   nippleR: number;
+  nippleShadowY: number;
+  nippleHighlightXLeft: number;
+  nippleHighlightXRight: number;
+  nippleHighlightY: number;
+  milkDropY: number;
   cleavagePath: string;
   foldLeftPath: string;
   foldRightPath: string;
@@ -461,65 +567,85 @@ interface BreastGeometry {
 
 function computeBreastGeometry(stats: unknown): BreastGeometry {
   const { x: xS, y: yS } = cupScaleFor(stats);
-
-  const top_y = 38;
-  const apex_y = top_y + 26 * yS;
-  const bottom_y = top_y + 52 * yS;
+  const m = breastMetrics(xS, yS);
 
   const pathLeft = buildBreastPath("left", xS, yS);
   const pathRight = buildBreastPath("right", xS, yS);
+  const contourLeftPath = buildBreastContourPath("left", xS, yS);
+  const contourRightPath = buildBreastContourPath("right", xS, yS);
+  const underShadeLeftPath = buildBreastUnderShadePath("left", xS, yS);
+  const underShadeRightPath = buildBreastUnderShadePath("right", xS, yS);
+  const specularLeftPath = buildBreastSpecularPath("left", xS, yS);
+  const specularRightPath = buildBreastSpecularPath("right", xS, yS);
 
   const fullness = stats && typeof stats === "object" && !Array.isArray(stats)
     ? clampPercent((stats as Record<string, unknown>).breast_fullness_pct)
     : 0;
-  const range = bottom_y - top_y;
-  const fillTop = bottom_y - (fullness / 100) * range;
+  const range = m.bottomY - m.topY;
+  const fillTop = m.bottomY - (fullness / 100) * range;
   const fillHeight = (fullness / 100) * range;
 
-  const outer_x_left = 50 - 40 * xS;
-  const outer_x_right = 50 + 40 * xS;
-  const inner_x_left = 46;
-  const inner_x_right = 54;
-  const apexXLeft = (outer_x_left + inner_x_left) / 2;
-  const apexXRight = (outer_x_right + inner_x_right) / 2;
+  const apexXLeft = 50 - (m.innerOffset + m.width * 0.55);
+  const apexXRight = 50 + (m.innerOffset + m.width * 0.55);
 
-  const areolaY = apex_y + 8 * yS;
-  const areolaR = Math.max(2.5, Math.min(6.0, 4.6 * yS));
-  const nippleR = Math.max(1.2, Math.min(2.5, 1.8 * yS));
+  const areolaY = m.topY + m.height * 0.66;
+  const areolaR = Math.max(3.2, Math.min(6.8, 4.8 * Math.sqrt(yS)));
+  const nippleR = Math.max(1.4, Math.min(2.8, 1.9 * Math.sqrt(yS)));
+  const nippleShadowY = areolaY + nippleR * 0.55;
+  const nippleHighlightXLeft = apexXLeft - nippleR * 0.34;
+  const nippleHighlightXRight = apexXRight - nippleR * 0.34;
+  const nippleHighlightY = areolaY - nippleR * 0.34;
+  const milkDropY = areolaY + nippleR + 1.8;
 
-  const cleavTop = apex_y - 10;
-  const cleavMid = apex_y - 2;
-  const cleavBotMid = apex_y + 10;
-  const cleavBot = apex_y + 18;
-  const cleavagePath = `M 50 ${fmtCoord(cleavTop)} C 48 ${fmtCoord(cleavMid)}, 48 ${fmtCoord(cleavBotMid)}, 50 ${fmtCoord(cleavBot)}`;
+  const ductLeftPath = buildBreastDuctPath("left", apexXLeft, areolaY, xS, yS);
+  const ductRightPath = buildBreastDuctPath("right", apexXRight, areolaY, xS, yS);
 
-  const foldY = bottom_y - 4;
-  const foldDipY = bottom_y + 3;
-  const foldLeftPath = `M 14 ${fmtCoord(foldY)} C 22 ${fmtCoord(foldDipY)}, 38 ${fmtCoord(foldDipY)}, 45 ${fmtCoord(foldY)}`;
-  const foldRightPath = `M 86 ${fmtCoord(foldY)} C 78 ${fmtCoord(foldDipY)}, 62 ${fmtCoord(foldDipY)}, 55 ${fmtCoord(foldY)}`;
+  const cleavTop = m.innerY - m.height * 0.24;
+  const cleavMid = m.innerY + m.height * 0.04;
+  const cleavBot = m.innerY + m.height * 0.28;
+  const cleavagePath = `M 50 ${fmtCoord(cleavTop)} Q 49.5 ${fmtCoord(cleavMid)} 50 ${fmtCoord(cleavBot)}`;
 
-  const glossY = top_y + (apex_y - top_y) * 0.45;
-  const glossXLeft = 32 + (outer_x_left - 32) * 0.4;
-  const glossXRight = 68 + (outer_x_right - 68) * 0.4;
-  // Gloss scales with the breast so the highlight stays proportional — contracts
-  // for small cups (so it doesn't bleed past the outline) and stretches for large
-  // ones, with sensible floors and ceilings.
-  const glossRX = Math.max(5, Math.min(16, 11 * xS));
-  const glossRY = Math.max(3, Math.min(10, 6.5 * yS));
+  const foldY = m.bottomY + 1.6;
+  const foldDipY = m.bottomY + 5.6;
+  const foldLeftOuter = 50 - (m.outerOffset - m.width * 0.14);
+  const foldLeftInner = 50 - (m.innerOffset + m.width * 0.14);
+  const foldRightOuter = 50 + (m.outerOffset - m.width * 0.14);
+  const foldRightInner = 50 + (m.innerOffset + m.width * 0.14);
+  const foldLeftPath = `M ${fmtCoord(foldLeftOuter)} ${fmtCoord(foldY - 1.4)} Q ${fmtCoord((foldLeftOuter + foldLeftInner) / 2)} ${fmtCoord(foldDipY)} ${fmtCoord(foldLeftInner)} ${fmtCoord(foldY - 0.2)}`;
+  const foldRightPath = `M ${fmtCoord(foldRightOuter)} ${fmtCoord(foldY - 1.4)} Q ${fmtCoord((foldRightOuter + foldRightInner) / 2)} ${fmtCoord(foldDipY)} ${fmtCoord(foldRightInner)} ${fmtCoord(foldY - 0.2)}`;
+
+  const glossY = m.topY + m.height * 0.35;
+  const glossXLeft = 50 - (m.innerOffset + m.width * 0.45);
+  const glossXRight = 50 + (m.innerOffset + m.width * 0.45);
+  const glossRX = Math.max(5.5, Math.min(15.5, m.width * 0.35));
+  const glossRY = Math.max(3.5, Math.min(10.5, m.height * 0.16));
 
   return {
     pathLeft,
     pathRight,
+    contourLeftPath,
+    contourRightPath,
+    underShadeLeftPath,
+    underShadeRightPath,
+    specularLeftPath,
+    specularRightPath,
+    ductLeftPath,
+    ductRightPath,
     fillTop: roundCoord(fillTop),
     fillHeight: roundCoord(fillHeight),
     fillSurfaceMid: roundCoord(fillTop + 3),
-    apexY: roundCoord(apex_y),
-    bottomY: roundCoord(bottom_y),
+    apexY: roundCoord(m.apexY),
+    bottomY: roundCoord(m.bottomY),
     apexXLeft: roundCoord(apexXLeft),
     apexXRight: roundCoord(apexXRight),
     areolaY: roundCoord(areolaY),
     areolaR: roundCoord(areolaR),
     nippleR: roundCoord(nippleR),
+    nippleShadowY: roundCoord(nippleShadowY),
+    nippleHighlightXLeft: roundCoord(nippleHighlightXLeft),
+    nippleHighlightXRight: roundCoord(nippleHighlightXRight),
+    nippleHighlightY: roundCoord(nippleHighlightY),
+    milkDropY: roundCoord(milkDropY),
     cleavagePath,
     foldLeftPath,
     foldRightPath,

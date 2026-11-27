@@ -8494,7 +8494,7 @@ Each character has:
 var pulse_thread_tracker_default = {
   templateName: "Pulse Thread Tracker",
   templateAuthor: "Prolix OCs",
-  trackerDesc: "Narrative character tracker with fertility, womb fullness, semen volume, refractory, and bladder/urination gauges.",
+  trackerDesc: "Narrative character tracker with fertility, womb fullness, semen volume, and refractory gauges.",
   templatePosition: "BOTTOM",
   htmlTemplate: `<!-- TEMPLATE NAME: Pulse Thread Tracker -->
 <!-- AUTHOR: Prolix OCs -->
@@ -8510,22 +8510,23 @@ var pulse_thread_tracker_default = {
     .pulse-tabbed-root {
         --pt-font: var(--lumiverse-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
         --pt-scale: var(--lumiverse-font-scale, 1);
-        --pt-bg-deep: var(--lumiverse-bg-deep, rgba(12, 12, 22, 0.92));
-        --pt-bg-glass: var(--lcs-glass-bg, color-mix(in srgb, var(--lumiverse-bg, rgba(30, 28, 48, 0.95)) 84%, transparent));
-        --pt-surface: color-mix(in srgb, var(--pt-bg-glass) 78%, var(--lumiverse-fill-subtle, rgba(0, 0, 0, 0.10)) 22%);
-        --pt-surface-strong: color-mix(in srgb, var(--pt-bg-glass) 62%, var(--lumiverse-fill, rgba(0, 0, 0, 0.15)) 38%);
+        --pt-bg-deep: var(--lumiverse-bg-deep, rgba(11, 10, 20, 0.94));
+        --pt-bg-glass: var(--lcs-glass-bg, color-mix(in srgb, var(--lumiverse-bg, rgba(28, 25, 46, 0.95)) 84%, transparent));
+        --pt-surface: color-mix(in srgb, var(--pt-bg-glass) 78%, var(--lumiverse-fill-subtle, rgba(0, 0, 0, 0.14)) 22%);
+        --pt-surface-strong: color-mix(in srgb, var(--pt-bg-glass) 60%, var(--lumiverse-fill, rgba(0, 0, 0, 0.22)) 40%);
+        --pt-stage-bg: color-mix(in srgb, var(--pt-bg-deep) 88%, #07050f 12%);
         --pt-border: var(--lcs-glass-border, var(--lumiverse-border, rgba(255, 255, 255, 0.10)));
-        --pt-border-hover: var(--lcs-glass-border-hover, var(--lumiverse-border-hover, rgba(255, 255, 255, 0.16)));
+        --pt-border-hover: var(--lcs-glass-border-hover, var(--lumiverse-border-hover, rgba(255, 255, 255, 0.18)));
         --pt-blur: min(var(--lcs-glass-soft-blur, 6px), 8px);
         --pt-radius: calc(var(--lcs-radius, 14px) + 12px);
-        --pt-radius-sm: calc(var(--lcs-radius-sm, 8px) + 4px);
+        --pt-radius-sm: calc(var(--lcs-radius-sm, 8px) + 6px);
         --pt-radius-xs: var(--lcs-radius-sm, 8px);
         --pt-transition: var(--lcs-transition, 220ms cubic-bezier(0.4, 0, 0.2, 1));
         --pt-transition-fast: var(--lcs-transition-fast, 120ms cubic-bezier(0.4, 0, 0.2, 1));
 
-        --pt-txt: var(--lumiverse-text, #e8e6f0);
-        --pt-txt-dim: var(--lumiverse-text-muted, #9088a8);
-        --pt-txt-soft: var(--lumiverse-text-dim, #706889);
+        --pt-txt: var(--lumiverse-text, #edeaf6);
+        --pt-txt-dim: var(--lumiverse-text-muted, #948caf);
+        --pt-txt-soft: var(--lumiverse-text-dim, #736b8e);
         --pt-accent: var(--lumiverse-primary-text, #c9a6ff);
         --pt-gold: #ffd700;
 
@@ -8539,6 +8540,7 @@ var pulse_thread_tracker_default = {
         --cy-ovu: #ffd700;
         --cy-lut: #a55eea;
         --cy-preg: #f6d365;
+        --cy-rut: #d946ef;
 
         --st-app: #2ecc71;
         --st-neu: #f1c40f;
@@ -8558,13 +8560,18 @@ var pulse_thread_tracker_default = {
         overflow: hidden;
         isolation: isolate;
         contain: layout style paint;
-        box-shadow: var(--lumiverse-highlight-inset, inset 0 1px 0 rgba(255, 255, 255, 0.08));
+        box-shadow:
+            var(--lumiverse-highlight-inset, inset 0 1px 0 rgba(255, 255, 255, 0.11)),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+            0 18px 42px rgba(0, 0, 0, 0.34);
         border: 1px solid var(--pt-border);
-        background: linear-gradient(
-            180deg,
-            color-mix(in srgb, var(--pt-bg-glass) 78%, var(--pt-bg-deep) 22%) 0%,
-            color-mix(in srgb, var(--pt-bg-deep) 94%, transparent) 100%
-        );
+        background:
+            radial-gradient(ellipse 80% 35% at 50% 0%, color-mix(in srgb, var(--pt-accent) 10%, transparent), transparent 65%),
+            linear-gradient(
+                180deg,
+                color-mix(in srgb, var(--pt-bg-glass) 76%, var(--pt-bg-deep) 24%) 0%,
+                color-mix(in srgb, var(--pt-bg-deep) 96%, transparent) 100%
+            );
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
     }
@@ -8603,8 +8610,8 @@ var pulse_thread_tracker_default = {
        ========================================= */
     .pt-tab-bar {
         display: flex;
-        gap: 6px;
-        padding: 14px 18px 0 18px;
+        gap: 7px;
+        padding: 14px 18px 2px 18px;
         max-width: 100%;
         min-width: 0;
         overflow-x: auto;
@@ -8624,18 +8631,21 @@ var pulse_thread_tracker_default = {
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 6px 12px;
-        border-radius: calc(var(--pt-radius-sm) + 2px);
+        padding: 6px 13px 6px 8px;
+        border-radius: 999px;
         background: var(--pt-surface);
         border: 1px solid var(--pt-border);
         cursor: pointer;
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.08),
+            0 3px 10px rgba(0, 0, 0, 0.22);
         transition:
             background var(--pt-transition-fast),
             border-color var(--pt-transition-fast),
             box-shadow var(--pt-transition-fast),
             opacity var(--pt-transition-fast),
             transform var(--pt-transition-fast);
-        opacity: 0.64;
+        opacity: 0.62;
         white-space: nowrap;
         flex-shrink: 0;
         scroll-snap-align: start;
@@ -8644,7 +8654,8 @@ var pulse_thread_tracker_default = {
     }
 
     .pt-tab:hover {
-        opacity: 0.92;
+        opacity: 0.94;
+        transform: translateY(-1px);
         background: var(--pt-surface-strong);
         border-color: var(--pt-border-hover);
     }
@@ -8657,14 +8668,19 @@ var pulse_thread_tracker_default = {
         align-items: center;
         justify-content: center;
         font-size: calc(11px * var(--pt-scale));
-        font-weight: 700;
+        font-weight: 800;
         text-transform: uppercase;
         background: color-mix(in srgb, var(--pt-surface-strong) 88%, transparent);
+        box-shadow:
+            inset 0 1px 1px rgba(255, 255, 255, 0.35),
+            inset 0 -2px 3px rgba(0, 0, 0, 0.4),
+            0 2px 6px rgba(0, 0, 0, 0.35);
     }
 
     .pt-tab-name {
         font-size: calc(12px * var(--pt-scale));
-        font-weight: 600;
+        font-weight: 650;
+        letter-spacing: 0.1px;
     }
 
     /* Active tab styling via radio:checked (supports up to 10 characters) */
@@ -8679,9 +8695,12 @@ var pulse_thread_tracker_default = {
     .pt-char-radio:nth-of-type(9):checked ~ .pt-tab-bar .pt-tab:nth-child(9),
     .pt-char-radio:nth-of-type(10):checked ~ .pt-tab-bar .pt-tab:nth-child(10) {
         opacity: 1;
-        background: color-mix(in srgb, var(--lumiverse-primary-010, rgba(201, 166, 255, 0.10)) 68%, var(--pt-surface-strong) 32%);
-        border-color: var(--pt-border-hover);
-        box-shadow: 0 0 0 1px color-mix(in srgb, var(--pt-accent) 16%, transparent);
+        background: color-mix(in srgb, var(--lumiverse-primary-010, rgba(201, 166, 255, 0.14)) 72%, var(--pt-surface-strong) 28%);
+        border-color: color-mix(in srgb, var(--pt-accent) 45%, var(--pt-border-hover));
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.18),
+            0 0 0 1px color-mix(in srgb, var(--pt-accent) 22%, transparent),
+            0 6px 16px rgba(0, 0, 0, 0.34);
     }
 
     /* =========================================
@@ -8693,11 +8712,11 @@ var pulse_thread_tracker_default = {
 
     .pt-page {
         display: none;
-        animation: ptPageIn 180ms ease-out;
+        animation: ptPageIn 200ms cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     @keyframes ptPageIn {
-        from { opacity: 0; transform: translateY(8px); }
+        from { opacity: 0; transform: translateY(7px); }
         to { opacity: 1; transform: translateY(0); }
     }
 
@@ -8715,84 +8734,28 @@ var pulse_thread_tracker_default = {
     }
 
     /* =========================================
-       PER-CHARACTER CARD CONTENT
-       ========================================= */
-    .pt-card-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 14px;
-        padding-bottom: 12px;
-        border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
-
-    .pt-header-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: calc(17px * var(--pt-scale));
-        font-weight: 700;
-        text-transform: uppercase;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        flex-shrink: 0;
-    }
-
-    .pt-header-info h3 {
-        margin: 0;
-        font-size: calc(15px * var(--pt-scale));
-        font-weight: 700;
-        letter-spacing: -0.3px;
-    }
-
-    .pt-header-meta {
-        font-size: calc(10px * var(--pt-scale));
-        color: var(--pt-txt-dim);
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-        font-weight: 600;
-    }
-
-    .pt-header-badges {
-        margin-left: auto;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .pt-badge-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-    }
-
-    .pt-bio-mini {
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: calc(11px * var(--pt-scale));
-        flex-shrink: 0;
-    }
-
-    /* =========================================
        MONOLOGUE
        ========================================= */
     .pt-mono {
         position: relative;
-        background: color-mix(in srgb, var(--pt-surface-strong) 94%, transparent);
+        background:
+            radial-gradient(ellipse 60% 100% at 0% 0%, color-mix(in srgb, var(--pt-accent) 7%, transparent), transparent 65%),
+            color-mix(in srgb, var(--pt-surface-strong) 92%, transparent);
         border: 1px solid var(--pt-border);
         border-radius: var(--pt-radius-sm);
-        padding: 24px 14px 12px 14px;
+        padding: 25px 15px 12px 15px;
         font-style: italic;
         font-size: calc(13px * var(--pt-scale));
         line-height: 1.5;
         color: var(--pt-txt);
         margin-bottom: 14px;
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.08),
+            inset 0 -8px 20px rgba(0, 0, 0, 0.22);
+    }
+
+    .pt-mono p {
+        margin: 0;
     }
 
     .pt-mono-tag {
@@ -8800,127 +8763,278 @@ var pulse_thread_tracker_default = {
         top: 6px;
         left: 12px;
         font-size: calc(8.5px * var(--pt-scale));
+        font-style: normal;
         text-transform: uppercase;
         font-weight: 800;
-        letter-spacing: 1px;
-        color: var(--pt-txt-soft);
-        background: color-mix(in srgb, var(--pt-bg-deep) 84%, transparent);
+        letter-spacing: 1.1px;
+        color: color-mix(in srgb, var(--pt-accent) 68%, var(--pt-txt-soft));
+        background: color-mix(in srgb, var(--pt-bg-deep) 88%, transparent);
         padding: 2px 8px;
-        border-radius: 4px;
-        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.09);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
     }
 
     /* =========================================
-       BIO ZONES (Fertility / Refractory)
+       BIO ZONES & 3D SPECIMEN CHAMBERS
        ========================================= */
     .pt-bio-stack {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
         gap: 12px;
         margin-bottom: 16px;
-        align-items: stretch;
+        align-items: start;
     }
 
     .pt-bio-column {
         display: grid;
         gap: 12px;
-        grid-auto-rows: 1fr;
+        align-content: start;
     }
 
     .pt-bio-zone {
+        position: relative;
         display: grid;
-        grid-template-columns: 140px minmax(0, 1fr);
+        grid-template-columns: 156px minmax(0, 1fr);
         align-items: center;
-        gap: 14px;
+        gap: 16px;
         padding: 14px 16px;
         background:
-            radial-gradient(circle at 20% 12%, color-mix(in srgb, var(--pt-accent) 10%, transparent), transparent 32%),
-            linear-gradient(135deg, color-mix(in srgb, var(--pt-surface-strong) 90%, transparent), color-mix(in srgb, var(--pt-surface) 96%, transparent));
+            radial-gradient(ellipse 90% 60% at 18% 12%, color-mix(in srgb, var(--zone-tint, var(--pt-accent)) 11%, transparent), transparent 58%),
+            linear-gradient(155deg, color-mix(in srgb, var(--pt-surface-strong) 92%, transparent) 0%, color-mix(in srgb, var(--pt-surface) 98%, transparent) 100%);
         border-radius: var(--pt-radius-sm);
         border: 1px solid var(--pt-border);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.09),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+            0 10px 24px rgba(0, 0, 0, 0.24);
         min-width: 0;
+        transition: border-color var(--pt-transition-fast), box-shadow var(--pt-transition-fast);
     }
 
-    .pt-bio-zone.pt-bio-compact {
-        grid-template-columns: 38px 1fr;
-        padding: 10px 12px;
+    .pt-bio-zone:hover {
+        border-color: color-mix(in srgb, var(--zone-tint, var(--pt-accent)) 28%, var(--pt-border-hover));
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.13),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.38),
+            0 14px 30px rgba(0, 0, 0, 0.30);
     }
 
-    .pt-bio-ready-dot {
-        width: 68px;
-        height: 68px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--pt-accent);
-        background: color-mix(in srgb, var(--lumiverse-primary-010, rgba(201, 166, 255, 0.08)) 84%, transparent);
-        border: 1px solid color-mix(in srgb, var(--pt-accent) 24%, var(--pt-border));
-        box-shadow: 0 0 0 1px color-mix(in srgb, var(--pt-accent) 10%, transparent);
-        font-size: calc(14px * var(--pt-scale));
-        font-weight: 900;
-    }
+    .pt-bio-zone.pt-zone-cycle { --zone-tint: var(--pt-accent); }
+    .pt-bio-zone.pt-zone-womb { --zone-tint: #ff7aa2; }
+    .pt-bio-zone.pt-zone-male { --zone-tint: #b8c7ff; }
+    .pt-bio-zone.pt-zone-breast { --zone-tint: #ff8fb8; }
+    .pt-bio-zone.pt-zone-anal { --zone-tint: #d946ef; }
+    .pt-bio-zone.pt-zone-bladder { --zone-tint: #ffd86b; }
 
-    /* --- FEMALE: Fertility / Womb Dial --- */
-    .pt-fertility-ring {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
+    /* Recessed 3D illuminated display chamber behind every anatomical SVG */
+    .pt-stage {
         position: relative;
-        flex-shrink: 0;
-        background: conic-gradient(
-            var(--cy-men) 0deg 64deg,
-            var(--cy-fol) 64deg 167deg,
-            var(--cy-ovu) 167deg 206deg,
-            var(--cy-lut) 206deg 309deg,
-            var(--cy-men) 309deg 360deg
-        );
-        padding: 6px;
-        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 8px 20px rgba(0,0,0,0.24);
+        border-radius: calc(var(--pt-radius-sm) - 2px);
+        background:
+            radial-gradient(ellipse 75% 45% at 50% 10%, color-mix(in srgb, var(--stage-glow, var(--zone-tint, var(--pt-accent))) 16%, transparent), transparent 68%),
+            radial-gradient(ellipse 68% 28% at 50% 96%, color-mix(in srgb, var(--stage-glow, var(--zone-tint, var(--pt-accent))) 10%, transparent), transparent 72%),
+            linear-gradient(180deg, rgba(6, 5, 13, 0.72) 0%, rgba(13, 10, 22, 0.56) 55%, rgba(5, 4, 11, 0.80) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        box-shadow:
+            inset 0 12px 26px rgba(0, 0, 0, 0.52),
+            inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+            0 1px 0 rgba(255, 255, 255, 0.05);
+        padding: 10px 6px;
+        overflow: hidden;
     }
 
-    .pt-fertility-ring::before {
+    /* Subtle curved overhead glass reflection + corner reticle ticks */
+    .pt-stage::before {
         content: '';
         position: absolute;
-        inset: 10px;
-        border-radius: 50%;
-        background:
-            radial-gradient(circle at 50% 42%, rgba(255,255,255,0.08), transparent 38%),
-            var(--pt-bg-deep);
-        z-index: 1;
+        top: 0;
+        left: 12%;
+        right: 12%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.24), transparent);
+        pointer-events: none;
     }
 
+    .pt-stage::after {
+        content: '';
+        position: absolute;
+        inset: 5px;
+        border-radius: calc(var(--pt-radius-sm) - 6px);
+        background:
+            linear-gradient(to right, rgba(255,255,255,0.14) 7px, transparent 7px) 0 0 / 100% 1px no-repeat,
+            linear-gradient(to bottom, rgba(255,255,255,0.14) 7px, transparent 7px) 0 0 / 1px 100% no-repeat,
+            linear-gradient(to left, rgba(255,255,255,0.14) 7px, transparent 7px) 100% 0 / 100% 1px no-repeat,
+            linear-gradient(to bottom, rgba(255,255,255,0.14) 7px, transparent 7px) 100% 0 / 1px 100% no-repeat,
+            linear-gradient(to right, rgba(255,255,255,0.12) 7px, transparent 7px) 0 100% / 100% 1px no-repeat,
+            linear-gradient(to top, rgba(255,255,255,0.12) 7px, transparent 7px) 0 100% / 1px 100% no-repeat,
+            linear-gradient(to left, rgba(255,255,255,0.12) 7px, transparent 7px) 100% 100% / 100% 1px no-repeat,
+            linear-gradient(to top, rgba(255,255,255,0.12) 7px, transparent 7px) 100% 100% / 1px 100% no-repeat;
+        opacity: 0.45;
+        pointer-events: none;
+    }
+
+    /* --- FEMALE: 3D Machined Fertility Chronometer --- */
     .pt-fertility-visuals {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 10px;
+        justify-content: center;
+        min-height: 152px;
     }
 
+    .pt-fertility-ring {
+        width: 126px;
+        height: 126px;
+        border-radius: 50%;
+        position: relative;
+        flex-shrink: 0;
+        background:
+            repeating-conic-gradient(
+                from -0.6deg,
+                rgba(8, 6, 16, 0.55) 0deg 1.1deg,
+                transparent 1.1deg 12.857deg
+            ),
+            conic-gradient(
+                var(--cy-men) 0deg 64deg,
+                var(--cy-fol) 64deg 167deg,
+                var(--cy-ovu) 167deg 206deg,
+                var(--cy-lut) 206deg 309deg,
+                var(--cy-men) 309deg 360deg
+            );
+        padding: 7px;
+        box-shadow:
+            0 12px 26px rgba(0, 0, 0, 0.54),
+            0 0 18px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 16%, transparent),
+            inset 0 1.5px 1px rgba(255, 255, 255, 0.34),
+            inset 0 -2px 4px rgba(0, 0, 0, 0.65);
+    }
+
+    /* Recessed dark chronometer well */
+    .pt-fertility-ring::before {
+        content: '';
+        position: absolute;
+        inset: 11px;
+        border-radius: 50%;
+        background:
+            radial-gradient(circle at 38% 30%, rgba(255, 255, 255, 0.08), transparent 44%),
+            linear-gradient(160deg, #0b0816 0%, #161126 55%, #090712 100%);
+        box-shadow:
+            inset 0 6px 14px rgba(0, 0, 0, 0.78),
+            inset 0 -1px 1px rgba(255, 255, 255, 0.14);
+        z-index: 1;
+    }
+
+    /* Outer glossy bezel glint */
+    .pt-fertility-ring::after {
+        content: '';
+        position: absolute;
+        inset: -2px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.14) 0%, transparent 32%, transparent 72%, rgba(0, 0, 0, 0.32) 100%);
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    /* 3D Convex Glass Core Orb */
     .pt-fertility-core {
         position: absolute;
-        inset: 28px;
+        inset: 24px;
         border-radius: 50%;
         z-index: 2;
         background:
-            radial-gradient(circle at 50% 25%, color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 20%, transparent), transparent 62%),
-            rgba(0,0,0,0.26);
-        border: 1px solid color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 38%, rgba(255,255,255,0.10));
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 18px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 10%, transparent);
+            radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.24) 0%, transparent 34%),
+            radial-gradient(circle at 50% 78%, color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 34%, transparent) 0%, transparent 62%),
+            radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 16%, #19132a) 0%, #0d0919 88%);
+        border: 1px solid color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 44%, rgba(255, 255, 255, 0.14));
+        box-shadow:
+            inset 0 2px 4px rgba(255, 255, 255, 0.18),
+            inset 0 -6px 12px rgba(0, 0, 0, 0.65),
+            0 6px 16px rgba(0, 0, 0, 0.5),
+            0 0 14px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 22%, transparent);
+    }
+
+    .pt-fertility-core::before {
+        content: '';
+        position: absolute;
+        top: 6px;
+        left: 14px;
+        right: 14px;
+        height: 18px;
+        border-radius: 50%;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 100%);
+        pointer-events: none;
     }
 
     .pt-fertility-core::after {
         content: '';
         position: absolute;
-        inset: 14px;
+        inset: 10px;
         border-radius: 50%;
-        background: radial-gradient(circle, color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 32%, rgba(255,255,255,0.12)) 0%, transparent 70%);
+        background: radial-gradient(circle, color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 28%, rgba(255,255,255,0.08)) 0%, transparent 72%);
         opacity: 0.9;
     }
 
+    .pt-fertility-marker {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 32% 30%, #ffffff 0%, #ffffff 42%, currentColor 100%);
+        border: 1.5px solid rgba(10, 8, 20, 0.72);
+        box-shadow: 0 0 10px currentColor, 0 2px 5px rgba(0, 0, 0, 0.6);
+        z-index: 5;
+        transform: translate(-50%, -50%) rotate(var(--marker-deg)) translateY(-57.5px);
+        transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .pt-fertility-marker.ovulation-glow {
+        animation: ovuPulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes ovuPulse {
+        0%, 100% { box-shadow: 0 0 10px var(--cy-ovu), 0 2px 5px rgba(0,0,0,0.6); }
+        50% { box-shadow: 0 0 20px 5px var(--cy-ovu), 0 2px 5px rgba(0,0,0,0.6); }
+    }
+
+    .pt-fertility-label {
+        position: absolute;
+        inset: 22px;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: calc(9.5px * var(--pt-scale));
+        font-weight: 700;
+        color: var(--pt-txt-dim);
+        z-index: 4;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.65);
+    }
+
+    .pt-fertility-label strong {
+        color: #fff;
+        font-size: calc(20px * var(--pt-scale));
+        line-height: 1;
+        letter-spacing: -0.6px;
+        text-shadow: 0 2px 10px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 45%, rgba(0,0,0,0.8));
+    }
+
+    .pt-fertility-label span {
+        margin-top: 3px;
+        font-size: calc(8.5px * var(--pt-scale));
+        letter-spacing: 1px;
+    }
+
+    /* --- FEMALE: 3D Womb, Ovaries, Cervix & Vaginal Vessel --- */
     .pt-womb-vessel {
-        width: 140px;
-        height: 224px;
+        width: 156px;
+        height: 234px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -8931,53 +9045,84 @@ var pulse_thread_tracker_default = {
         height: 100%;
         display: block;
         overflow: visible;
-        filter: none;
+        filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.55));
     }
 
-    .pt-womb-outline {
+    .pt-womb-tube-wall {
         fill: none;
-        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 70%, white 30%);
-        stroke-width: 5;
+        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 26%, #4a1e35 74%);
+        stroke-width: 7.4;
         stroke-linecap: round;
         stroke-linejoin: round;
-        opacity: 0.95;
-        filter: none;
+    }
+
+    .pt-womb-tube-core {
+        fill: none;
+        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 52%, #a84c73 48%);
+        stroke-width: 4.4;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .pt-womb-tube-gloss {
+        fill: none;
+        stroke: rgba(255, 240, 248, 0.42);
+        stroke-width: 1.4;
+        stroke-linecap: round;
+    }
+
+    .pt-womb-fimbria {
+        fill: none;
+        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 58%, #e89bb8 42%);
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        opacity: 0.88;
+    }
+
+    .pt-womb-wall {
+        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 64%, #ffd9e8 36%);
+        stroke-width: 1.45;
+        stroke-linejoin: round;
+    }
+
+    .pt-womb-rim-highlight {
+        fill: none;
+        stroke: rgba(255, 245, 250, 0.42);
+        stroke-width: 1.5;
+        stroke-linecap: round;
     }
 
     .pt-womb-inner {
-        fill: rgba(255,255,255,0.05);
-        stroke: rgba(255,255,255,0.08);
-        stroke-width: 1.5;
+        stroke: rgba(12, 4, 10, 0.65);
+        stroke-width: 1.3;
+    }
+
+    .pt-womb-endometrium-bevel {
+        fill: none;
+        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 45%, rgba(255, 210, 228, 0.35));
+        stroke-width: 1.2;
+        opacity: 0.65;
     }
 
     .pt-womb-ovary {
-        fill: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 22%, rgba(255,255,255,0.08));
-        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 48%, rgba(255,255,255,0.12));
-        stroke-width: 1.2;
-        /* Anchor SVG transforms to the circle's own center so the conception
-           pulse breathes in place instead of translating toward (0,0). */
+        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 62%, rgba(255, 232, 242, 0.4));
+        stroke-width: 1.1;
         transform-box: fill-box;
         transform-origin: center;
-        transition: filter 600ms ease-out, fill 600ms ease-out, stroke 600ms ease-out;
+        transition: filter 600ms ease-out, stroke 600ms ease-out;
     }
 
     .pt-womb-ovary.pulse {
-        fill: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 40%, rgba(255,255,255,0.16));
-        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 72%, rgba(255,255,255,0.22));
-        filter: drop-shadow(0 0 6px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 70%, transparent));
+        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 86%, white 14%);
+        filter: drop-shadow(0 0 6px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 80%, transparent));
         animation: ovaryPulse 2.4s ease-in-out infinite;
     }
 
-    /* Conception halo: an expanding ring behind each ovary. It sits at opacity 0
-       unless .pulse (isConceived) is present, so non-conceived characters are
-       untouched. The static scale/opacity on .pulse is the visible fallback when
-       animations are disabled (see the prefers-reduced-motion block above). */
     .pt-womb-ovary-halo {
         fill: none;
         stroke: transparent;
         stroke-width: 1.2;
         opacity: 0;
-        /* Same fill-box anchoring as the ovary, so the ring breathes in place. */
         transform-box: fill-box;
         transform-origin: center;
     }
@@ -8985,121 +9130,133 @@ var pulse_thread_tracker_default = {
     .pt-womb-ovary-halo.pulse {
         stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 88%, white 12%);
         transform: scale(1.45);
-        opacity: 0.32;
+        opacity: 0.36;
         animation: ovaryHalo 2.4s ease-out infinite;
     }
 
     @keyframes ovaryPulse {
         0%, 100% {
             transform: scale(1);
-            opacity: 1;
-            filter: drop-shadow(0 0 5px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 60%, transparent));
+            filter: drop-shadow(0 0 4px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 65%, transparent));
         }
         50% {
-            transform: scale(1.14);
-            opacity: 1;
-            filter: drop-shadow(0 0 10px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 95%, transparent));
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 9px color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 98%, transparent));
         }
     }
 
     @keyframes ovaryHalo {
-        0% {
-            transform: scale(0.9);
-            opacity: 0.55;
-        }
-        60%, 100% {
-            /* r=5 at scale 2.15 stays inside the 100x160 viewBox for cx=14 and cx=86. */
-            transform: scale(2.15);
-            opacity: 0;
-        }
+        0% { transform: scale(0.92); opacity: 0.62; }
+        65%, 100% { transform: scale(2.05); opacity: 0; }
+    }
+
+    .pt-womb-seed-halo {
+        fill: rgba(255, 224, 130, 0.22);
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: seedBreath 2.6s ease-in-out infinite;
     }
 
     .pt-womb-seed {
-        fill: rgba(255,255,255,0.92);
+        stroke: rgba(255, 245, 210, 0.78);
+        stroke-width: 0.8;
+        filter: drop-shadow(0 0 5px rgba(255, 215, 110, 0.75));
+    }
+
+    @keyframes seedBreath {
+        0%, 100% { transform: scale(0.95); opacity: 0.55; }
+        50% { transform: scale(1.24); opacity: 0.92; }
     }
 
     .pt-womb-liquid {
-        fill: rgba(255,255,255,0.95);
         transition: y 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
-    .pt-womb-surface {
-        stroke: rgba(255,255,255,0.72);
-        stroke-width: 2;
-        stroke-linecap: round;
-        opacity: 0.88;
+    .pt-meniscus-top {
+        fill: rgba(255, 255, 255, 0.78);
+        stroke: rgba(255, 255, 255, 0.92);
+        stroke-width: 0.6;
     }
 
-    /* --- FEMALE: Vaginal canal, cervical wall & penetration depth --- */
-    .pt-vag-outline {
+    .pt-meniscus-glint {
         fill: none;
-        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 65%, white 35%);
-        stroke-width: 4;
+        stroke: rgba(255, 255, 255, 0.96);
+        stroke-width: 1.3;
         stroke-linecap: round;
+    }
+
+    /* --- FEMALE: 3D Vaginal Canal, Cervical Torus & Penetration --- */
+    .pt-vag-wall {
+        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 58%, #f5c6da 42%);
+        stroke-width: 1.35;
         stroke-linejoin: round;
-        opacity: 0.95;
-        filter: none;
     }
 
     .pt-vag-inner {
-        fill: rgba(255,255,255,0.05);
-        stroke: rgba(255,255,255,0.08);
-        stroke-width: 1.5;
+        stroke: rgba(10, 3, 9, 0.62);
+        stroke-width: 1.1;
     }
 
-    .pt-vag-rugae {
+    .pt-rugae-shadow {
         fill: none;
-        stroke: rgba(255,255,255,0.08);
-        stroke-width: 1.5;
+        stroke: rgba(14, 2, 12, 0.46);
+        stroke-width: 2.1;
+        stroke-linecap: round;
+    }
+
+    .pt-rugae-light {
+        fill: none;
+        stroke: rgba(255, 212, 232, 0.22);
+        stroke-width: 1.1;
         stroke-linecap: round;
     }
 
     .pt-fornix {
         fill: none;
-        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 38%, transparent);
-        stroke-width: 1.6;
+        stroke: rgba(12, 2, 10, 0.55);
+        stroke-width: 2.2;
         stroke-linecap: round;
-        opacity: 0.75;
     }
 
-    .pt-introitus {
+    .pt-fornix-rim {
         fill: none;
-        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 60%, rgba(255,255,255,0.2) 40%);
-        stroke-width: 3.2;
+        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 45%, rgba(255, 224, 238, 0.35));
+        stroke-width: 1;
         stroke-linecap: round;
     }
 
-    /* Split cervix: womb contents weeping down the canal + a falling drip */
+    .pt-labia-cushion {
+        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 52%, rgba(255, 200, 222, 0.45));
+        stroke-width: 1;
+    }
+
     .pt-canal-leak {
-        fill: rgba(255,255,255,0.88);
         transition: y 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
     .pt-canal-drip {
-        fill: rgba(255,255,255,0.8);
         transform-box: fill-box;
         transform-origin: center;
         animation: canalDrip 2.2s ease-in infinite;
     }
 
     @keyframes canalDrip {
-        0% { transform: translateY(0); opacity: 0; }
-        15% { opacity: 0.9; }
-        70% { transform: translateY(26px); opacity: 0.5; }
-        100% { transform: translateY(34px); opacity: 0; }
+        0% { transform: translateY(0) scale(0.85); opacity: 0; }
+        18% { opacity: 0.95; transform: translateY(2px) scale(1); }
+        78% { transform: translateY(14px) scale(0.96); opacity: 0.7; }
+        100% { transform: translateY(18px) scale(0.8); opacity: 0; }
     }
 
     .pt-cervix-collar {
-        fill: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 20%, #241019 80%);
-        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 55%, white 15%);
-        stroke-width: 2.2;
-        transition: fill 600ms ease-out, stroke 600ms ease-out;
+        stroke: color-mix(in srgb, var(--cycle-accent, var(--cy-fol)) 62%, #ffd4e5 38%);
+        stroke-width: 1.4;
+        transition: stroke 600ms ease-out, filter 600ms ease-out;
     }
 
     .pt-cervix-os {
-        fill: #140810;
-        stroke: rgba(255,255,255,0.25);
-        stroke-width: 1.2;
+        fill: #0f040b;
+        stroke: rgba(255, 255, 255, 0.28);
+        stroke-width: 1.3;
         transition: r 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), stroke 600ms ease-out, filter 600ms ease-out;
     }
 
@@ -9109,15 +9266,15 @@ var pulse_thread_tracker_default = {
     .pt-cervix.os-open .pt-cervix-os { stroke: #ff8fb8; }
     .pt-cervix.os-dilated .pt-cervix-os {
         stroke: #ff6fa5;
-        filter: drop-shadow(0 0 3px rgba(255,111,165,0.7));
+        filter: drop-shadow(0 0 4px rgba(255, 111, 165, 0.78));
     }
     .pt-cervix.os-kissed .pt-cervix-os {
         stroke: #ffd700;
         animation: osKissed 2s ease-in-out infinite;
     }
     .pt-cervix.os-split .pt-cervix-collar {
-        stroke: #ff4757;
-        fill: color-mix(in srgb, #ff4757 18%, #241019 82%);
+        stroke: #ff5263;
+        filter: drop-shadow(0 0 4px rgba(255, 71, 87, 0.55));
     }
     .pt-cervix.os-split .pt-cervix-os {
         stroke: #ff4757;
@@ -9125,165 +9282,134 @@ var pulse_thread_tracker_default = {
     }
 
     @keyframes osKissed {
-        0%, 100% { filter: drop-shadow(0 0 3px rgba(255,215,0,0.6)); }
-        50% { filter: drop-shadow(0 0 7px rgba(255,215,0,0.95)); }
+        0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 215, 0, 0.65)); }
+        50% { filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.98)); }
     }
 
     @keyframes osSplitThrob {
-        0%, 100% { filter: drop-shadow(0 0 4px rgba(255,71,87,0.7)); }
-        50% { filter: drop-shadow(0 0 9px rgba(255,71,87,1)); }
+        0%, 100% { filter: drop-shadow(0 0 4px rgba(255, 71, 87, 0.72)); }
+        50% { filter: drop-shadow(0 0 9px rgba(255, 71, 87, 1)); }
     }
 
     .pt-cervix-tear {
         fill: none;
-        stroke: #ff4757;
-        stroke-width: 1.8;
+        stroke: #ff5263;
+        stroke-width: 1.5;
         stroke-linecap: round;
         stroke-linejoin: round;
         opacity: 0.95;
-        filter: drop-shadow(0 0 3px rgba(255,71,87,0.6));
+        filter: drop-shadow(0 0 3px rgba(255, 71, 87, 0.7));
     }
 
-    /* Penetrating shaft — geometry driven by vag_depth_pct / anal_depth_pct;
-       fill comes from the per-character skin gradient inline. Layered build:
-       capsule body + coronal ridge band + dome glans. */
-    .pt-shaft {
-        stroke: rgba(0,0,0,0.22);
-        stroke-width: 0.8;
-        transition: y 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+    /* Sculpted 3D Penetrating Phallus */
+    .pt-shaft-body {
+        stroke: rgba(45, 18, 12, 0.42);
+        stroke-width: 0.7;
     }
 
-    .pt-shaft-corona {
-        fill: #d69272;
-        stroke: rgba(0,0,0,0.18);
+    .pt-shaft-vein {
+        fill: none;
+        stroke: rgba(155, 86, 72, 0.34);
+        stroke-width: 1.05;
+        stroke-linecap: round;
+    }
+
+    .pt-shaft-vein-gloss {
+        fill: none;
+        stroke: rgba(255, 232, 220, 0.28);
         stroke-width: 0.6;
-        transition: cy 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+        stroke-linecap: round;
+    }
+
+    .pt-shaft-sulcus {
+        fill: none;
+        stroke: rgba(74, 24, 24, 0.56);
+        stroke-width: 2.1;
+        stroke-linecap: round;
     }
 
     .pt-shaft-glans {
-        fill: #eeb39a;
-        stroke: rgba(0,0,0,0.25);
-        stroke-width: 0.7;
-        transition: cy 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+        stroke: rgba(92, 34, 38, 0.45);
+        stroke-width: 0.75;
     }
 
-    /* Cervix state chip (panel) reuses the os-* state classes */
+    .pt-shaft-meatus {
+        fill: none;
+        stroke: rgba(82, 22, 34, 0.65);
+        stroke-width: 1.05;
+        stroke-linecap: round;
+    }
+
+    /* Cervix state chip (panel) */
     .pt-os-chip {
         display: inline-block;
-        padding: 1px 8px;
+        padding: 2px 8px;
         border-radius: 999px;
         font-size: calc(9.5px * var(--pt-scale));
-        font-weight: 700;
-        letter-spacing: 0.4px;
+        font-weight: 750;
+        letter-spacing: 0.45px;
         text-transform: uppercase;
         border: 1px solid transparent;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
     }
 
-    .pt-os-chip.os-sealed { color: #a8c6ff; border-color: rgba(112,161,255,0.4); background: rgba(112,161,255,0.14); }
-    .pt-os-chip.os-firm { color: #c3d2e8; border-color: rgba(150,170,200,0.35); background: rgba(150,170,200,0.12); }
-    .pt-os-chip.os-soft { color: #f4b8d2; border-color: rgba(240,167,200,0.4); background: rgba(240,167,200,0.13); }
-    .pt-os-chip.os-open { color: #ffa3c6; border-color: rgba(255,143,184,0.45); background: rgba(255,143,184,0.14); }
-    .pt-os-chip.os-dilated { color: #ff8fb4; border-color: rgba(255,111,165,0.55); background: rgba(255,111,165,0.16); }
-    .pt-os-chip.os-kissed { color: #ffe27a; border-color: rgba(255,215,0,0.55); background: rgba(255,215,0,0.14); }
-    .pt-os-chip.os-split { color: #ff8a94; border-color: rgba(255,71,87,0.65); background: rgba(255,71,87,0.18); animation: osSplitThrob 1.6s ease-in-out infinite; }
+    .pt-os-chip.os-sealed { color: #a8c6ff; border-color: rgba(112,161,255,0.42); background: rgba(112,161,255,0.14); }
+    .pt-os-chip.os-firm { color: #c3d2e8; border-color: rgba(150,170,200,0.38); background: rgba(150,170,200,0.12); }
+    .pt-os-chip.os-soft { color: #f4b8d2; border-color: rgba(240,167,200,0.42); background: rgba(240,167,200,0.14); }
+    .pt-os-chip.os-open { color: #ffa3c6; border-color: rgba(255,143,184,0.48); background: rgba(255,143,184,0.15); }
+    .pt-os-chip.os-dilated { color: #ff8fb4; border-color: rgba(255,111,165,0.58); background: rgba(255,111,165,0.18); }
+    .pt-os-chip.os-kissed { color: #ffe27a; border-color: rgba(255,215,0,0.58); background: rgba(255,215,0,0.16); }
+    .pt-os-chip.os-split { color: #ff8a94; border-color: rgba(255,71,87,0.68); background: rgba(255,71,87,0.20); animation: osSplitThrob 1.6s ease-in-out infinite; }
     .pt-os-chip.os-unknown { color: var(--pt-txt-dim); border-color: rgba(255,255,255,0.18); background: rgba(255,255,255,0.06); }
 
     /* Depth meter: 0-130 scale, dashed marker = the cervix (100 point) */
-    .pt-depth-meter {
-        position: relative;
-    }
-
-    .pt-depth-fill {
-        background: linear-gradient(90deg, #f0c4a8, #ff7aa2);
-    }
-
+    .pt-depth-meter { position: relative; }
+    .pt-depth-fill { background: linear-gradient(90deg, #f2be9d, #ff6d9a) !important; }
     .pt-depth-marker {
         position: absolute;
         top: -2px;
         bottom: -2px;
         left: 76.9%;
         width: 0;
-        border-left: 1px dashed rgba(255,255,255,0.65);
+        border-left: 1px dashed rgba(255, 255, 255, 0.72);
         pointer-events: none;
     }
 
-    .pt-fertility-marker {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #fff;
-        box-shadow: 0 0 8px currentColor;
-        z-index: 4;
-        transform: translate(-50%, -50%) rotate(var(--marker-deg)) translateY(-54px);
-        transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-    }
-
-    .pt-fertility-marker.ovulation-glow {
-        animation: ovuPulse 1.8s ease-in-out infinite;
-    }
-
-    @keyframes ovuPulse {
-        0%, 100% { box-shadow: 0 0 8px var(--cy-ovu); }
-        50% { box-shadow: 0 0 18px 4px var(--cy-ovu); }
-    }
-
-    .pt-fertility-label {
-        position: absolute;
-        inset: 15px;
-        border-radius: 50%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        font-size: calc(9.5px * var(--pt-scale));
-        font-weight: 700;
-        color: var(--pt-txt-dim);
-        z-index: 3;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        text-shadow: 0 1px 6px rgba(0,0,0,0.35);
-    }
-
-    .pt-fertility-label strong {
-        color: var(--pt-txt);
-        font-size: calc(18px * var(--pt-scale));
-        line-height: 1;
-        letter-spacing: -0.5px;
-    }
-
-    .pt-fertility-label span {
-        margin-top: 2px;
-        font-size: calc(8.5px * var(--pt-scale));
-    }
-
+    /* Recessed 3D Glass Meters */
     .pt-womb-meter,
-    .pt-metric-bar {
-        height: 7px;
+    .pt-metric-bar,
+    .pt-anal-meter,
+    .pt-bladder-meter {
+        height: 8px;
         border-radius: 999px;
         overflow: hidden;
-        background: color-mix(in srgb, var(--pt-surface-strong) 92%, transparent);
-        border: 1px solid color-mix(in srgb, var(--pt-border) 75%, transparent);
+        background: rgba(6, 5, 13, 0.62);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.58);
     }
 
     .pt-womb-meter-fill,
-    .pt-metric-fill {
+    .pt-metric-fill,
+    .pt-anal-meter-fill,
+    .pt-bladder-meter-fill {
         height: 100%;
         width: 0%;
         border-radius: inherit;
+        position: relative;
         transition: width 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
     }
 
     .pt-womb-meter-fill { background: linear-gradient(90deg, #f6d365, #ff7aa2); }
-    .pt-metric-fill { background: linear-gradient(90deg, #fff8d6, #ffd86b); }
-    .pt-fertility-fill { background: linear-gradient(90deg, #70a1ff, #ffd700); }
+    .pt-metric-fill { background: linear-gradient(90deg, #fff6d0, #ffd464); }
+    .pt-fertility-fill { background: linear-gradient(90deg, #6ba4ff, #ffd700); }
+    .pt-anal-meter-fill { background: linear-gradient(90deg, #8b2be2, #ec4899); }
+    .pt-bladder-meter-fill { background: linear-gradient(90deg, #fff3c4, #f5a623); }
 
-    /* --- FEMALE: Breast & Lactation Vessel --- */
+    /* --- FEMALE: 3D Breasts, Torso, Ducts & Lactation Vessel --- */
     .pt-breast-vessel {
-        width: 140px;
-        height: 160px;
+        width: 156px;
+        height: 174px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -9294,48 +9420,83 @@ var pulse_thread_tracker_default = {
         height: 100%;
         display: block;
         overflow: visible;
-        filter: none;
+        filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.52));
+    }
+
+    .pt-torso-silhouette {
+        fill: rgba(255, 214, 228, 0.035);
+        stroke: rgba(255, 214, 228, 0.14);
+        stroke-width: 1.05;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .pt-torso-clavicle {
+        fill: none;
+        stroke: rgba(255, 232, 240, 0.20);
+        stroke-width: 1.15;
+        stroke-linecap: round;
+    }
+
+    .pt-torso-clavicle-shadow {
+        fill: none;
+        stroke: rgba(12, 4, 14, 0.36);
+        stroke-width: 2;
+        stroke-linecap: round;
     }
 
     .pt-breast-outline {
         fill: none;
-        stroke: color-mix(in srgb, #ff7aa2 65%, white 30%);
-        stroke-width: 2.6;
+        stroke: color-mix(in srgb, #ff84ac 68%, white 32%);
+        stroke-width: 2.1;
         stroke-linecap: round;
         stroke-linejoin: round;
-        opacity: 0.95;
+        opacity: 0.94;
         transition: stroke 600ms ease-out, filter 600ms ease-out;
     }
 
     .pt-breast-outline.lactating {
-        stroke: color-mix(in srgb, #ffd86b 35%, color-mix(in srgb, #ff7aa2 65%, white 30%) 65%);
-        filter: drop-shadow(0 0 5px color-mix(in srgb, #ffd86b 55%, transparent));
+        stroke: color-mix(in srgb, #ffd86b 45%, #ff9ab8 55%);
+        filter: drop-shadow(0 0 5px rgba(255, 216, 107, 0.62));
     }
 
-    .pt-breast-inner {
-        fill: rgba(255, 255, 255, 0.05);
-        stroke: rgba(255, 255, 255, 0.06);
-        stroke-width: 1;
+    .pt-breast-duct {
+        fill: none;
+        stroke: rgba(255, 214, 230, 0.20);
+        stroke-width: 1.1;
+        stroke-linecap: round;
+        transition: stroke 500ms ease-out, opacity 500ms ease-out;
+    }
+
+    .pt-breast-duct.active {
+        stroke: rgba(255, 246, 206, 0.44);
     }
 
     .pt-breast-cleavage {
         fill: none;
-        stroke: rgba(0, 0, 0, 0.32);
-        stroke-width: 1.4;
+        stroke: rgba(20, 4, 14, 0.58);
+        stroke-width: 2.2;
         stroke-linecap: round;
-        opacity: 0.5;
+        opacity: 0.65;
     }
 
     .pt-breast-fold {
         fill: none;
-        stroke: rgba(0, 0, 0, 0.22);
-        stroke-width: 0.9;
+        stroke: rgba(10, 2, 10, 0.56);
+        stroke-width: 2.6;
         stroke-linecap: round;
-        opacity: 0.55;
+        opacity: 0.72;
+    }
+
+    .pt-breast-specular {
+        fill: none;
+        stroke: rgba(255, 250, 252, 0.34);
+        stroke-width: 3.4;
+        stroke-linecap: round;
+        pointer-events: none;
     }
 
     .pt-breast-gloss {
-        fill: rgba(255, 255, 255, 0.10);
         pointer-events: none;
     }
 
@@ -9343,69 +9504,63 @@ var pulse_thread_tracker_default = {
         display: inline-flex;
         align-items: center;
         margin-left: 6px;
-        padding: 1px 6px;
+        padding: 1px 7px;
         border-radius: 999px;
-        background: color-mix(in srgb, #ff7aa2 18%, var(--pt-bg-deep) 82%);
-        border: 1px solid color-mix(in srgb, #ff7aa2 35%, var(--pt-border) 65%);
-        color: color-mix(in srgb, #ffb1c7 80%, white 20%);
+        background: color-mix(in srgb, #ff7aa2 20%, var(--pt-bg-deep) 80%);
+        border: 1px solid color-mix(in srgb, #ff7aa2 42%, var(--pt-border) 58%);
+        color: color-mix(in srgb, #ffbdd0 84%, white 16%);
         font-size: calc(9px * var(--pt-scale));
         font-weight: 800;
         letter-spacing: 0.6px;
-        line-height: 1.4;
+        line-height: 1.45;
         text-transform: none;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
     }
 
     .pt-areola {
-        fill: color-mix(in srgb, #b85c7c 28%, rgba(255, 255, 255, 0.06));
-        stroke: color-mix(in srgb, #b85c7c 42%, rgba(255, 255, 255, 0.12));
-        stroke-width: 0.6;
-        opacity: 0.85;
-        transition: fill 400ms ease-out;
-    }
-
-    .pt-areola.engorged {
-        fill: color-mix(in srgb, #b8456b 42%, rgba(255, 255, 255, 0.08));
-        stroke: color-mix(in srgb, #b8456b 55%, rgba(255, 255, 255, 0.16));
+        opacity: 0.92;
+        transition: opacity 400ms ease-out;
     }
 
     .pt-nipple {
-        fill: color-mix(in srgb, #ff5c8a 78%, rgba(255, 255, 255, 0.14));
-        stroke: color-mix(in srgb, #ff3c70 80%, rgba(255, 255, 255, 0.2));
-        stroke-width: 0.6;
+        stroke: rgba(96, 18, 44, 0.42);
+        stroke-width: 0.55;
         transform-box: fill-box;
         transform-origin: center;
-        transition: fill 400ms ease-out, filter 400ms ease-out;
+        transition: filter 400ms ease-out;
     }
 
     .pt-nipple.engorged {
-        fill: color-mix(in srgb, #ff3870 90%, white 10%);
-        stroke: color-mix(in srgb, #ff3870 95%, rgba(255, 255, 255, 0.25));
-        filter: drop-shadow(0 0 3.5px color-mix(in srgb, #ff3870 70%, transparent));
+        filter: drop-shadow(0 0 4px rgba(255, 56, 112, 0.85));
         animation: nippleEngorged 2.4s ease-in-out infinite;
     }
 
     @keyframes nippleEngorged {
         0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.22); }
+        50% { transform: scale(1.18); }
     }
 
     .pt-milk-liquid {
-        fill: rgba(255, 248, 214, 0.95);
         transition: y 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
-    .pt-milk-surface {
-        fill: none;
-        stroke: rgba(255, 248, 214, 0.78);
-        stroke-width: 2;
-        stroke-linecap: round;
-        opacity: 0.88;
+    .pt-milk-drip {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: milkDrip 2.4s ease-in infinite;
     }
 
-    /* --- MALE: Anal & Prostate Vessel --- */
+    @keyframes milkDrip {
+        0% { transform: translateY(0) scale(0.75); opacity: 0; }
+        20% { transform: translateY(1px) scale(1); opacity: 0.95; }
+        82% { transform: translateY(10px) scale(0.95); opacity: 0.65; }
+        100% { transform: translateY(13px) scale(0.7); opacity: 0; }
+    }
+
+    /* --- MALE: 3D Anal & Prostate Vessel --- */
     .pt-anal-vessel {
-        width: 140px;
-        height: 180px;
+        width: 156px;
+        height: 190px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -9416,87 +9571,64 @@ var pulse_thread_tracker_default = {
         height: 100%;
         display: block;
         overflow: visible;
-        filter: none;
+        filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.55));
     }
 
-    .pt-anal-outline {
-        fill: none;
-        stroke: color-mix(in srgb, #d946ef 70%, white 30%);
-        stroke-width: 4;
-        stroke-linecap: round;
+    .pt-anal-wall {
+        stroke: color-mix(in srgb, #e879f9 64%, #ffe6ff 36%);
+        stroke-width: 1.4;
         stroke-linejoin: round;
-        opacity: 0.95;
-        filter: none;
     }
 
     .pt-anal-inner {
-        fill: rgba(255,255,255,0.05);
-        stroke: rgba(255,255,255,0.08);
-        stroke-width: 1.5;
+        stroke: rgba(14, 2, 22, 0.68);
+        stroke-width: 1.2;
     }
 
-    .pt-anal-rugae {
-        fill: none;
-        stroke: rgba(255,255,255,0.08);
-        stroke-width: 1.5;
-        stroke-linecap: round;
-    }
-
-    .pt-anal-sphincter {
-        fill: none;
-        stroke: color-mix(in srgb, #d946ef 60%, rgba(255,255,255,0.2) 40%);
-        stroke-width: 3.5;
-        stroke-linecap: round;
+    .pt-anal-sphincter-cushion {
+        stroke: color-mix(in srgb, #e879f9 55%, rgba(255, 224, 255, 0.35));
+        stroke-width: 1.1;
     }
 
     .pt-prostate {
-        fill: color-mix(in srgb, #f472b6 45%, rgba(255,255,255,0.1));
-        stroke: color-mix(in srgb, #f472b6 70%, rgba(255,255,255,0.2));
-        stroke-width: 2;
-        transform-origin: 36px 65px;
+        stroke: color-mix(in srgb, #f472b6 76%, #ffe4f2 24%);
+        stroke-width: 1.25;
+        transform-box: fill-box;
+        transform-origin: center;
     }
 
     .pt-prostate.glow {
+        filter: drop-shadow(0 0 6px rgba(244, 114, 182, 0.85));
         animation: prostatePulse 1.5s ease-in-out infinite;
     }
 
+    .pt-prostate-wave {
+        fill: none;
+        stroke: rgba(244, 114, 182, 0.65);
+        stroke-width: 1.3;
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: prostateWave 1.8s ease-out infinite;
+    }
+
     @keyframes prostatePulse {
-        0%, 100% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.1); opacity: 0.82; }
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.09); }
+    }
+
+    @keyframes prostateWave {
+        0% { transform: scale(0.85); opacity: 0.78; }
+        100% { transform: scale(1.75); opacity: 0; }
     }
 
     .pt-anal-liquid {
-        fill: rgba(255,255,255,0.95);
         transition: y 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
-    .pt-anal-surface {
-        stroke: rgba(255,255,255,0.72);
-        stroke-width: 2;
-        stroke-linecap: round;
-        opacity: 0.88;
-    }
-
-    .pt-anal-meter {
-        height: 7px;
-        border-radius: 999px;
-        overflow: hidden;
-        background: color-mix(in srgb, var(--pt-surface-strong) 92%, transparent);
-        border: 1px solid color-mix(in srgb, var(--pt-border) 75%, transparent);
-    }
-
-    .pt-anal-meter-fill {
-        height: 100%;
-        width: 0%;
-        border-radius: inherit;
-        transition: width 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
-        background: linear-gradient(90deg, #9333ea, #d946ef);
-    }
-
-    /* --- ALL: Bladder & Urination Vessel --- */
+    /* --- ALL: 3D Bladder, Kidneys, Ureters & Sphincter Vessel --- */
     .pt-bladder-vessel {
-        width: 140px;
-        height: 180px;
+        width: 156px;
+        height: 204px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -9507,133 +9639,119 @@ var pulse_thread_tracker_default = {
         height: 100%;
         display: block;
         overflow: visible;
-        filter: none;
+        filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.55));
     }
 
     .pt-bladder-kidney {
-        fill: color-mix(in srgb, #ffd86b 12%, rgba(255, 255, 255, 0.05));
-        stroke: color-mix(in srgb, #ffd86b 50%, rgba(255, 255, 255, 0.3));
-        stroke-width: 2.4;
-        stroke-linecap: round;
+        stroke: color-mix(in srgb, #ffd86b 58%, #fff1c9 42%);
+        stroke-width: 1.25;
         stroke-linejoin: round;
     }
 
-    .pt-bladder-ureter {
+    .pt-bladder-ureter-wall {
         fill: none;
-        stroke: color-mix(in srgb, #ffd86b 40%, rgba(255, 255, 255, 0.25));
-        stroke-width: 2;
+        stroke: rgba(112, 82, 24, 0.78);
+        stroke-width: 4.2;
         stroke-linecap: round;
-        opacity: 0.85;
     }
 
-    .pt-bladder-urachus {
+    .pt-bladder-ureter-core {
         fill: none;
-        stroke: rgba(255, 255, 255, 0.22);
+        stroke: rgba(255, 218, 120, 0.56);
+        stroke-width: 1.9;
+        stroke-linecap: round;
+    }
+
+    .pt-bladder-ureter-gloss {
+        fill: none;
+        stroke: rgba(255, 250, 224, 0.45);
+        stroke-width: 0.7;
+        stroke-linecap: round;
+    }
+
+    .pt-bladder-wall {
+        stroke: color-mix(in srgb, #ffd86b 68%, #fff5d4 32%);
         stroke-width: 1.5;
-        stroke-linecap: round;
-    }
-
-    .pt-bladder-outline {
-        fill: none;
-        stroke: color-mix(in srgb, #ffd86b 70%, white 30%);
-        stroke-width: 4;
-        stroke-linecap: round;
         stroke-linejoin: round;
-        opacity: 0.95;
         transform-box: fill-box;
         transform-origin: center;
     }
 
-    .pt-bladder-outline.straining {
-        animation: bladderStrain 1.2s ease-in-out infinite;
+    .pt-bladder-wall.straining {
+        filter: drop-shadow(0 0 6px rgba(255, 198, 66, 0.55));
+        animation: bladderStrain 1.15s ease-in-out infinite;
+    }
+
+    .pt-bladder-strain-ring {
+        fill: none;
+        stroke: rgba(255, 206, 78, 0.55);
+        stroke-width: 1.2;
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: bladderStrainRing 1.4s ease-out infinite;
     }
 
     @keyframes bladderStrain {
-        0%, 100% { transform: scale(1); opacity: 0.95; }
-        50% { transform: scale(1.04); opacity: 0.72; }
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.032); }
+    }
+
+    @keyframes bladderStrainRing {
+        0% { transform: scale(0.98); opacity: 0.65; }
+        100% { transform: scale(1.16); opacity: 0; }
     }
 
     .pt-bladder-inner {
-        fill: rgba(255, 255, 255, 0.05);
-        stroke: rgba(255, 255, 255, 0.08);
-        stroke-width: 1.5;
-    }
-
-    .pt-bladder-rugae {
-        fill: none;
-        stroke: rgba(255, 255, 255, 0.08);
-        stroke-width: 1.5;
-        stroke-linecap: round;
+        stroke: rgba(20, 14, 4, 0.68);
+        stroke-width: 1.2;
     }
 
     .pt-bladder-liquid {
-        fill: rgba(255, 210, 84, 0.92);
         transition: y 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
-    .pt-bladder-surface {
-        stroke: rgba(255, 240, 180, 0.75);
-        stroke-width: 2;
-        stroke-linecap: round;
-        opacity: 0.88;
-    }
-
-    .pt-bladder-urethra {
-        fill: none;
-        stroke: color-mix(in srgb, #ffd86b 60%, rgba(255, 255, 255, 0.2) 40%);
-        stroke-width: 3;
-        stroke-linecap: round;
-    }
-
     .pt-bladder-sphincter {
-        fill: none;
-        stroke: color-mix(in srgb, #ffd86b 55%, rgba(255, 255, 255, 0.25) 45%);
-        stroke-width: 3;
+        stroke: color-mix(in srgb, #ffd86b 62%, #fff0bd 38%);
+        stroke-width: 1.25;
+        transform-box: fill-box;
+        transform-origin: center;
     }
 
     .pt-bladder-sphincter.straining {
-        animation: sphincterHold 0.9s ease-in-out infinite;
+        filter: drop-shadow(0 0 4px rgba(255, 184, 52, 0.8));
+        animation: sphincterHold 0.85s ease-in-out infinite;
     }
 
     @keyframes sphincterHold {
-        0%, 100% { stroke-opacity: 1; }
-        50% { stroke-opacity: 0.4; }
+        0%, 100% { transform: scaleX(1); }
+        50% { transform: scaleX(0.88); }
     }
 
     .pt-bladder-drip {
-        fill: rgba(255, 210, 84, 0.9);
         transform-box: fill-box;
         transform-origin: center;
         animation: bladderDrip 1.6s ease-in infinite;
     }
 
     @keyframes bladderDrip {
-        0% { transform: translateY(0); opacity: 0; }
-        15% { opacity: 0.9; }
-        100% { transform: translateY(10px); opacity: 0; }
+        0% { transform: translateY(0) scale(0.8); opacity: 0; }
+        18% { transform: translateY(1px) scale(1); opacity: 0.95; }
+        100% { transform: translateY(11px) scale(0.85); opacity: 0; }
     }
 
-    .pt-bladder-meter {
-        height: 7px;
-        border-radius: 999px;
-        overflow: hidden;
-        background: color-mix(in srgb, var(--pt-surface-strong) 92%, transparent);
-        border: 1px solid color-mix(in srgb, var(--pt-border) 75%, transparent);
+    /* --- MALE: 3D Erect Phallus, Scrotum, Testes & Vas Deferens --- */
+    .pt-male-visuals {
+        width: 156px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
     }
 
-    .pt-bladder-meter-fill {
-        height: 100%;
-        width: 0%;
-        border-radius: inherit;
-        transition: width 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
-        background: linear-gradient(90deg, #fff3c4, #f5a623);
-    }
-
-    /* --- MALE: Semen / Refractory Penis --- */
     .pt-penis-container {
         position: relative;
-        width: 120px;
-        height: 150px;
+        width: 144px;
+        height: 184px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -9644,175 +9762,134 @@ var pulse_thread_tracker_default = {
         height: 100%;
         display: block;
         overflow: visible;
-        filter: none;
+        filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.56));
     }
 
-    .pt-penis-shaft {
+    .pt-scrotum-sac {
+        stroke: rgba(235, 220, 240, 0.34);
+        stroke-width: 1.35;
+        stroke-linejoin: round;
+    }
+
+    .pt-testicle-wall {
+        stroke: rgba(255, 255, 255, 0.44);
+        stroke-width: 1.25;
+    }
+
+    .pt-epididymis {
         fill: none;
-        stroke: rgba(255,255,255,0.85);
-        stroke-width: 5.5;
+        stroke: rgba(226, 200, 224, 0.45);
+        stroke-width: 2.6;
         stroke-linecap: round;
-        stroke-linejoin: round;
-        filter: none;
     }
 
-    .pt-penis-glans {
-        fill: rgba(255,255,255,0.08);
-        stroke: rgba(255,255,255,0.85);
-        stroke-width: 4.5;
+    .pt-vas-deferens {
+        fill: none;
+        stroke: rgba(235, 225, 255, 0.32);
+        stroke-width: 1.3;
         stroke-linecap: round;
+    }
+
+    .pt-penis-shaft-body {
+        stroke: rgba(255, 240, 245, 0.36);
+        stroke-width: 1.2;
         stroke-linejoin: round;
     }
 
-    .pt-testicle {
-        fill: rgba(255,255,255,0.06);
-        stroke: rgba(255,255,255,0.75);
-        stroke-width: 3.5;
+    .pt-penis-glans-body {
+        stroke: rgba(255, 226, 238, 0.45);
+        stroke-width: 1.25;
+        stroke-linejoin: round;
+    }
+
+    .pt-penis-urethra {
+        fill: none;
+        stroke: rgba(255, 255, 255, 0.22);
+        stroke-width: 1.6;
         stroke-linecap: round;
+        stroke-dasharray: 2 3;
+    }
+
+    .pt-penis-precum {
+        fill: rgba(255, 255, 255, 0.88);
+        filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.7));
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: precumShimmer 2.8s ease-in-out infinite;
+    }
+
+    @keyframes precumShimmer {
+        0%, 100% { transform: scale(0.92); opacity: 0.72; }
+        50% { transform: scale(1.18); opacity: 1; }
     }
 
     .pt-semen-fill {
-        fill: rgba(255,255,255,0.95);
         transition: y 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
-    .pt-semen-surface {
-        stroke: rgba(255,255,255,0.72);
-        stroke-width: 2;
-        stroke-linecap: round;
-        opacity: 0.88;
+    .pt-male-visuals.pt-futa-accent .pt-scrotum-sac,
+    .pt-male-visuals.pt-futa-accent .pt-testicle-wall,
+    .pt-male-visuals.pt-futa-accent .pt-penis-shaft-body,
+    .pt-male-visuals.pt-futa-accent .pt-penis-glans-body {
+        stroke: rgba(255, 146, 184, 0.56);
     }
 
-    .pt-semen-label {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 2;
-        color: rgba(255,255,255,0.82);
-        font-size: calc(10px * var(--pt-scale));
-        font-weight: 900;
-        text-shadow: 0 1px 6px rgba(0,0,0,0.55);
-        pointer-events: none;
-    }
-
-    .pt-male-visuals {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 3px;
-    }
-
-    .pt-male-visuals.pt-futa-accent .pt-penis-shaft,
-    .pt-male-visuals.pt-futa-accent .pt-penis-glans,
-    .pt-male-visuals.pt-futa-accent .pt-testicle {
-        stroke: rgba(255,122,162,0.85);
-    }
-
-    .pt-male-visuals.pt-futa-accent .pt-semen-fill {
-        fill: rgba(255,244,250,0.95);
+    .pt-male-visuals.pt-futa-accent .pt-vas-deferens,
+    .pt-male-visuals.pt-futa-accent .pt-epididymis {
+        stroke: rgba(255, 166, 200, 0.46);
     }
 
     .pt-male-visuals.pt-futa-accent .pt-cooldown-fill {
         background: linear-gradient(90deg, #ff7aa2, #ffd86b);
-        box-shadow: 0 0 8px rgba(255,122,162,0.28);
+        box-shadow: 0 0 8px rgba(255, 122, 162, 0.36);
+    }
+
+    .pt-male-footer {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 0 6px;
+    }
+
+    .pt-semen-chip {
+        font-size: calc(9.5px * var(--pt-scale));
+        font-weight: 800;
+        color: #fff;
+        letter-spacing: 0.3px;
+        padding: 1px 6px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        line-height: 1.4;
     }
 
     .pt-cooldown-track {
-        width: 72px;
-        height: 4px;
+        flex: 1;
+        max-width: 78px;
+        height: 5px;
         border-radius: 999px;
         overflow: hidden;
-        background: color-mix(in srgb, var(--pt-surface-strong) 92%, transparent);
-        border: 1px solid color-mix(in srgb, var(--pt-border) 75%, transparent);
+        background: rgba(6, 5, 13, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.55);
     }
 
     .pt-cooldown-fill {
         height: 100%;
         border-radius: inherit;
-        background: linear-gradient(90deg, var(--pt-des), #ff99aa);
-        box-shadow: 0 0 8px rgba(255,92,138,0.25);
+        background: linear-gradient(90deg, var(--pt-des), #ffa3b5);
+        box-shadow: 0 0 8px rgba(255, 92, 138, 0.35);
         transition: width 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
-
-    /* --- MALE: Refractory Gauge --- */
-    .pt-refractory-gauge {
-        width: 64px;
-        height: 64px;
-        position: relative;
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .pt-refractory-arc {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        position: relative;
-        background: conic-gradient(
-            from 180deg,
-            var(--pt-des) 0deg var(--ref-angle),
-            rgba(255,255,255,0.06) var(--ref-angle) 180deg
-        );
-        transform: rotate(-90deg);
-        padding: 4px;
-        box-shadow: 0 0 15px rgba(0,0,0,0.4);
-    }
-
-    .pt-refractory-arc::before {
-        content: '';
-        position: absolute;
-        inset: 4px;
-        border-radius: 50%;
-        background: var(--pt-bg-deep);
-    }
-
-    .pt-refractory-center {
-        position: absolute;
-        inset: 4px;
-        border-radius: 50%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 1;
-    }
-
-    .pt-refractory-center .ref-icon { font-size: calc(16px * var(--pt-scale)); line-height: 1; }
-    .pt-refractory-center .ref-time {
-        font-size: calc(8px * var(--pt-scale));
-        font-weight: 800;
-        color: var(--pt-txt-dim);
-        margin-top: 2px;
-    }
-
-    .pt-refractory-label {
-        position: absolute;
-        top: -4px;
-        right: -2px;
-        background: color-mix(in srgb, var(--pt-bg-deep) 90%, transparent);
-        border: 1px solid var(--pt-border);
-        border-radius: var(--pt-radius-xs);
-        padding: 1px 4px;
-        font-size: calc(8px * var(--pt-scale));
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: var(--pt-des);
-    }
-
-    .ref-ready { color: var(--pt-accent) !important; }
-    .ref-cool { color: var(--pt-des) !important; }
 
     /* Bio Text */
     .pt-bio-panel {
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: 7px;
+        gap: 8px;
         min-width: 0;
     }
 
@@ -9821,27 +9898,22 @@ var pulse_thread_tracker_default = {
         align-items: center;
         justify-content: space-between;
         gap: 8px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
 
     .pt-bio-title-row h4 {
         margin: 0;
         font-size: calc(11px * var(--pt-scale));
-        font-weight: 700;
+        font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 0.85px;
+        letter-spacing: 1px;
         color: var(--pt-txt);
-    }
-
-    .pt-bio-note {
-        margin: 0;
-        font-size: calc(11px * var(--pt-scale));
-        color: var(--pt-txt-dim);
-        line-height: 1.45;
     }
 
     .pt-bio-grid {
         display: grid;
-        gap: 5px;
+        gap: 6px;
     }
 
     .pt-bio-row {
@@ -9856,44 +9928,42 @@ var pulse_thread_tracker_default = {
         color: var(--pt-txt-dim);
         font-size: calc(9px * var(--pt-scale));
         font-weight: 800;
-        letter-spacing: 0.7px;
+        letter-spacing: 0.75px;
         text-transform: uppercase;
     }
 
     .pt-bio-value {
         color: var(--pt-txt);
-        font-size: calc(11px * var(--pt-scale));
+        font-size: calc(11.5px * var(--pt-scale));
         font-weight: 650;
         min-width: 0;
     }
-
-    .pt-bio-value-muted { color: var(--pt-txt-dim); }
 
     .pt-risk-badge {
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        padding: 2px 8px;
+        padding: 3px 9px;
         border-radius: 999px;
         font-size: calc(9px * var(--pt-scale));
         font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 0.6px;
+        letter-spacing: 0.65px;
         align-self: flex-start;
         line-height: 1;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
     }
 
-    .risk-low { background: rgba(112, 161, 255, 0.14); color: #9ac3ff; border: 1px solid rgba(112, 161, 255, 0.25); box-shadow: 0 0 10px rgba(112, 161, 255, 0.08); }
-    .risk-med { background: rgba(165, 94, 234, 0.14); color: #cda5f7; border: 1px solid rgba(165, 94, 234, 0.25); box-shadow: 0 0 10px rgba(165, 94, 234, 0.08); }
-    .risk-high { background: rgba(255, 215, 0, 0.14); color: #ffe259; border: 1px solid rgba(255, 215, 0, 0.30); box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.05); }
-    .risk-preg { background: rgba(246, 211, 101, 0.14); color: #fadd7e; border: 1px solid rgba(246, 211, 101, 0.25); box-shadow: 0 0 10px rgba(246, 211, 101, 0.08); }
-    .risk-unknown { background: rgba(136, 153, 170, 0.12); color: #aab6c4; border: 1px solid rgba(136, 153, 170, 0.20); }
+    .risk-low { background: rgba(112, 161, 255, 0.14); color: #9ac3ff; border: 1px solid rgba(112, 161, 255, 0.28); }
+    .risk-med { background: rgba(165, 94, 234, 0.16); color: #d4afff; border: 1px solid rgba(165, 94, 234, 0.30); }
+    .risk-high { background: rgba(255, 215, 0, 0.16); color: #ffe566; border: 1px solid rgba(255, 215, 0, 0.36); }
+    .risk-preg { background: rgba(246, 211, 101, 0.16); color: #fce186; border: 1px solid rgba(246, 211, 101, 0.32); }
+    .risk-unknown { background: rgba(136, 153, 170, 0.12); color: #aab6c4; border: 1px solid rgba(136, 153, 170, 0.22); }
 
-    @media (max-width: 420px) {
+    @media (max-width: 440px) {
         .pulse-tabbed-root { border-radius: calc(var(--pt-radius) - 6px); }
         .pt-bio-zone { grid-template-columns: 1fr; }
-        .pt-fertility-ring, .pt-penis-container, .pt-womb-vessel, .pt-anal-vessel, .pt-bladder-vessel, .pt-male-visuals, .pt-breast-vessel { justify-self: center; }
-        .pt-bio-zone.pt-bio-compact { grid-template-columns: auto 1fr; }
+        .pt-stage { justify-self: center; }
     }
 
     /* =========================================
@@ -9904,25 +9974,31 @@ var pulse_thread_tracker_default = {
         flex-direction: column;
         gap: 10px;
         margin-bottom: 14px;
+        padding: 12px 14px;
+        border-radius: var(--pt-radius-sm);
+        background: color-mix(in srgb, var(--pt-surface) 88%, transparent);
+        border: 1px solid var(--pt-border);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
 
     .pt-stat-row {
         display: grid;
-        grid-template-columns: 28px 1fr 36px;
+        grid-template-columns: 30px 1fr 38px;
         align-items: center;
         gap: 10px;
         position: relative;
     }
 
     .pt-stat-icon {
-        width: 28px;
-        height: 28px;
+        width: 30px;
+        height: 30px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: color-mix(in srgb, var(--pt-surface-strong) 92%, transparent);
-        border: 1px solid color-mix(in srgb, var(--pt-border) 82%, transparent);
+        background: radial-gradient(circle at 32% 28%, rgba(255,255,255,0.12), rgba(8, 6, 18, 0.65));
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.16), 0 3px 8px rgba(0, 0, 0, 0.32);
         position: relative;
     }
 
@@ -9932,8 +10008,8 @@ var pulse_thread_tracker_default = {
         position: absolute;
         top: -3px;
         left: -3px;
-        width: 34px;
-        height: 34px;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         border: 2px solid transparent;
         opacity: 0;
@@ -9942,7 +10018,7 @@ var pulse_thread_tracker_default = {
     }
 
     @keyframes ptOrbitSpin {
-        0% { transform: rotate(0deg) scale(1); opacity: 0.8; }
+        0% { transform: rotate(0deg) scale(1); opacity: 0.85; }
         60% { transform: rotate(220deg) scale(1.1); opacity: 0.6; }
         100% { transform: rotate(360deg) scale(1); opacity: 0; }
     }
@@ -9951,18 +10027,21 @@ var pulse_thread_tracker_default = {
     .orbit-neg { border-color: #e74c3c; }
 
     .pt-track-bg {
-        height: 5px;
-        background: color-mix(in srgb, var(--pt-surface-strong) 92%, transparent);
-        border-radius: 10px;
+        height: 7px;
+        background: rgba(6, 5, 13, 0.62);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 999px;
         position: relative;
         overflow: hidden;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.55);
     }
 
     .pt-track-fill {
         height: 100%;
-        border-radius: 10px;
+        border-radius: 999px;
         transition: width 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
         position: relative;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
     }
 
     .pt-track-fill::after {
@@ -9970,19 +10049,18 @@ var pulse_thread_tracker_default = {
         position: absolute;
         top: 0;
         right: 0;
-        width: 12px;
+        width: 14px;
         height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28));
-        opacity: 0.72;
-        border-radius: 10px;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.42));
+        opacity: 0.85;
+        border-radius: 999px;
     }
 
     .fill-aff { background: linear-gradient(90deg, var(--pt-aff), #ffb7d5); }
     .fill-des { background: linear-gradient(90deg, var(--pt-des), #ff99aa); }
     .fill-tru { background: linear-gradient(90deg, var(--pt-tru), #7efcf6); }
-    .fill-con { background: linear-gradient(90deg, var(--pt-con), #aabbcc); }
+    .fill-con { background: linear-gradient(90deg, var(--pt-con), #b4c4d4); }
 
-    /* Negative values: mirrored deficit fill anchored to the right edge, growing leftward */
     .pt-track-fill.fill-neg {
         margin-left: auto;
         background: linear-gradient(90deg, #ff9d8f, #e74c3c);
@@ -9991,14 +10069,15 @@ var pulse_thread_tracker_default = {
     .pt-track-fill.fill-neg::after {
         right: auto;
         left: 0;
-        background: linear-gradient(90deg, rgba(255,255,255,0.28), transparent);
+        background: linear-gradient(90deg, rgba(255,255,255,0.4), transparent);
     }
 
     .pt-stat-val {
-        font-size: calc(11px * var(--pt-scale));
-        font-weight: 700;
+        font-size: calc(11.5px * var(--pt-scale));
+        font-weight: 750;
         text-align: right;
         position: relative;
+        font-variant-numeric: tabular-nums;
     }
 
     .pt-change-bubble {
@@ -10022,35 +10101,36 @@ var pulse_thread_tracker_default = {
         100% { transform: translateY(-14px); opacity: 0; }
     }
 
-    .ch-pos { background: rgba(46, 204, 113, 0.9); color: #fff; }
-    .ch-neg { background: rgba(231, 76, 60, 0.9); color: #fff; }
+    .ch-pos { background: rgba(46, 204, 113, 0.92); color: #fff; }
+    .ch-neg { background: rgba(231, 76, 60, 0.92); color: #fff; }
 
     /* =========================================
        STATUS PILLS
        ========================================= */
     .pt-pill-row {
         display: flex;
-        gap: 6px;
+        gap: 7px;
         flex-wrap: wrap;
     }
 
     .pt-pill {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        padding: 5px 8px;
-        border-radius: var(--pt-radius-xs);
+        gap: 5px;
+        padding: 5px 10px;
+        border-radius: 999px;
         font-size: calc(10px * var(--pt-scale));
-        font-weight: 700;
+        font-weight: 750;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.55px;
         border: 1px solid var(--pt-border);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10);
     }
 
-    .pill-preg { background: rgba(246, 211, 101, 0.12); color: var(--cy-preg); }
-    .pill-ovu { background: rgba(0, 210, 255, 0.12); color: var(--cy-ovu); }
-    .pill-men { background: rgba(255, 94, 98, 0.12); color: var(--cy-men); }
-    .pill-rut { background: rgba(155, 89, 182, 0.12); color: var(--cy-rut); }
+    .pill-preg { background: rgba(246, 211, 101, 0.14); color: var(--cy-preg); border-color: rgba(246, 211, 101, 0.3); }
+    .pill-ovu { background: rgba(255, 215, 0, 0.14); color: var(--cy-ovu); border-color: rgba(255, 215, 0, 0.3); }
+    .pill-men { background: rgba(255, 71, 87, 0.14); color: var(--cy-men); border-color: rgba(255, 71, 87, 0.3); }
+    .pill-rut { background: rgba(217, 70, 239, 0.14); color: var(--cy-rut); border-color: rgba(217, 70, 239, 0.32); }
     .pill-react-app { background: var(--bg-approved); color: var(--st-app); }
     .pill-react-neu { background: var(--bg-neutral); color: var(--st-neu); }
     .pill-react-dis { background: var(--bg-disapproved); color: var(--st-dis); }
@@ -10058,10 +10138,6 @@ var pulse_thread_tracker_default = {
 
     .pulse-tabbed-root svg { display: block; }
     .icon-12 { width: 12px; height: 12px; }
-
-    .risk-low-text { color: var(--cy-fol); }
-    .risk-high-text { color: var(--cy-ovu); }
-    .risk-med-text { color: var(--cy-lut); }
 
     /* =========================================
        ROOT COLLAPSE BAR
@@ -10090,15 +10166,15 @@ var pulse_thread_tracker_default = {
         content: '';
         position: absolute;
         bottom: 0;
-        left: 10%;
-        width: 80%;
+        left: 8%;
+        width: 84%;
         height: 1px;
-        background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--pt-accent) 32%, transparent), transparent);
-        opacity: 0.4;
+        background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--pt-accent) 40%, transparent), transparent);
+        opacity: 0.45;
     }
 
     .pt-root-toggle:checked ~ .pt-root-bar {
-        border-bottom-color: rgba(255,255,255,0.06);
+        border-bottom-color: rgba(255, 255, 255, 0.06);
     }
 
     .pt-root-summary {
@@ -10109,17 +10185,17 @@ var pulse_thread_tracker_default = {
         font-weight: 600;
         color: var(--pt-txt-dim);
         text-transform: uppercase;
-        letter-spacing: 0.6px;
+        letter-spacing: 0.7px;
         z-index: 1;
     }
 
     .pt-root-summary .pt-accent-text {
         color: var(--pt-accent);
-        font-weight: 700;
+        font-weight: 800;
     }
 
     .pt-root-chevron {
-        opacity: 0.4;
+        opacity: 0.48;
         transition: transform var(--pt-transition), opacity var(--pt-transition-fast);
         z-index: 1;
     }
@@ -10136,7 +10212,7 @@ var pulse_thread_tracker_default = {
     }
 
     .pt-root-toggle:checked ~ .pt-root-body {
-        max-height: 2400px;
+        max-height: 3600px;
     }
 
     .pt-root-inner {
@@ -10160,15 +10236,15 @@ var pulse_thread_tracker_default = {
         font-size: calc(10px * var(--pt-scale));
         color: var(--pt-txt-dim);
         text-transform: uppercase;
-        letter-spacing: 0.7px;
-        font-weight: 600;
+        letter-spacing: 0.8px;
+        font-weight: 700;
     }
 
     .pt-page-meta .pt-dot-sep {
         width: 3px;
         height: 3px;
         border-radius: 50%;
-        background: rgba(255,255,255,0.15);
+        background: rgba(255, 255, 255, 0.22);
     }
 </style>
 
@@ -10230,6 +10306,7 @@ var pulse_thread_tracker_default = {
             <div class="pt-bio-stack">
                 {{#if (hasFertilityTracking stats)}}
                 <div class="pt-bio-column">
+                    <!-- CYCLE CHRONOMETER -->
                     <div class="pt-bio-zone">
                         <div class="pt-fertility-visuals">
                             <div class="pt-fertility-ring" style="--cycle-accent: {{#if (eq (cycleStage stats) "ovulation")}}var(--cy-ovu){{else if (eq (cycleStage stats) "menstruation")}}var(--cy-men){{else if (eq (cycleStage stats) "follicular")}}var(--cy-fol){{else if (eq (cycleStage stats) "luteal")}}var(--cy-lut){{else}}var(--cy-preg){{/if}};">
@@ -10275,83 +10352,285 @@ var pulse_thread_tracker_default = {
                         </div>
                     </div>
 
+                    <!-- WOMB, OVARIES, CERVIX & VAGINAL CANAL -->
                     <div class="pt-bio-zone">
                         <div class="pt-womb-vessel" style="--cycle-accent: {{#if (eq (cycleStage stats) "ovulation")}}var(--cy-ovu){{else if (eq (cycleStage stats) "menstruation")}}var(--cy-men){{else if (eq (cycleStage stats) "follicular")}}var(--cy-fol){{else if (eq (cycleStage stats) "luteal")}}var(--cy-lut){{else}}var(--cy-preg){{/if}};">
-                            <svg class="pt-womb-svg" viewBox="0 0 100 160" aria-hidden="true" focusable="false">
+                            <svg class="pt-womb-svg" viewBox="-8 -4 116 172" aria-hidden="true" focusable="false">
                                 <defs>
                                     <clipPath id="pt-womb-clip-{{@index}}">
-                                        <path d="M50 24 C62 24 72 34 72 46 C72 57 66 66 58 74 C54 78 52 83 50 88 C48 83 46 78 42 74 C34 66 28 57 28 46 C28 34 38 24 50 24 Z" />
+                                        <path d="M 50 24 C 62 24 72 34 72 46 C 72 57 66 66 58 74 C 54 78 52 83 50 88 C 48 83 46 78 42 74 C 34 66 28 57 28 46 C 28 34 38 24 50 24 Z" />
                                     </clipPath>
-                                    <linearGradient id="pt-womb-depth-{{@index}}" x1="0.5" y1="0" x2="0.5" y2="1">
-                                        <stop offset="0%" stop-color="#7a3a55" stop-opacity="0.85" />
-                                        <stop offset="100%" stop-color="#3a1528" stop-opacity="0.95" />
-                                    </linearGradient>
-                                    <!-- Vaginal canal: os at (50,90) down to the introitus (~y148).
-                                         Shares the accent-driven palette; clip keeps the split-cervix
-                                         leak inside the canal walls. -->
                                     <clipPath id="pt-vag-clip-{{@index}}">
-                                        <path d="M 42 96 C 37 112, 35 126, 37 138 C 38.5 146, 42 150, 45 152.5 C 48 154.5, 52 154.5, 55 152.5 C 58 150, 61.5 146, 63 138 C 65 126, 63 112, 58 96 C 55.5 100, 44.5 100, 42 96 Z" />
+                                        <path d="M 42 96 C 37 112 35 126 37 138 C 38.5 146 42 150 45 152.5 C 48 154.5 52 154.5 55 152.5 C 58 150 61.5 146 63 138 C 65 126 63 112 58 96 C 55.5 100 44.5 100 42 96 Z" />
                                     </clipPath>
-                                    <linearGradient id="pt-vag-depth-{{@index}}" x1="0.5" y1="0" x2="0.5" y2="1">
-                                        <stop offset="0%" stop-color="#6b2a48" stop-opacity="0.85" />
-                                        <stop offset="100%" stop-color="#2a0d20" stop-opacity="0.95" />
+                                    <clipPath id="pt-vag-shaft-clip-{{@index}}">
+                                        <rect x="20" y="20" width="60" height="141" />
+                                    </clipPath>
+                                    <!-- Ambient subsurface glow -->
+                                    <radialGradient id="pt-womb-aura-{{@index}}" cx="50%" cy="46%" r="54%">
+                                        <stop offset="0%" stop-color="#ff6b9d" stop-opacity="0.18" />
+                                        <stop offset="55%" stop-color="#a83264" stop-opacity="0.06" />
+                                        <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+                                    </radialGradient>
+                                    <!-- 3D Myometrium outer wall -->
+                                    <radialGradient id="pt-womb-wall-grad-{{@index}}" cx="34%" cy="26%" r="72%">
+                                        <stop offset="0%" stop-color="#d4688f" />
+                                        <stop offset="38%" stop-color="#8f3056" />
+                                        <stop offset="76%" stop-color="#4e162f" />
+                                        <stop offset="100%" stop-color="#290918" />
+                                    </radialGradient>
+                                    <!-- Recessed endometrial cavity -->
+                                    <radialGradient id="pt-womb-cav-{{@index}}" cx="50%" cy="46%" r="58%">
+                                        <stop offset="0%" stop-color="#691c3e" />
+                                        <stop offset="55%" stop-color="#3c0e24" />
+                                        <stop offset="100%" stop-color="#17040e" />
+                                    </radialGradient>
+                                    <!-- Pearlescent 3D womb semen fill -->
+                                    <linearGradient id="pt-womb-semen-grad-{{@index}}" x1="0" y1="0" x2="1" y2="0.15">
+                                        <stop offset="0%" stop-color="#d9cbe0" stop-opacity="0.92" />
+                                        <stop offset="28%" stop-color="#ffffff" stop-opacity="0.97" />
+                                        <stop offset="62%" stop-color="#f7eef8" stop-opacity="0.93" />
+                                        <stop offset="100%" stop-color="#c4b0cf" stop-opacity="0.88" />
                                     </linearGradient>
+                                    <!-- Ovary pearl sphere -->
+                                    <radialGradient id="pt-ovary-grad-{{@index}}" cx="34%" cy="30%" r="68%">
+                                        <stop offset="0%" stop-color="#fff4f9" />
+                                        <stop offset="35%" stop-color="#f6a8c8" />
+                                        <stop offset="76%" stop-color="#a8416e" />
+                                        <stop offset="100%" stop-color="#581837" />
+                                    </radialGradient>
+                                    <!-- Vaginal wall & recessed tunnel -->
+                                    <linearGradient id="pt-vag-wall-grad-{{@index}}" x1="0" y1="0" x2="1" y2="0">
+                                        <stop offset="0%" stop-color="#a63c67" />
+                                        <stop offset="22%" stop-color="#c95d87" />
+                                        <stop offset="52%" stop-color="#762245" />
+                                        <stop offset="86%" stop-color="#47122a" />
+                                        <stop offset="100%" stop-color="#2c0919" />
+                                    </linearGradient>
+                                    <linearGradient id="pt-vag-tunnel-{{@index}}" x1="0" y1="0" x2="1" y2="0">
+                                        <stop offset="0%" stop-color="#5a1838" />
+                                        <stop offset="24%" stop-color="#350b21" />
+                                        <stop offset="50%" stop-color="#190410" />
+                                        <stop offset="76%" stop-color="#350b21" />
+                                        <stop offset="100%" stop-color="#541634" />
+                                    </linearGradient>
+                                    <radialGradient id="pt-labia-grad-{{@index}}" cx="35%" cy="32%" r="70%">
+                                        <stop offset="0%" stop-color="#df7ca2" />
+                                        <stop offset="55%" stop-color="#9c3861" />
+                                        <stop offset="100%" stop-color="#4c142d" />
+                                    </radialGradient>
+                                    <!-- Cervical collar 3D torus -->
+                                    <radialGradient id="pt-cervix-grad-{{@index}}" cx="36%" cy="30%" r="68%">
+                                        <stop offset="0%" stop-color="#f5a4c2" />
+                                        <stop offset="42%" stop-color="#b84b76" />
+                                        <stop offset="82%" stop-color="#641d3c" />
+                                        <stop offset="100%" stop-color="#360c1f" />
+                                    </radialGradient>
+                                    <!-- Embryo seed pearl -->
+                                    <radialGradient id="pt-seed-grad-{{@index}}" cx="35%" cy="32%" r="65%">
+                                        <stop offset="0%" stop-color="#ffffff" />
+                                        <stop offset="35%" stop-color="#ffe799" />
+                                        <stop offset="75%" stop-color="#f6b93b" />
+                                        <stop offset="100%" stop-color="#c47412" />
+                                    </radialGradient>
+                                    <!-- Penetrating 3D phallus shading -->
                                     <linearGradient id="pt-shaft-skin-{{@index}}" x1="0" y1="0" x2="1" y2="0">
-                                        <stop offset="0%" stop-color="#f2c9ac" />
-                                        <stop offset="55%" stop-color="#e0a184" />
-                                        <stop offset="100%" stop-color="#bd7a5e" />
+                                        <stop offset="0%" stop-color="#c98569" />
+                                        <stop offset="24%" stop-color="#fbd9c2" />
+                                        <stop offset="48%" stop-color="#eeb596" />
+                                        <stop offset="78%" stop-color="#c98265" />
+                                        <stop offset="100%" stop-color="#874837" />
+                                    </linearGradient>
+                                    <radialGradient id="pt-glans-skin-{{@index}}" cx="36%" cy="30%" r="68%">
+                                        <stop offset="0%" stop-color="#ffd9db" />
+                                        <stop offset="34%" stop-color="#eb8f9a" />
+                                        <stop offset="74%" stop-color="#b84c60" />
+                                        <stop offset="100%" stop-color="#762336" />
+                                    </radialGradient>
+                                    <linearGradient id="pt-corona-skin-{{@index}}" x1="0" y1="0" x2="1" y2="0">
+                                        <stop offset="0%" stop-color="#9e3b50" />
+                                        <stop offset="28%" stop-color="#f7b2bc" />
+                                        <stop offset="56%" stop-color="#d46b7f" />
+                                        <stop offset="100%" stop-color="#782436" />
+                                    </linearGradient>
+                                    <linearGradient id="pt-leak-grad-{{@index}}" x1="0" y1="0" x2="1" y2="0">
+                                        <stop offset="0%" stop-color="#e5d9eb" stop-opacity="0.72" />
+                                        <stop offset="40%" stop-color="#ffffff" stop-opacity="0.92" />
+                                        <stop offset="100%" stop-color="#c8b6d4" stop-opacity="0.68" />
                                     </linearGradient>
                                 </defs>
-                                <path class="pt-womb-outline" d="M36 30 C28 22 18 24 14 28 M64 30 C72 22 82 24 86 28 M36 30 C34 36 38 40 42 43 M64 30 C66 36 62 40 58 43 M42 43 C38 38 32 37 28 42 C24 47 27 55 34 58 M58 43 C62 38 68 37 72 42 C76 47 73 55 66 58 M50 24 C62 24 72 34 72 46 C72 57 66 66 58 74 C54 78 52 83 50 88 C48 83 46 78 42 74 C34 66 28 57 28 46 C28 34 38 24 50 24 Z" />
-                                <circle class="pt-womb-ovary-halo {{#if (isConceived stats)}}pulse{{/if}}" cx="14" cy="30" r="5" />
-                                <circle class="pt-womb-ovary {{#if (isConceived stats)}}pulse{{/if}}" cx="14" cy="30" r="5" />
-                                {{#unless (or stats.preg (eq (cycleStage stats) "pregnancy"))}}
-                                <circle class="pt-womb-ovary-halo {{#if (isConceived stats)}}pulse{{/if}}" cx="86" cy="30" r="5" />
-                                <circle class="pt-womb-ovary {{#if (isConceived stats)}}pulse{{/if}}" cx="86" cy="30" r="5" />
-                                {{/unless}}
-                                {{#if (or stats.preg (eq (cycleStage stats) "pregnancy"))}}
-                                <!-- Seed inside womb when pregnant -->
-                                <circle class="pt-womb-seed" cx="50" cy="56" r="4" />
-                                {{/if}}
-                                <path class="pt-womb-inner" style="fill:url(#pt-womb-depth-{{@index}})" d="M50 24 C62 24 72 34 72 46 C72 57 66 66 58 74 C54 78 52 83 50 88 C48 83 46 78 42 74 C34 66 28 57 28 46 C28 34 38 24 50 24 Z" />
-                                <!-- Vaginal canal walls, interior and rugae -->
-                                <path class="pt-vag-outline" d="M 42 96 C 37 112, 35 126, 37 138 C 38.5 146, 42 150, 45 152.5 C 48 154.5, 52 154.5, 55 152.5 C 58 150, 61.5 146, 63 138 C 65 126, 63 112, 58 96 C 55.5 100, 44.5 100, 42 96 Z" />
-                                <path class="pt-vag-inner" style="fill:url(#pt-vag-depth-{{@index}})" d="M 42 96 C 37 112, 35 126, 37 138 C 38.5 146, 42 150, 45 152.5 C 48 154.5, 52 154.5, 55 152.5 C 58 150, 61.5 146, 63 138 C 65 126, 63 112, 58 96 C 55.5 100, 44.5 100, 42 96 Z" />
-                                <path class="pt-vag-rugae" d="M 37.5 112 Q 50 118 62.5 112 M 36 128 Q 50 134 64 128 M 38.5 142 Q 50 147 61.5 142" />
-                                <!-- Fornix dimples hugging the cervical collar -->
-                                <path class="pt-fornix" d="M 38 96 Q 42 101 47 100 M 62 96 Q 58 101 53 100" />
-                                <!-- Introitus lips -->
-                                <path class="pt-introitus" d="M 44 152 C 44 156, 56 156, 56 152" />
-                                <path class="pt-introitus" d="M 42 153 C 42 158, 58 158, 58 153" />
+
+                                <!-- Stage ambient glow & floor shadow -->
+                                <ellipse cx="50" cy="84" rx="54" ry="74" fill="url(#pt-womb-aura-{{@index}})" />
+                                <ellipse cx="50" cy="161" rx="22" ry="4" fill="rgba(0,0,0,0.45)" />
+
+                                <!-- Ovarian ligaments -->
+                                <path d="M 24 41 Q 17 39 12 34 M 76 41 Q 83 39 88 34" fill="none" stroke="rgba(220,140,175,0.28)" stroke-width="1.3" stroke-linecap="round" />
+
+                                <!-- Fallopian tubes: 3-pass tubular shading (dark wall, fleshy core, top wet specular) -->
+                                <path class="pt-womb-tube-wall" d="M 32 32 C 25 22 14 14 4 21 C -1 25 0 32 5 35" />
+                                <path class="pt-womb-tube-core" d="M 32 32 C 25 22 14 14 4 21 C -1 25 0 32 5 35" />
+                                <path class="pt-womb-tube-gloss" d="M 30 30 C 24 21 14 14.5 5.5 20" />
+
+                                <path class="pt-womb-tube-wall" d="M 68 32 C 75 22 86 14 96 21 C 101 25 100 32 95 35" />
+                                <path class="pt-womb-tube-core" d="M 68 32 C 75 22 86 14 96 21 C 101 25 100 32 95 35" />
+                                <path class="pt-womb-tube-gloss" d="M 70 30 C 76 21 86 14.5 94.5 20" />
+
+                                <!-- Fimbriae fronds cradling each ovary -->
+                                <path class="pt-womb-fimbria" d="M 4 33 L 1 39 M 6 35 L 5 41 M 9 35 L 11 40 M 96 33 L 99 39 M 94 35 L 95 41 M 91 35 L 89 40" />
+
+                                <!-- Left Ovary (3D almond sphere + internal follicles + wet glint) -->
+                                <ellipse class="pt-womb-ovary-halo {{#if (isConceived stats)}}pulse{{/if}}" cx="9.5" cy="36" rx="7" ry="5" transform="rotate(-18 9.5 36)" />
+                                <g class="pt-womb-ovary {{#if (isConceived stats)}}pulse{{/if}}">
+                                    <ellipse cx="9.5" cy="36" rx="6.6" ry="4.7" transform="rotate(-18 9.5 36)" fill="url(#pt-ovary-grad-{{@index}})" />
+                                    <circle cx="8" cy="35.5" r="1.2" fill="rgba(255,245,250,0.48)" stroke="none" />
+                                    <circle cx="11.2" cy="37.2" r="0.95" fill="rgba(255,235,245,0.42)" stroke="none" />
+                                    <ellipse cx="7.4" cy="34.2" rx="2.1" ry="0.9" transform="rotate(-24 7.4 34.2)" fill="rgba(255,255,255,0.58)" stroke="none" />
+                                </g>
+
+                                <!-- Right Ovary (3D almond sphere + internal follicles + wet glint) -->
+                                <ellipse class="pt-womb-ovary-halo {{#if (isConceived stats)}}pulse{{/if}}" cx="90.5" cy="36" rx="7" ry="5" transform="rotate(18 90.5 36)" />
+                                <g class="pt-womb-ovary {{#if (isConceived stats)}}pulse{{/if}}">
+                                    <ellipse cx="90.5" cy="36" rx="6.6" ry="4.7" transform="rotate(18 90.5 36)" fill="url(#pt-ovary-grad-{{@index}})" />
+                                    <circle cx="91.8" cy="35.5" r="1.2" fill="rgba(255,245,250,0.48)" stroke="none" />
+                                    <circle cx="88.6" cy="37.2" r="0.95" fill="rgba(255,235,245,0.42)" stroke="none" />
+                                    <ellipse cx="89.2" cy="34.2" rx="2.1" ry="0.9" transform="rotate(12 89.2 34.2)" fill="rgba(255,255,255,0.58)" stroke="none" />
+                                </g>
+
+                                <!-- Thick 3D Myometrium outer shell -->
+                                <path class="pt-womb-wall" fill="url(#pt-womb-wall-grad-{{@index}})"
+                                      d="M 50 18 C 66 18 78 30 78 46 C 78 60 70 70 61 80 C 57 84 55 88 54 92 L 46 92 C 45 88 43 84 39 80 C 30 70 22 60 22 46 C 22 30 34 18 50 18 Z" />
+                                <!-- Upper-left 3D dome specular rim on myometrium -->
+                                <path class="pt-womb-rim-highlight" d="M 27 42 C 27.5 30 36 22 48 21.5" />
+                                <path d="M 73 46 C 72.5 56 67 65 60 73" fill="none" stroke="rgba(255,190,220,0.16)" stroke-width="1.2" stroke-linecap="round" />
+
+                                <!-- Recessed Endometrial Cavity (3D dark velvet interior) -->
+                                <path class="pt-womb-inner" fill="url(#pt-womb-cav-{{@index}})"
+                                      d="M 50 24 C 62 24 72 34 72 46 C 72 57 66 66 58 74 C 54 78 52 83 50 88 C 48 83 46 78 42 74 C 34 66 28 57 28 46 C 28 34 38 24 50 24 Z" />
+                                <!-- Inner cutaway bevel & subtle endometrial ridges -->
+                                <path class="pt-womb-endometrium-bevel"
+                                      d="M 50 25.5 C 61 25.5 70.3 34.8 70.3 46 C 70.3 56.2 64.6 64.8 57 72.6" />
+                                <path d="M 35 42 Q 50 47 65 42 M 34 54 Q 50 59 66 54 M 40 66 Q 50 70 60 66"
+                                      fill="none" stroke="rgba(255,175,210,0.10)" stroke-width="1" stroke-linecap="round" />
+
+                                <!-- Thick 3D Vaginal Outer Wall -->
+                                <path class="pt-vag-wall" fill="url(#pt-vag-wall-grad-{{@index}})"
+                                      d="M 38.5 94 C 33 111 31 126 33.2 139.5 C 35 149 39.5 154 44.2 156.5 C 47.8 158.4 52.2 158.4 55.8 156.5 C 60.5 154 65 149 66.8 139.5 C 69 126 67 111 61.5 94 Z" />
+                                <path d="M 36.2 114 C 34.4 126 35.4 137 38.2 146" fill="none" stroke="rgba(255,220,235,0.22)" stroke-width="1.2" stroke-linecap="round" />
+
+                                <!-- Recessed 3D Cylindrical Vaginal Lumen -->
+                                <path class="pt-vag-inner" fill="url(#pt-vag-tunnel-{{@index}})"
+                                      d="M 42 96 C 37 112 35 126 37 138 C 38.5 146 42 150 45 152.5 C 48 154.5 52 154.5 55 152.5 C 58 150 61.5 146 63 138 C 65 126 63 112 58 96 C 55.5 100 44.5 100 42 96 Z" />
+
+                                <!-- Sculpted 3D Vaginal Rugae (paired shadow groove + wet highlight crest) -->
+                                <path class="pt-rugae-shadow" d="M 38.8 108 Q 50 113.5 61.2 108 M 37 118 Q 50 124 63 118 M 36.4 128 Q 50 134 63.6 128 M 37.5 138 Q 50 143.5 62.5 138 M 40.2 146.5 Q 50 150.5 59.8 146.5" />
+                                <path class="pt-rugae-light" d="M 39.2 106.8 Q 50 112 60.8 106.8 M 37.4 116.8 Q 50 122.6 62.6 116.8 M 36.8 126.8 Q 50 132.6 63.2 126.8 M 37.9 136.8 Q 50 142.2 62.1 136.8 M 40.6 145.4 Q 50 149.2 59.4 145.4" />
+
+                                <!-- Deep Fornix Pockets -->
+                                <path class="pt-fornix" d="M 37.5 96.5 Q 42 102.2 47.5 100.5 M 62.5 96.5 Q 58 102.2 52.5 100.5" />
+                                <path class="pt-fornix-rim" d="M 38.2 95.5 Q 42 100.5 47 99.2 M 61.8 95.5 Q 58 100.5 53 99.2" />
+
+                                <!-- Plush 3D Labial / Introitus Cushions -->
+                                <path class="pt-labia-cushion" fill="url(#pt-labia-grad-{{@index}})"
+                                      d="M 41 151.5 C 37.5 154 38.5 158.8 44.5 159.4 C 47.2 159.6 49 158.2 49.4 156.2 C 46.8 155.8 43.8 154 41 151.5 Z" />
+                                <path class="pt-labia-cushion" fill="url(#pt-labia-grad-{{@index}})"
+                                      d="M 59 151.5 C 62.5 154 61.5 158.8 55.5 159.4 C 52.8 159.6 51 158.2 50.6 156.2 C 53.2 155.8 56.2 154 59 151.5 Z" />
+                                <path d="M 41 154.6 C 43 156.6 45.6 157.4 47.6 157.4 M 59 154.6 C 57 156.6 54.4 157.4 52.4 157.4"
+                                      fill="none" stroke="rgba(255,235,244,0.34)" stroke-width="0.9" stroke-linecap="round" />
+
                                 {{#if (and (eq (cervixState stats) "split") (gt stats.womb_fullness_pct 0))}}
-                                <!-- Split cervix: womb contents leaking down the canal -->
+                                <!-- Split cervix: creamy leak pooling & rivulets down the canal -->
                                 <g clip-path="url(#pt-vag-clip-{{@index}})">
-                                    <rect class="pt-canal-leak" x="0" y="{{subtract 152 (divide (multiply (clampPercent stats.womb_fullness_pct) 52) 100)}}" width="100" height="60" />
+                                    <rect class="pt-canal-leak" fill="url(#pt-leak-grad-{{@index}})" x="0" y="{{subtract 152 (divide (multiply (clampPercent stats.womb_fullness_pct) 52) 100)}}" width="100" height="62" />
+                                    <path d="M 46 98 C 45 112 48 122 46 136 M 53 99 C 54 115 51 128 53 144"
+                                          fill="none" stroke="rgba(255,255,255,0.52)" stroke-width="1.6" stroke-linecap="round" />
+                                    <ellipse cx="50" cy="{{subtract 152 (divide (multiply (clampPercent stats.womb_fullness_pct) 52) 100)}}" rx="15" ry="2.6" fill="rgba(255,255,255,0.82)" />
                                 </g>
-                                <ellipse class="pt-canal-drip" cx="50" cy="159" rx="1.5" ry="2.5" />
+                                <!-- Animated glistening pearl teardrop -->
+                                <g class="pt-canal-drip">
+                                    <path d="M 50 156 C 50 156 52.4 160 52.4 161.6 C 52.4 163 51.3 164 50 164 C 48.7 164 47.6 163 47.6 161.6 C 47.6 160 50 156 50 156 Z" fill="rgba(255,255,255,0.94)" />
+                                    <circle cx="49.2" cy="161" r="0.65" fill="#ffffff" />
+                                </g>
                                 {{/if}}
+
+                                <!-- Pearlescent 3D Womb Fluid + Meniscus + Micro-bubbles -->
                                 <g clip-path="url(#pt-womb-clip-{{@index}})">
-                                    <rect class="pt-womb-liquid" x="0" y="{{wombFillTop stats.womb_fullness_pct}}" width="100" height="{{wombFillHeight stats.womb_fullness_pct}}" />
-                                    <path class="pt-womb-surface" d="M33 {{wombFillTop stats.womb_fullness_pct}} C40 {{add (wombFillTop stats.womb_fullness_pct) 3}} 60 {{add (wombFillTop stats.womb_fullness_pct) 3}} 67 {{wombFillTop stats.womb_fullness_pct}}" />
+                                    <rect class="pt-womb-liquid" fill="url(#pt-womb-semen-grad-{{@index}})" x="0" y="{{wombFillTop stats.womb_fullness_pct}}" width="100" height="{{wombFillHeight stats.womb_fullness_pct}}" />
+                                    {{#if (gt stats.womb_fullness_pct 0)}}
+                                    <!-- 3D liquid meniscus ellipse + specular rim + pearl bubbles -->
+                                    <ellipse class="pt-meniscus-top" cx="50" cy="{{wombFillTop stats.womb_fullness_pct}}" rx="24" ry="3.2" />
+                                    <path class="pt-meniscus-glint" d="M 36 {{subtract (wombFillTop stats.womb_fullness_pct) 0.4}} Q 46 {{add (wombFillTop stats.womb_fullness_pct) 1.5}} 56 {{subtract (wombFillTop stats.womb_fullness_pct) 0.2}}" />
+                                    <circle cx="43" cy="{{add (wombFillTop stats.womb_fullness_pct) 7}}" r="1.2" fill="rgba(255,255,255,0.62)" />
+                                    <circle cx="56" cy="{{add (wombFillTop stats.womb_fullness_pct) 11}}" r="0.9" fill="rgba(255,255,255,0.52)" />
+                                    <circle cx="49" cy="{{add (wombFillTop stats.womb_fullness_pct) 15}}" r="1.4" fill="rgba(255,255,255,0.45)" />
+                                    {{/if}}
+                                    <!-- Subtle inner cavity shadow along right edge so liquid looks cylindrical -->
+                                    <rect x="61" y="22" width="14" height="70" fill="rgba(35,8,24,0.22)" />
+                                    <rect x="28" y="22" width="6" height="70" fill="rgba(255,255,255,0.10)" />
                                 </g>
-                                <!-- Cervical wall: collar + os aperture keyed to cervix_state_id -->
+
+                                {{#if (or stats.preg (eq (cycleStage stats) "pregnancy"))}}
+                                <!-- Glowing 3D Amniotic Sac & Seed inside womb -->
+                                <circle class="pt-womb-seed-halo" cx="50" cy="54" r="9.5" />
+                                <circle cx="50" cy="54" r="6.5" fill="rgba(255,232,160,0.16)" stroke="rgba(255,240,190,0.55)" stroke-width="0.7" />
+                                <circle class="pt-womb-seed" cx="50" cy="54" r="4.1" fill="url(#pt-seed-grad-{{@index}})" />
+                                <ellipse cx="48.5" cy="52.4" rx="1.3" ry="0.8" transform="rotate(-25 48.5 52.4)" fill="rgba(255,255,255,0.85)" />
+                                {{/if}}
+
+                                <!-- 3D Cervical Torus Collar + Recessed Os Aperture -->
                                 <g class="pt-cervix {{cervixOsClass stats}}">
-                                    <ellipse class="pt-cervix-collar" cx="50" cy="90" rx="11" ry="7.5" />
-                                    <circle class="pt-cervix-os" cx="50" cy="90" r="{{cervixOsR stats}}" />
+                                    <!-- Cast shadow below cervix onto fornix -->
+                                    <ellipse cx="50" cy="94" rx="12" ry="5.5" fill="rgba(10,2,8,0.55)" />
+                                    <ellipse class="pt-cervix-collar" cx="50" cy="90" rx="12.2" ry="8.2" fill="url(#pt-cervix-grad-{{@index}})" />
+                                    <!-- Upper specular crescent on torus lip -->
+                                    <path d="M 41 86.2 Q 50 82.6 59 86.2" fill="none" stroke="rgba(255,238,246,0.48)" stroke-width="1.35" stroke-linecap="round" />
+                                    <!-- Recessed os funnel + dark interior -->
+                                    <circle class="pt-cervix-os" cx="50" cy="90.2" r="{{cervixOsR stats}}" />
                                     {{#if (eq (cervixState stats) "split")}}
-                                    <path class="pt-cervix-tear" d="M 42 86.5 L 45 90 L 41 92 L 44 95 M 58 86.5 L 55 90 L 59 92 L 56 95" />
+                                    <path class="pt-cervix-tear" d="M 40.5 86 L 44.2 89.8 L 40 92.2 L 43.8 95.4 M 59.5 86 L 55.8 89.8 L 60 92.2 L 56.2 95.4" />
                                     {{/if}}
                                 </g>
+
                                 {{#if (gt stats.vag_depth_pct 0)}}
-                                <!-- Penetrating shaft: layered phallic build (body + coronal
-                                     ridge + dome glans). Tip advances with vag_depth_pct;
-                                     past 100 the head slips through the split os into the
-                                     womb cavity. -->
-                                <g class="pt-shaft-group">
-                                    <rect class="pt-shaft" style="fill:url(#pt-shaft-skin-{{@index}})" x="43.5" y="{{add (vagShaftTopY stats) 7}}" width="13" height="{{subtract (subtract 158 (vagShaftTopY stats)) 7}}" rx="6.5" />
-                                    <ellipse class="pt-shaft-corona" cx="50" cy="{{add (vagShaftTopY stats) 7}}" rx="8.2" ry="2.6" />
-                                    <ellipse class="pt-shaft-glans" cx="50" cy="{{add (vagShaftTopY stats) 4.6}}" rx="7.2" ry="5.4" />
+                                <!-- Sculpted 3D Penetrating Phallus (translated to vagShaftTopY, clipped at canal floor) -->
+                                <g clip-path="url(#pt-vag-shaft-clip-{{@index}})">
+                                    <g transform="translate(0, {{vagShaftTopY stats}})">
+                                        <!-- Soft drop shadow cast onto rear vaginal wall -->
+                                        <path d="M 52 10 C 60 11 60.5 22 59.5 148 L 44 148 C 43 22 44 11 52 10 Z" fill="rgba(8,1,6,0.42)" />
+                                        <!-- Cylindrical 3D Shaft -->
+                                        <path class="pt-shaft-body" fill="url(#pt-shaft-skin-{{@index}})"
+                                              d="M 43.2 13 C 42.4 36 42.2 76 42.6 150 L 57.4 150 C 57.8 76 57.6 36 56.8 13 Z" />
+                                        <!-- Wet specular strip along upper-left shaft cylinder -->
+                                        <path d="M 46.2 16 L 45.8 145" fill="none" stroke="rgba(255,244,236,0.42)" stroke-width="2.1" stroke-linecap="round" />
+                                        <!-- Subtle dorsal vein relief -->
+                                        <path class="pt-shaft-vein" d="M 52.8 19 C 54.6 34 51.2 49 53.5 67 C 55 82 51.8 98 53.6 122" />
+                                        <path class="pt-shaft-vein-gloss" d="M 52.2 19 C 54 34 50.6 49 52.9 67 C 54.4 82 51.2 98 53 122" />
+                                        <!-- Coronal Sulcus undercut shadow -->
+                                        <path class="pt-shaft-sulcus" d="M 42.4 13.6 Q 50 17.8 57.6 13.6" />
+                                        <!-- Flared Coronal Ridge -->
+                                        <path fill="url(#pt-corona-skin-{{@index}})" stroke="rgba(90,26,38,0.48)" stroke-width="0.6"
+                                              d="M 41.2 11.4 C 41.2 14.8 45.2 16.4 50 16.4 C 54.8 16.4 58.8 14.8 58.8 11.4 C 58.8 9.2 55 8.2 50 8.2 C 45 8.2 41.2 9.2 41.2 11.4 Z" />
+                                        <!-- Sculpted Domed 3D Glans -->
+                                        <path class="pt-shaft-glans" fill="url(#pt-glans-skin-{{@index}})"
+                                              d="M 50 0 C 55.6 0 58.8 5.2 58.4 11.2 C 58.1 13.8 54.6 15.2 50 15.2 C 45.4 15.2 41.9 13.8 41.6 11.2 C 41.2 5.2 44.4 0 50 0 Z" />
+                                        <!-- Glossy wet dome highlight & coronal rim shine -->
+                                        <path d="M 44.8 4.4 C 45.8 2.2 48.2 1.6 49.4 2.4 C 47.4 4.2 46.2 7.2 45.6 10.2 C 44.2 9.4 44.1 6.4 44.8 4.4 Z" fill="rgba(255,248,250,0.58)" />
+                                        <path d="M 43.2 12.2 Q 49.5 14.5 55.6 12.4" fill="none" stroke="rgba(255,235,240,0.45)" stroke-width="0.85" stroke-linecap="round" />
+                                        <!-- Recessed urethral meatus -->
+                                        <path class="pt-shaft-meatus" d="M 50 1.4 L 50 4.3" />
+                                    </g>
                                 </g>
+                                {{#if (gt stats.vag_depth_pct 100)}}
+                                {{#if (gt stats.womb_fullness_pct 0)}}
+                                <!-- Translucent womb fluid sheen over glans tip during deep breach -->
+                                <g clip-path="url(#pt-womb-clip-{{@index}})">
+                                    <rect class="pt-womb-liquid" fill="url(#pt-womb-semen-grad-{{@index}})" opacity="0.34" x="0" y="{{wombFillTop stats.womb_fullness_pct}}" width="100" height="{{wombFillHeight stats.womb_fullness_pct}}" />
+                                    <ellipse class="pt-meniscus-top" cx="50" cy="{{wombFillTop stats.womb_fullness_pct}}" rx="24" ry="3.2" opacity="0.86" />
+                                </g>
+                                {{/if}}
+                                <!-- Subtle stretched cervical lip rim overlapping shaft at deep womb breach -->
+                                <path d="M 40.5 92.4 Q 50 96.4 59.5 92.4" fill="none" stroke="rgba(255,175,204,0.68)" stroke-width="1.6" stroke-linecap="round" />
+                                {{/if}}
                                 {{/if}}
                             </svg>
                         </div>
@@ -10398,40 +10677,147 @@ var pulse_thread_tracker_default = {
                 {{#if (or (hasRefractoryTracking stats) (hasLactationTracking stats) (hasAnalTracking stats) (eqi stats.sex "male") (eqi stats.sex "female") (eqi stats.sex "futanari") (eqi stats.sex "futa") (eqi stats.sex "both") (eqi stats.sex "intersex") (eqi stats.sex "hermaphrodite") (gt stats.bladder_fullness_pct 0) (gt stats.urination_need_pct 0) (gt stats.bladder_pressure_pct 0))}}
                 <div class="pt-bio-column">
                     {{#if (hasRefractoryTracking stats)}}
+                    <!-- MALE: SCULPTED 3D PHALLUS, SCROTUM, TESTES & VAS DEFERENS -->
                     <div class="pt-bio-zone">
                         <div class="pt-male-visuals {{#if (eq stats.sex "futanari")}}pt-futa-accent{{/if}}">
                             <div class="pt-penis-container">
-                                <svg class="pt-penis-svg" viewBox="0 0 100 140" aria-hidden="true" focusable="false">
+                                <svg class="pt-penis-svg" viewBox="-4 -4 108 148" aria-hidden="true" focusable="false">
                                     <defs>
                                         <clipPath id="pt-penis-clip-{{@index}}">
-                                            <ellipse cx="28" cy="108" rx="18" ry="22" />
-                                            <ellipse cx="72" cy="108" rx="18" ry="22" />
+                                            <ellipse cx="32" cy="108" rx="16.5" ry="20" transform="rotate(9 32 108)" />
+                                            <ellipse cx="68" cy="108" rx="16.5" ry="20" transform="rotate(-9 68 108)" />
                                         </clipPath>
-                                        <linearGradient id="pt-penis-depth-{{@index}}" x1="0.5" y1="0" x2="0.5" y2="1">
-                                            <stop offset="0%" stop-color="#7a5a4a" stop-opacity="0.5" />
-                                            <stop offset="100%" stop-color="#3a2015" stop-opacity="0.7" />
+                                        <radialGradient id="pt-male-aura-{{@index}}" cx="50%" cy="52%" r="54%">
+                                            <stop offset="0%" stop-color="#f5c694" stop-opacity="0.14" />
+                                            <stop offset="55%" stop-color="#a86472" stop-opacity="0.05" />
+                                            <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+                                        </radialGradient>
+                                        <!-- Bilobed scrotum volume -->
+                                        <radialGradient id="pt-scrotum-grad-{{@index}}" cx="36%" cy="32%" r="68%">
+                                            <stop offset="0%" stop-color="#8c5864" stop-opacity="0.72" />
+                                            <stop offset="55%" stop-color="#4e2938" stop-opacity="0.82" />
+                                            <stop offset="100%" stop-color="#210f1a" stop-opacity="0.92" />
+                                        </radialGradient>
+                                        <!-- Translucent testicle interior -->
+                                        <radialGradient id="pt-testicle-cav-{{@index}}" cx="38%" cy="32%" r="68%">
+                                            <stop offset="0%" stop-color="#764b5d" stop-opacity="0.82" />
+                                            <stop offset="55%" stop-color="#3c1f2e" stop-opacity="0.90" />
+                                            <stop offset="100%" stop-color="#190b15" stop-opacity="0.96" />
+                                        </radialGradient>
+                                        <!-- Pearlescent semen reservoir -->
+                                        <linearGradient id="pt-semen-grad-{{@index}}" x1="0" y1="0" x2="1" y2="0.1">
+                                            <stop offset="0%" stop-color="#d8cde0" stop-opacity="0.92" />
+                                            <stop offset="30%" stop-color="#ffffff" stop-opacity="0.98" />
+                                            <stop offset="68%" stop-color="#f7f2fb" stop-opacity="0.94" />
+                                            <stop offset="100%" stop-color="#c3b4cf" stop-opacity="0.88" />
+                                        </linearGradient>
+                                        <!-- Erect 3D Shaft cylindrical shading -->
+                                        <linearGradient id="pt-male-shaft-grad-{{@index}}" x1="0" y1="0" x2="1" y2="0">
+                                            <stop offset="0%" stop-color="#9e5e4e" />
+                                            <stop offset="22%" stop-color="#f3c5ab" />
+                                            <stop offset="48%" stop-color="#dc997e" />
+                                            <stop offset="78%" stop-color="#a86252" />
+                                            <stop offset="100%" stop-color="#61312c" />
+                                        </linearGradient>
+                                        <!-- Sculpted 3D Glans radial dome -->
+                                        <radialGradient id="pt-male-glans-grad-{{@index}}" cx="36%" cy="28%" r="70%">
+                                            <stop offset="0%" stop-color="#ffdce2" />
+                                            <stop offset="32%" stop-color="#e5879a" />
+                                            <stop offset="72%" stop-color="#ad445d" />
+                                            <stop offset="100%" stop-color="#681c32" />
+                                        </radialGradient>
+                                        <linearGradient id="pt-male-corona-grad-{{@index}}" x1="0" y1="0" x2="1" y2="0">
+                                            <stop offset="0%" stop-color="#872e45" />
+                                            <stop offset="28%" stop-color="#f5aab8" />
+                                            <stop offset="56%" stop-color="#cc627a" />
+                                            <stop offset="100%" stop-color="#611c30" />
                                         </linearGradient>
                                     </defs>
-                                    <!-- Shaft -->
-                                    <path class="pt-penis-shaft" d="M38 78 C36 58 34 38 36 18 C36 8 42 2 50 2 C58 2 64 8 64 18 C66 38 64 58 62 78" />
-                                    <!-- Glans -->
-                                    <path class="pt-penis-glans" d="M36 18 C36 6 42 0 50 0 C58 0 64 6 64 18 C64 28 58 34 50 34 C42 34 36 28 36 18 Z" />
-                                    <!-- Testicle inner depth -->
-                                    <ellipse cx="28" cy="108" rx="16" ry="20" fill="url(#pt-penis-depth-{{@index}})" />
-                                    <ellipse cx="72" cy="108" rx="16" ry="20" fill="url(#pt-penis-depth-{{@index}})" />
-                                    <!-- Testicle outlines -->
-                                    <ellipse class="pt-testicle" cx="28" cy="108" rx="18" ry="22" />
-                                    <ellipse class="pt-testicle" cx="72" cy="108" rx="18" ry="22" />
-                                    <!-- Semen fill -->
+
+                                    <!-- Ambient backdrop & floor shadow -->
+                                    <ellipse cx="50" cy="72" rx="48" ry="66" fill="url(#pt-male-aura-{{@index}})" />
+                                    <ellipse cx="50" cy="137" rx="34" ry="4.5" fill="rgba(0,0,0,0.48)" />
+
+                                    <!-- Sculpted Bilobed Scrotal Sac -->
+                                    <path class="pt-scrotum-sac" fill="url(#pt-scrotum-grad-{{@index}})"
+                                          d="M 34 78 C 20 82 10 96 12 113 C 14 128 24 136 37 135 C 44 134.5 48 130.5 50 127.5 C 52 130.5 56 134.5 63 135 C 76 136 86 128 88 113 C 90 96 80 82 66 78 Z" />
+                                    <!-- Median raphe crease & soft lateral rim glints -->
+                                    <path d="M 50 86 C 49.6 102 50.4 114 50 127" fill="none" stroke="rgba(16,4,12,0.45)" stroke-width="1.6" stroke-linecap="round" />
+                                    <path d="M 16.5 103 C 15.5 113 18.5 123 25 129" fill="none" stroke="rgba(255,235,244,0.22)" stroke-width="1.3" stroke-linecap="round" />
+
+                                    <!-- Vas Deferens ascending ducts -->
+                                    <path class="pt-vas-deferens" d="M 27 89 C 30 78 39 74 44 64 M 73 89 C 70 78 61 74 56 64" />
+
+                                    <!-- Paired Anatomical Testes (translucent cutaway chambers) -->
+                                    <ellipse cx="32" cy="108" rx="16.5" ry="20" transform="rotate(9 32 108)" fill="url(#pt-testicle-cav-{{@index}})" />
+                                    <ellipse cx="68" cy="108" rx="16.5" ry="20" transform="rotate(-9 68 108)" fill="url(#pt-testicle-cav-{{@index}})" />
+
+                                    <!-- Epididymis caps hugging upper lateral poles -->
+                                    <path class="pt-epididymis" d="M 20 100 C 21 90 28 85 36 87 M 80 100 C 79 90 72 85 64 87" />
+
+                                    <!-- Clipped 3D Pearlescent Semen Reservoir + Dual Meniscus -->
                                     <g clip-path="url(#pt-penis-clip-{{@index}})">
-                                        <rect class="pt-semen-fill" x="0" y="{{semenFillTop (semenPercent stats)}}" width="100" height="{{semenFillHeight (semenPercent stats)}}" />
-                                        <path class="pt-semen-surface" d="M20 {{semenFillTop (semenPercent stats)}} C35 {{add (semenFillTop (semenPercent stats)) 3}} 65 {{add (semenFillTop (semenPercent stats)) 3}} 80 {{semenFillTop (semenPercent stats)}}" />
+                                        <rect class="pt-semen-fill" fill="url(#pt-semen-grad-{{@index}})" x="0" y="{{semenFillTop (semenPercent stats)}}" width="100" height="{{semenFillHeight (semenPercent stats)}}" />
+                                        {{#if (gt (semenPercent stats) 0)}}
+                                        <ellipse class="pt-meniscus-top" cx="32" cy="{{semenFillTop (semenPercent stats)}}" rx="17" ry="2.8" />
+                                        <ellipse class="pt-meniscus-top" cx="68" cy="{{semenFillTop (semenPercent stats)}}" rx="17" ry="2.8" />
+                                        <path class="pt-meniscus-glint" d="M 22 {{subtract (semenFillTop (semenPercent stats)) 0.3}} Q 31 {{add (semenFillTop (semenPercent stats)) 1.2}} 40 {{subtract (semenFillTop (semenPercent stats)) 0.2}}" />
+                                        <path class="pt-meniscus-glint" d="M 58 {{subtract (semenFillTop (semenPercent stats)) 0.3}} Q 67 {{add (semenFillTop (semenPercent stats)) 1.2}} 76 {{subtract (semenFillTop (semenPercent stats)) 0.2}}" />
+                                        <circle cx="29" cy="{{add (semenFillTop (semenPercent stats)) 7}}" r="1.1" fill="rgba(255,255,255,0.62)" />
+                                        <circle cx="71" cy="{{add (semenFillTop (semenPercent stats)) 8}}" r="1.0" fill="rgba(255,255,255,0.58)" />
+                                        {{/if}}
+                                        <!-- Cylindrical side shadows inside chambers -->
+                                        <rect x="40" y="84" width="10" height="48" fill="rgba(20,6,18,0.22)" />
+                                        <rect x="77" y="84" width="10" height="48" fill="rgba(20,6,18,0.24)" />
                                     </g>
+
+                                    <!-- Testicle glass-like rims + curved specular highlights -->
+                                    <ellipse class="pt-testicle-wall" cx="32" cy="108" rx="16.5" ry="20" transform="rotate(9 32 108)" fill="none" />
+                                    <ellipse class="pt-testicle-wall" cx="68" cy="108" rx="16.5" ry="20" transform="rotate(-9 68 108)" fill="none" />
+                                    <path d="M 23.5 96 C 21.5 102 21.5 109 23.8 115" fill="none" stroke="rgba(255,255,255,0.34)" stroke-width="1.6" stroke-linecap="round" />
+                                    <path d="M 59.5 96 C 57.8 102 58 109 60.2 115" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1.5" stroke-linecap="round" />
+
+                                    <!-- Cast shadow of shaft base onto upper scrotum -->
+                                    <ellipse cx="50" cy="84" rx="16" ry="5.5" fill="rgba(12,3,10,0.46)" />
+
+                                    <!-- Erect 3D Cylindrical Shaft -->
+                                    <path class="pt-penis-shaft-body" fill="url(#pt-male-shaft-grad-{{@index}})"
+                                          d="M 35.8 84 C 34.8 66 34.5 46 36.2 28 L 63.8 28 C 65.5 46 65.2 66 64.2 84 C 60 88.5 40 88.5 35.8 84 Z" />
+                                    <!-- Internal faint translucent urethral core -->
+                                    <path class="pt-penis-urethra" d="M 50 18 L 50 82" />
+                                    <!-- Wet specular highlight strip & dorsal vein along shaft -->
+                                    <path d="M 41.2 31 C 40.4 49 40.6 66 41.4 81" fill="none" stroke="rgba(255,244,238,0.40)" stroke-width="2.6" stroke-linecap="round" />
+                                    <path class="pt-shaft-vein" d="M 55.2 33 C 58 45 52.8 58 56.2 71 C 57.4 76 55.2 81 53.5 84" />
+                                    <path class="pt-shaft-vein-gloss" d="M 54.5 33 C 57.3 45 52.1 58 55.5 71" />
+
+                                    <!-- Coronal Sulcus undercut shadow -->
+                                    <path class="pt-shaft-sulcus" d="M 35.6 29.2 Q 50 36.2 64.4 29.2" />
+
+                                    <!-- Flared 3D Coronal Ridge -->
+                                    <path fill="url(#pt-male-corona-grad-{{@index}})" stroke="rgba(85,24,38,0.45)" stroke-width="0.7"
+                                          d="M 33.4 25.4 C 33.4 30.8 40.5 33.6 50 33.6 C 59.5 33.6 66.6 30.8 66.6 25.4 C 66.6 21.8 59.5 20.4 50 20.4 C 40.5 20.4 33.4 21.8 33.4 25.4 Z" />
+
+                                    <!-- Sculpted Domed 3D Glans -->
+                                    <path class="pt-penis-glans-body" fill="url(#pt-male-glans-grad-{{@index}})"
+                                          d="M 50 2.5 C 59.2 2.5 66.2 12 65.8 24.4 C 65.4 29.4 58.6 31.6 50 31.6 C 41.4 31.6 34.6 29.4 34.2 24.4 C 33.8 12 40.8 2.5 50 2.5 Z" />
+                                    <!-- Glossy curved specular highlight on upper-left glans dome + coronal shine -->
+                                    <path d="M 40.5 11.4 C 42.4 7.2 46.2 5.4 48.6 6.8 C 45.2 10.2 43.2 15.8 42.4 21.4 C 39.8 20.2 39.2 14.8 40.5 11.4 Z" fill="rgba(255,248,252,0.56)" />
+                                    <path d="M 37.5 27.6 Q 50 31.2 61.5 27.6" fill="none" stroke="rgba(255,235,242,0.44)" stroke-width="1.15" stroke-linecap="round" />
+                                    <!-- Recessed Urethral Meatus -->
+                                    <path class="pt-shaft-meatus" d="M 50 5.5 L 50 11" />
+
+                                    {{#if (gt (semenPercent stats) 55)}}
+                                    <!-- Shimmering pre-cum pearl bead at meatus when loaded -->
+                                    <circle class="pt-penis-precum" cx="50" cy="4.4" r="2.2" />
+                                    <circle cx="49.3" cy="3.8" r="0.7" fill="#ffffff" />
+                                    {{/if}}
                                 </svg>
-                                <div class="pt-semen-label">{{semenPercent stats}}%</div>
                             </div>
-                            <div class="pt-cooldown-track">
-                                <div class="pt-cooldown-fill" style="width: {{divide (multiply (subtract stats.refractory_total stats.refractory_minutes) 100) stats.refractory_total}}%"></div>
+                            <div class="pt-male-footer">
+                                <span class="pt-semen-chip">{{semenPercent stats}}%</span>
+                                <div class="pt-cooldown-track">
+                                    <div class="pt-cooldown-fill" style="width: {{#if (gt stats.refractory_minutes 0)}}{{divide (multiply (subtract stats.refractory_total stats.refractory_minutes) 100) stats.refractory_total}}{{else}}100{{/if}}%"></div>
+                                </div>
                             </div>
                         </div>
                         <div class="pt-bio-panel">
@@ -10468,62 +10854,142 @@ var pulse_thread_tracker_default = {
                     {{/if}}
 
                     {{#if (hasLactationTracking stats)}}
+                    <!-- FEMALE: 3D BREASTS, TORSO, MAMMARY DUCTS & LACTATION -->
                     <div class="pt-bio-zone">
                         <div class="pt-breast-vessel">
-                            <svg class="pt-breast-svg" viewBox="0 0 100 120" aria-hidden="true" focusable="false">
+                            <svg class="pt-breast-svg" viewBox="-4 4 108 118" aria-hidden="true" focusable="false">
                                 <defs>
-                                    <!-- Breast silhouette: anatomically scaled per character via
-                                         cup_size. Paths, anchor points, areola/nipple coords,
-                                         underbreast folds, cleavage and gloss are all
-                                         precomputed by the renderer (computeBreastGeometry). -->
                                     <clipPath id="pt-breast-clip-{{@index}}">
                                         <path d="{{breastGeometry.pathLeft}}" />
                                         <path d="{{breastGeometry.pathRight}}" />
                                     </clipPath>
-                                    <linearGradient id="pt-breast-depth-{{@index}}" x1="0.5" y1="0" x2="0.5" y2="1">
-                                        <stop offset="0%" stop-color="#7a3a55" stop-opacity="0.45" />
-                                        <stop offset="100%" stop-color="#3a1528" stop-opacity="0.7" />
+                                    <radialGradient id="pt-breast-aura-{{@index}}" cx="50%" cy="56%" r="54%">
+                                        <stop offset="0%" stop-color="#ff7aa8" stop-opacity="0.16" />
+                                        <stop offset="60%" stop-color="#a83264" stop-opacity="0.05" />
+                                        <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+                                    </radialGradient>
+                                    <!-- 3D Spherical-Teardrop Breast Volume Shading (left & right offset key lights) -->
+                                    <radialGradient id="pt-breast-vol-l-{{@index}}" cx="38%" cy="30%" r="72%">
+                                        <stop offset="0%" stop-color="#e894b3" stop-opacity="0.72" />
+                                        <stop offset="36%" stop-color="#b44f79" stop-opacity="0.68" />
+                                        <stop offset="76%" stop-color="#621d3e" stop-opacity="0.82" />
+                                        <stop offset="100%" stop-color="#2b091c" stop-opacity="0.92" />
+                                    </radialGradient>
+                                    <radialGradient id="pt-breast-vol-r-{{@index}}" cx="32%" cy="30%" r="72%">
+                                        <stop offset="0%" stop-color="#e894b3" stop-opacity="0.72" />
+                                        <stop offset="36%" stop-color="#b44f79" stop-opacity="0.68" />
+                                        <stop offset="76%" stop-color="#621d3e" stop-opacity="0.82" />
+                                        <stop offset="100%" stop-color="#2b091c" stop-opacity="0.92" />
+                                    </radialGradient>
+                                    <!-- Warm creamy ivory-gold 3D milk reservoir -->
+                                    <linearGradient id="pt-milk-grad-{{@index}}" x1="0" y1="0" x2="1" y2="0.12">
+                                        <stop offset="0%" stop-color="#f2dfb8" stop-opacity="0.90" />
+                                        <stop offset="28%" stop-color="#fffdf4" stop-opacity="0.96" />
+                                        <stop offset="52%" stop-color="#f8ebd0" stop-opacity="0.92" />
+                                        <stop offset="76%" stop-color="#fffcf0" stop-opacity="0.96" />
+                                        <stop offset="100%" stop-color="#e3cca0" stop-opacity="0.88" />
                                     </linearGradient>
-                                    <radialGradient id="pt-breast-shade-{{@index}}" cx="0.4" cy="0.35" r="0.65">
-                                        <stop offset="0%" stop-color="rgba(255,255,255,0.22)" />
-                                        <stop offset="100%" stop-color="rgba(255,255,255,0)" />
+                                    <!-- Lower-pole gravitational crescent shadow (renders OVER milk fill for 3D depth) -->
+                                    <linearGradient id="pt-under-shade-{{@index}}" x1="0.5" y1="0" x2="0.5" y2="1">
+                                        <stop offset="0%" stop-color="#4e1330" stop-opacity="0" />
+                                        <stop offset="55%" stop-color="#3a0c24" stop-opacity="0.34" />
+                                        <stop offset="100%" stop-color="#180410" stop-opacity="0.62" />
+                                    </linearGradient>
+                                    <!-- Soft dome specular radial bloom -->
+                                    <radialGradient id="pt-breast-shade-{{@index}}" cx="40%" cy="35%" r="65%">
+                                        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.32" />
+                                        <stop offset="55%" stop-color="#ffeef5" stop-opacity="0.10" />
+                                        <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+                                    </radialGradient>
+                                    <!-- Soft 3D Areola gradient -->
+                                    <radialGradient id="pt-areola-grad-{{@index}}" cx="42%" cy="38%" r="62%">
+                                        <stop offset="0%" stop-color="#e8749b" stop-opacity="0.92" />
+                                        <stop offset="68%" stop-color="#b5406b" stop-opacity="0.82" />
+                                        <stop offset="100%" stop-color="#87264b" stop-opacity="0.18" />
+                                    </radialGradient>
+                                    <!-- Sculpted 3D Nipple gradient -->
+                                    <radialGradient id="pt-nipple-grad-{{@index}}" cx="34%" cy="30%" r="68%">
+                                        <stop offset="0%" stop-color="#ffd4e2" />
+                                        <stop offset="35%" stop-color="#e65383" />
+                                        <stop offset="80%" stop-color="#991d4a" />
+                                        <stop offset="100%" stop-color="#5e0d2c" />
                                     </radialGradient>
                                 </defs>
 
-                                <!-- Inner cavity depth (gradient inside each teardrop) -->
-                                <path class="pt-breast-inner" style="fill:url(#pt-breast-depth-{{@index}})" d="{{breastGeometry.pathLeft}}" />
-                                <path class="pt-breast-inner" style="fill:url(#pt-breast-depth-{{@index}})" d="{{breastGeometry.pathRight}}" />
+                                <!-- Ambient glow backdrop -->
+                                <ellipse cx="50" cy="64" rx="50" ry="50" fill="url(#pt-breast-aura-{{@index}})" />
 
-                                <!-- Milk fill (rises with breast_fullness_pct, clipped to both breasts) -->
-                                <g clip-path="url(#pt-breast-clip-{{@index}})">
-                                    <rect class="pt-milk-liquid" x="0" y="{{breastGeometry.fillTop}}" width="100" height="{{breastGeometry.fillHeight}}" />
-                                    <path class="pt-milk-surface" d="M 8 {{breastGeometry.fillTop}} C 28 {{breastGeometry.fillSurfaceMid}} 72 {{breastGeometry.fillSurfaceMid}} 92 {{breastGeometry.fillTop}}" />
-                                    <!-- Soft upper-curve gloss (clipped so it follows the breast shape) -->
-                                    <ellipse class="pt-breast-gloss" cx="{{breastGeometry.glossXLeft}}" cy="{{breastGeometry.glossY}}" rx="{{breastGeometry.glossRX}}" ry="{{breastGeometry.glossRY}}" fill="url(#pt-breast-shade-{{@index}})" />
-                                    <ellipse class="pt-breast-gloss" cx="{{breastGeometry.glossXRight}}" cy="{{breastGeometry.glossY}}" rx="{{breastGeometry.glossRX}}" ry="{{breastGeometry.glossRY}}" fill="url(#pt-breast-shade-{{@index}})" />
-                                </g>
+                                <!-- Subtle Anatomical Upper Torso Silhouette (neck, shoulders, clavicles, ribcage waist) -->
+                                <path class="pt-torso-silhouette"
+                                      d="M 40 7 C 40 15 36 19 22 22 C 11 24.5 4 31 3 43 L 6 70 C 10 86 15 99 17 115 L 83 115 C 85 99 90 86 94 70 L 97 43 C 96 31 89 24.5 78 22 C 64 19 60 15 60 7" />
+                                <!-- Collarbone (clavicle) relief & sternal notch -->
+                                <path class="pt-torso-clavicle-shadow" d="M 16 26.8 Q 33 23.2 46.5 27.6 M 84 26.8 Q 67 23.2 53.5 27.6" />
+                                <path class="pt-torso-clavicle" d="M 16 25.8 Q 33 22.2 46.5 26.6 M 84 25.8 Q 67 22.2 53.5 26.6" />
+                                <path d="M 46.5 26.6 Q 50 29 53.5 26.6" fill="none" stroke="rgba(255,220,235,0.22)" stroke-width="1" stroke-linecap="round" />
 
-                                <!-- Cleavage hint: a short shadow line in the narrow band where
-                                     the breasts touch. Length/position track the apex. -->
-                                <path class="pt-breast-cleavage" d="{{breastGeometry.cleavagePath}}" />
-
-                                <!-- Underbreast folds: faint creases at each breast's IMF.
-                                     Drift downward as cup size grows. -->
+                                <!-- Inframammary cast shadows on ribcage beneath breasts -->
                                 <path class="pt-breast-fold" d="{{breastGeometry.foldLeftPath}}" />
                                 <path class="pt-breast-fold" d="{{breastGeometry.foldRightPath}}" />
 
-                                <!-- Outlines on top of fill and folds -->
-                                <path class="pt-breast-outline {{#if stats.lactating}}lactating{{/if}}" d="{{breastGeometry.pathLeft}}" />
-                                <path class="pt-breast-outline {{#if stats.lactating}}lactating{{/if}}" d="{{breastGeometry.pathRight}}" />
+                                <!-- 3D Breast Volume Bases -->
+                                <path fill="url(#pt-breast-vol-l-{{@index}})" d="{{breastGeometry.pathLeft}}" />
+                                <path fill="url(#pt-breast-vol-r-{{@index}})" d="{{breastGeometry.pathRight}}" />
 
-                                <!-- Areola: broader, softer disk centred on each breast's
-                                     apex. Position and radius scale with cup. -->
-                                <circle class="pt-areola {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.areolaR}}" />
-                                <circle class="pt-areola {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.areolaR}}" />
+                                <!-- Clipped Interior: Mammary Duct Tree, Milk Fill, Meniscus, Lower-Pole Volume Shadow & Specular -->
+                                <g clip-path="url(#pt-breast-clip-{{@index}})">
+                                    <!-- Delicate branching lactiferous ducts radiating to each areola -->
+                                    <path class="pt-breast-duct {{#if (or stats.lactating (gt stats.breast_fullness_pct 50))}}active{{/if}}" d="{{breastGeometry.ductLeftPath}}" />
+                                    <path class="pt-breast-duct {{#if (or stats.lactating (gt stats.breast_fullness_pct 50))}}active{{/if}}" d="{{breastGeometry.ductRightPath}}" />
 
-                                <!-- Nipple: small, deeper colour, scales gently when sensitivity > 60. -->
-                                <circle class="pt-nipple {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.nippleR}}" />
-                                <circle class="pt-nipple {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.nippleR}}" />
+                                    <!-- Milk Fill -->
+                                    <rect class="pt-milk-liquid" fill="url(#pt-milk-grad-{{@index}})" x="0" y="{{breastGeometry.fillTop}}" width="100" height="{{breastGeometry.fillHeight}}" />
+                                    {{#if (gt stats.breast_fullness_pct 0)}}
+                                    <!-- Curved 3D Milk Meniscus + Glint -->
+                                    <ellipse cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.fillTop}}" rx="26" ry="2.6" fill="rgba(255,255,245,0.78)" />
+                                    <ellipse cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.fillTop}}" rx="26" ry="2.6" fill="rgba(255,255,245,0.78)" />
+                                    <path d="M 8 {{breastGeometry.fillTop}} C 28 {{breastGeometry.fillSurfaceMid}} 72 {{breastGeometry.fillSurfaceMid}} 92 {{breastGeometry.fillTop}}"
+                                          fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="1.4" stroke-linecap="round" />
+                                    {{/if}}
+
+                                    <!-- Translucent Lower-Pole Gravitational Shadow (keeps 3D volume even at 100% milk!) -->
+                                    <path fill="url(#pt-under-shade-{{@index}})" d="{{breastGeometry.underShadeLeftPath}}" />
+                                    <path fill="url(#pt-under-shade-{{@index}})" d="{{breastGeometry.underShadeRightPath}}" />
+
+                                    <!-- Soft Upper-Dome Gloss & Curved Glass Specular Sheen -->
+                                    <ellipse class="pt-breast-gloss" cx="{{breastGeometry.glossXLeft}}" cy="{{breastGeometry.glossY}}" rx="{{breastGeometry.glossRX}}" ry="{{breastGeometry.glossRY}}" fill="url(#pt-breast-shade-{{@index}})" />
+                                    <ellipse class="pt-breast-gloss" cx="{{breastGeometry.glossXRight}}" cy="{{breastGeometry.glossY}}" rx="{{breastGeometry.glossRX}}" ry="{{breastGeometry.glossRY}}" fill="url(#pt-breast-shade-{{@index}})" />
+                                    <path class="pt-breast-specular" d="{{breastGeometry.specularLeftPath}}" />
+                                    <path class="pt-breast-specular" d="{{breastGeometry.specularRightPath}}" />
+                                </g>
+
+                                <!-- Sculpted Medial Cleavage Shadow -->
+                                <path class="pt-breast-cleavage" d="{{breastGeometry.cleavagePath}}" />
+
+                                <!-- Natural Anatomical Contour Outlines (open upper slope, luminous outer/lower/cleavage curves) -->
+                                <path class="pt-breast-outline {{#if stats.lactating}}lactating{{/if}}" d="{{breastGeometry.contourLeftPath}}" />
+                                <path class="pt-breast-outline {{#if stats.lactating}}lactating{{/if}}" d="{{breastGeometry.contourRightPath}}" />
+
+                                <!-- 3D Areola Disks + Subtle Highlight Rings -->
+                                <circle class="pt-areola {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.areolaR}}" fill="url(#pt-areola-grad-{{@index}})" />
+                                <circle class="pt-areola {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.areolaR}}" fill="url(#pt-areola-grad-{{@index}})" />
+
+                                <!-- Projected 3D Nipple Shadows + Sculpted Nipple Domes + Specular Dots -->
+                                <ellipse cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.nippleShadowY}}" rx="{{breastGeometry.nippleR}}" ry="1.8" fill="rgba(22,4,14,0.48)" />
+                                <ellipse cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.nippleShadowY}}" rx="{{breastGeometry.nippleR}}" ry="1.8" fill="rgba(22,4,14,0.48)" />
+                                <circle class="pt-nipple {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.nippleR}}" fill="url(#pt-nipple-grad-{{@index}})" />
+                                <circle class="pt-nipple {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.nippleR}}" fill="url(#pt-nipple-grad-{{@index}})" />
+                                <circle cx="{{breastGeometry.nippleHighlightXLeft}}" cy="{{breastGeometry.nippleHighlightY}}" r="0.95" fill="rgba(255,248,252,0.82)" />
+                                <circle cx="{{breastGeometry.nippleHighlightXRight}}" cy="{{breastGeometry.nippleHighlightY}}" r="0.95" fill="rgba(255,248,252,0.82)" />
+
+                                {{#if (and stats.lactating (gt stats.breast_fullness_pct 15))}}
+                                <!-- Animated Glistening Milk Droplets when actively lactating -->
+                                <g class="pt-milk-drip">
+                                    <path d="M {{breastGeometry.apexXLeft}} {{breastGeometry.milkDropY}} C {{breastGeometry.apexXLeft}} {{breastGeometry.milkDropY}} {{add breastGeometry.apexXLeft 1.9}} {{add breastGeometry.milkDropY 3.2}} {{add breastGeometry.apexXLeft 1.9}} {{add breastGeometry.milkDropY 4.5}} C {{add breastGeometry.apexXLeft 1.9}} {{add breastGeometry.milkDropY 5.6}} {{add breastGeometry.apexXLeft 1}} {{add breastGeometry.milkDropY 6.4}} {{breastGeometry.apexXLeft}} {{add breastGeometry.milkDropY 6.4}} C {{subtract breastGeometry.apexXLeft 1}} {{add breastGeometry.milkDropY 6.4}} {{subtract breastGeometry.apexXLeft 1.9}} {{add breastGeometry.milkDropY 5.6}} {{subtract breastGeometry.apexXLeft 1.9}} {{add breastGeometry.milkDropY 4.5}} C {{subtract breastGeometry.apexXLeft 1.9}} {{add breastGeometry.milkDropY 3.2}} {{breastGeometry.apexXLeft}} {{breastGeometry.milkDropY}} {{breastGeometry.apexXLeft}} {{breastGeometry.milkDropY}} Z" fill="rgba(255,252,238,0.95)" />
+                                </g>
+                                <g class="pt-milk-drip" style="animation-delay: 1.1s;">
+                                    <path d="M {{breastGeometry.apexXRight}} {{breastGeometry.milkDropY}} C {{breastGeometry.apexXRight}} {{breastGeometry.milkDropY}} {{add breastGeometry.apexXRight 1.9}} {{add breastGeometry.milkDropY 3.2}} {{add breastGeometry.apexXRight 1.9}} {{add breastGeometry.milkDropY 4.5}} C {{add breastGeometry.apexXRight 1.9}} {{add breastGeometry.milkDropY 5.6}} {{add breastGeometry.apexXRight 1}} {{add breastGeometry.milkDropY 6.4}} {{breastGeometry.apexXRight}} {{add breastGeometry.milkDropY 6.4}} C {{subtract breastGeometry.apexXRight 1}} {{add breastGeometry.milkDropY 6.4}} {{subtract breastGeometry.apexXRight 1.9}} {{add breastGeometry.milkDropY 5.6}} {{subtract breastGeometry.apexXRight 1.9}} {{add breastGeometry.milkDropY 4.5}} C {{subtract breastGeometry.apexXRight 1.9}} {{add breastGeometry.milkDropY 3.2}} {{breastGeometry.apexXRight}} {{breastGeometry.milkDropY}} {{breastGeometry.apexXRight}} {{breastGeometry.milkDropY}} Z" fill="rgba(255,252,238,0.95)" />
+                                </g>
+                                {{/if}}
                             </svg>
                         </div>
                         <div class="pt-bio-panel">
@@ -10566,59 +11032,169 @@ var pulse_thread_tracker_default = {
                     {{/if}}
 
                     {{#if (hasAnalTracking stats)}}
+                    <!-- ANAL CANAL, PROSTATE, SPHINCTER & LAYERED 3D PENETRATION -->
                     <div class="pt-bio-zone">
                         <div class="pt-anal-vessel">
-                            <svg class="pt-anal-svg" viewBox="0 0 100 134" aria-hidden="true" focusable="false">
+                            <svg class="pt-anal-svg" viewBox="-4 0 108 136" aria-hidden="true" focusable="false">
                                 <defs>
                                     <clipPath id="pt-anal-clip-{{@index}}">
-                                        <!-- Main canal path -->
-                                        <path d="M 40 15 C 32 30, 24 50, 28 80 C 30 95, 42 105, 45 106 C 48 107, 52 107, 55 106 C 58 105, 70 95, 72 80 C 76 50, 68 30, 60 15 C 55 20, 45 20, 40 15 Z" />
+                                        <path d="M 40 15 C 32 30 24 50 28 80 C 30 95 42 105 45 106 C 48 107 52 107 55 106 C 58 105 70 95 72 80 C 76 50 68 30 60 15 C 55 20 45 20 40 15 Z" />
                                     </clipPath>
-                                    <linearGradient id="pt-anal-depth-{{@index}}" x1="0.5" y1="0" x2="0.5" y2="1">
-                                        <stop offset="0%" stop-color="#4a044e" stop-opacity="0.85" />
-                                        <stop offset="100%" stop-color="#170123" stop-opacity="0.95" />
+                                    <clipPath id="pt-anal-shaft-clip-{{@index}}">
+                                        <rect x="20" y="14" width="60" height="119" />
+                                    </clipPath>
+                                    <radialGradient id="pt-anal-aura-{{@index}}" cx="50%" cy="54%" r="54%">
+                                        <stop offset="0%" stop-color="#c084fc" stop-opacity="0.18" />
+                                        <stop offset="60%" stop-color="#701a75" stop-opacity="0.06" />
+                                        <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+                                    </radialGradient>
+                                    <!-- Thick 3D Rectal Wall -->
+                                    <linearGradient id="pt-anal-wall-grad-{{@index}}" x1="0" y1="0" x2="1" y2="0.15">
+                                        <stop offset="0%" stop-color="#9e4ab8" />
+                                        <stop offset="26%" stop-color="#ba62cc" />
+                                        <stop offset="56%" stop-color="#6b2180" />
+                                        <stop offset="86%" stop-color="#3e0d52" />
+                                        <stop offset="100%" stop-color="#220530" />
                                     </linearGradient>
+                                    <!-- Recessed Cylindrical 3D Cavity -->
+                                    <linearGradient id="pt-anal-cav-{{@index}}" x1="0" y1="0" x2="1" y2="0">
+                                        <stop offset="0%" stop-color="#4e1063" />
+                                        <stop offset="22%" stop-color="#29073b" />
+                                        <stop offset="50%" stop-color="#12021d" />
+                                        <stop offset="78%" stop-color="#29073b" />
+                                        <stop offset="100%" stop-color="#480f5c" />
+                                    </linearGradient>
+                                    <!-- Walnut 3D Prostate -->
+                                    <radialGradient id="pt-prostate-grad-{{@index}}" cx="36%" cy="32%" r="68%">
+                                        <stop offset="0%" stop-color="#ffd0e6" />
+                                        <stop offset="36%" stop-color="#f472b6" />
+                                        <stop offset="76%" stop-color="#9d174d" />
+                                        <stop offset="100%" stop-color="#500724" />
+                                    </radialGradient>
+                                    <!-- 3D Sphincter Cushions -->
+                                    <radialGradient id="pt-sphincter-grad-{{@index}}" cx="35%" cy="32%" r="70%">
+                                        <stop offset="0%" stop-color="#d882e8" />
+                                        <stop offset="55%" stop-color="#862e9c" />
+                                        <stop offset="100%" stop-color="#3d0b4f" />
+                                    </radialGradient>
+                                    <!-- Pearlescent Anal Semen Base & Translucent Front Wash -->
+                                    <linearGradient id="pt-anal-semen-grad-{{@index}}" x1="0" y1="0" x2="1" y2="0.1">
+                                        <stop offset="0%" stop-color="#dccae6" stop-opacity="0.92" />
+                                        <stop offset="32%" stop-color="#ffffff" stop-opacity="0.97" />
+                                        <stop offset="68%" stop-color="#f5ecfa" stop-opacity="0.92" />
+                                        <stop offset="100%" stop-color="#c3acd4" stop-opacity="0.88" />
+                                    </linearGradient>
+                                    <!-- Penetrating 3D Phallus Shading -->
                                     <linearGradient id="pt-anal-shaft-skin-{{@index}}" x1="0" y1="0" x2="1" y2="0">
-                                        <stop offset="0%" stop-color="#f2c9ac" />
-                                        <stop offset="55%" stop-color="#e0a184" />
-                                        <stop offset="100%" stop-color="#bd7a5e" />
+                                        <stop offset="0%" stop-color="#c98569" />
+                                        <stop offset="24%" stop-color="#fbd9c2" />
+                                        <stop offset="48%" stop-color="#eeb596" />
+                                        <stop offset="78%" stop-color="#c98265" />
+                                        <stop offset="100%" stop-color="#874837" />
+                                    </linearGradient>
+                                    <radialGradient id="pt-anal-glans-skin-{{@index}}" cx="36%" cy="30%" r="68%">
+                                        <stop offset="0%" stop-color="#ffd9db" />
+                                        <stop offset="34%" stop-color="#eb8f9a" />
+                                        <stop offset="74%" stop-color="#b84c60" />
+                                        <stop offset="100%" stop-color="#762336" />
+                                    </radialGradient>
+                                    <linearGradient id="pt-anal-corona-skin-{{@index}}" x1="0" y1="0" x2="1" y2="0">
+                                        <stop offset="0%" stop-color="#9e3b50" />
+                                        <stop offset="28%" stop-color="#f7b2bc" />
+                                        <stop offset="56%" stop-color="#d46b7f" />
+                                        <stop offset="100%" stop-color="#782436" />
                                     </linearGradient>
                                 </defs>
 
+                                <!-- Ambient glow & floor shadow -->
+                                <ellipse cx="50" cy="68" rx="48" ry="60" fill="url(#pt-anal-aura-{{@index}})" />
+                                <ellipse cx="50" cy="129" rx="22" ry="4" fill="rgba(0,0,0,0.45)" />
+
                                 {{#if (hasProstateTracking stats)}}
-                                <!-- Prostate (anterior wall, nestled inside curve) -->
-                                <path class="pt-prostate {{#if (gt stats.prostate_stimulation_pct 50)}}glow{{/if}}" d="M 28 65 C 18 60, 16 75, 22 85 C 28 95, 32 88, 30 75 Z" />
+                                <!-- Sculpted 3D Walnut Prostate (anterior wall) + Pleasure Nerve Waves -->
+                                {{#if (gt stats.prostate_stimulation_pct 50)}}
+                                <circle class="pt-prostate-wave" cx="20.5" cy="76" r="11" />
+                                <circle class="pt-prostate-wave" cx="20.5" cy="76" r="11" style="animation-delay: 0.9s;" />
+                                {{/if}}
+                                <g class="pt-prostate {{#if (gt stats.prostate_stimulation_pct 50)}}glow{{/if}}">
+                                    <path fill="url(#pt-prostate-grad-{{@index}})"
+                                          d="M 27 62 C 19 59 11.5 67.5 12.5 77.5 C 13.5 87.5 22 93.5 28.5 89.5 C 31.8 87.4 31.5 79.5 30 72 C 29.2 68 29 63 27 62 Z" />
+                                    <!-- Lobular crease & wet specular bead -->
+                                    <path d="M 20.5 64 C 19 72 20 80 22 87" fill="none" stroke="rgba(90,10,45,0.42)" stroke-width="0.9" stroke-linecap="round" />
+                                    <ellipse cx="17.2" cy="70.5" rx="2.6" ry="1.4" transform="rotate(-24 17.2 70.5)" fill="rgba(255,245,250,0.62)" stroke="none" />
+                                </g>
                                 {{/if}}
 
-                                <!-- Outer glow / Outline -->
-                                <path class="pt-anal-outline" d="M 40 15 C 32 30, 24 50, 28 80 C 30 95, 42 105, 45 106 C 48 107, 52 107, 55 106 C 58 105, 70 95, 72 80 C 76 50, 68 30, 60 15 C 55 20, 45 20, 40 15 Z" />
+                                <!-- Thick 3D Rectal Outer Wall -->
+                                <path class="pt-anal-wall" fill="url(#pt-anal-wall-grad-{{@index}})"
+                                      d="M 36.5 12 C 27 28 19 50 23.2 81.5 C 25.8 98.5 38 109.5 43.5 111.5 C 47.5 113 52.5 113 56.5 111.5 C 62 109.5 74.2 98.5 76.8 81.5 C 81 50 73 28 63.5 12 C 56 17.5 44 17.5 36.5 12 Z" />
+                                <!-- Upper-left 3D outer rim highlight -->
+                                <path d="M 34 22 C 27 38 23.8 57 26.2 78" fill="none" stroke="rgba(255,225,255,0.34)" stroke-width="1.5" stroke-linecap="round" />
 
-                                <!-- Inner cavity with depth gradient -->
-                                <path class="pt-anal-inner" style="fill:url(#pt-anal-depth-{{@index}})" d="M 40 15 C 32 30, 24 50, 28 80 C 30 95, 42 105, 45 106 C 48 107, 52 107, 55 106 C 58 105, 70 95, 72 80 C 76 50, 68 30, 60 15 C 55 20, 45 20, 40 15 Z" />
+                                <!-- Recessed 3D Cylindrical Rectal Lumen -->
+                                <path class="pt-anal-inner" fill="url(#pt-anal-cav-{{@index}})"
+                                      d="M 40 15 C 32 30 24 50 28 80 C 30 95 42 105 45 106 C 48 107 52 107 55 106 C 58 105 70 95 72 80 C 76 50 68 30 60 15 C 55 20 45 20 40 15 Z" />
 
-                                <!-- Muscular Rugae -->
-                                <path class="pt-anal-rugae" d="M 32 35 Q 50 42 68 35 M 26 55 Q 50 64 74 55 M 28 75 Q 50 82 72 75 M 34 92 Q 50 96 66 92" />
+                                <!-- Sculpted 3D Mucosal Folds (paired shadow + specular ridge) -->
+                                <path class="pt-rugae-shadow" d="M 33.5 34 Q 50 41.5 66.5 34 M 27.8 54 Q 50 63.5 72.2 54 M 28.8 75 Q 50 83 71.2 75 M 35 92 Q 50 97.5 65 92" />
+                                <path class="pt-rugae-light" d="M 34 32.8 Q 50 40 66 32.8 M 28.2 52.8 Q 50 62 71.8 52.8 M 29.2 73.8 Q 50 81.6 70.8 73.8 M 35.4 90.8 Q 50 96 64.6 90.8" />
 
-                                <!-- Sphincter (integrated at bottom) -->
-                                <path class="pt-anal-sphincter" d="M 42 105 C 42 110, 58 110, 58 105" />
-                                <path class="pt-anal-sphincter" d="M 40 106 C 40 113, 60 113, 60 106" />
+                                <!-- Sculpted 3D Layered Anal Sphincter Ring Cushions -->
+                                <path class="pt-anal-sphincter-cushion" fill="url(#pt-sphincter-grad-{{@index}})"
+                                      d="M 36.5 104.5 C 33.5 108 35.5 115 43.2 115.6 C 46.5 115.8 49.2 114.2 49.6 111.4 C 46.2 110.8 40.5 108.5 36.5 104.5 Z" />
+                                <path class="pt-anal-sphincter-cushion" fill="url(#pt-sphincter-grad-{{@index}})"
+                                      d="M 63.5 104.5 C 66.5 108 64.5 115 56.8 115.6 C 53.5 115.8 50.8 114.2 50.4 111.4 C 53.8 110.8 59.5 108.5 63.5 104.5 Z" />
+                                <!-- Sphincter pucker creases & specular rim -->
+                                <path d="M 38.5 109.5 Q 44.5 113 48.2 112.5 M 61.5 109.5 Q 55.5 113 51.8 112.5"
+                                      fill="none" stroke="rgba(255,235,255,0.34)" stroke-width="1" stroke-linecap="round" />
+
+                                <!-- Base Pearlescent Semen Fill (behind penetrating shaft) -->
+                                <g clip-path="url(#pt-anal-clip-{{@index}})">
+                                    <rect class="pt-anal-liquid" fill="url(#pt-anal-semen-grad-{{@index}})" x="0" y="{{analFillTop stats.anal_fullness_pct}}" width="100" height="{{analFillHeight stats.anal_fullness_pct}}" />
+                                    <rect x="62" y="15" width="16" height="94" fill="rgba(28,4,42,0.20)" />
+                                    <rect x="24" y="15" width="7" height="94" fill="rgba(255,255,255,0.10)" />
+                                </g>
 
                                 {{#if (gt stats.anal_depth_pct 0)}}
-                                <!-- Penetrating shaft: layered phallic build; enters past the
-                                     sphincter, tip at anal_depth_pct of the canal span -->
-                                <g class="pt-shaft-group">
-                                    <rect class="pt-shaft" style="fill:url(#pt-anal-shaft-skin-{{@index}})" x="43" y="{{add (analShaftTopY stats) 7}}" width="14" height="{{subtract (subtract 132 (analShaftTopY stats)) 7}}" rx="7" />
-                                    <ellipse class="pt-shaft-corona" cx="50" cy="{{add (analShaftTopY stats) 7}}" rx="8.8" ry="2.8" />
-                                    <ellipse class="pt-shaft-glans" cx="50" cy="{{add (analShaftTopY stats) 4.8}}" rx="7.8" ry="5.8" />
+                                <!-- Sculpted 3D Penetrating Phallus (submerged naturally in fluid) -->
+                                <g clip-path="url(#pt-anal-shaft-clip-{{@index}})">
+                                    <g transform="translate(0, {{analShaftTopY stats}})">
+                                        <!-- Cast shadow on rear canal wall -->
+                                        <path d="M 52 10 C 60.5 11 61 22 60 120 L 44 120 C 43 22 44 11 52 10 Z" fill="rgba(10,1,16,0.42)" />
+                                        <!-- Cylindrical 3D Shaft -->
+                                        <path class="pt-shaft-body" fill="url(#pt-anal-shaft-skin-{{@index}})"
+                                              d="M 42.8 13 C 42 34 42 74 42.4 122 L 57.6 122 C 58 74 58 34 57.2 13 Z" />
+                                        <!-- Wet specular strip & dorsal vein -->
+                                        <path d="M 45.8 16 L 45.5 118" fill="none" stroke="rgba(255,244,236,0.42)" stroke-width="2.1" stroke-linecap="round" />
+                                        <path class="pt-shaft-vein" d="M 53 19 C 54.8 34 51.2 49 53.6 67 C 55 80 52 94 53.5 110" />
+                                        <path class="pt-shaft-vein-gloss" d="M 52.3 19 C 54.1 34 50.5 49 52.9 67" />
+                                        <!-- Coronal Sulcus undercut shadow -->
+                                        <path class="pt-shaft-sulcus" d="M 42 13.8 Q 50 18.2 58 13.8" />
+                                        <!-- Flared Coronal Ridge -->
+                                        <path fill="url(#pt-anal-corona-skin-{{@index}})" stroke="rgba(90,26,38,0.48)" stroke-width="0.6"
+                                              d="M 40.6 11.4 C 40.6 15 44.8 16.8 50 16.8 C 55.2 16.8 59.4 15 59.4 11.4 C 59.4 9.2 55.2 8.2 50 8.2 C 44.8 8.2 40.6 9.2 40.6 11.4 Z" />
+                                        <!-- Sculpted Domed 3D Glans -->
+                                        <path class="pt-shaft-glans" fill="url(#pt-anal-glans-skin-{{@index}})"
+                                              d="M 50 0 C 56 0 59.4 5.4 59 11.4 C 58.6 14 54.8 15.6 50 15.6 C 45.2 15.6 41.4 14 41 11.4 C 40.6 5.4 44 0 50 0 Z" />
+                                        <path d="M 44.4 4.6 C 45.6 2.2 48.2 1.6 49.4 2.4 C 47.2 4.4 46 7.4 45.4 10.4 C 43.8 9.6 43.7 6.4 44.4 4.6 Z" fill="rgba(255,248,250,0.58)" />
+                                        <path d="M 42.8 12.4 Q 50 14.8 56.2 12.6" fill="none" stroke="rgba(255,235,240,0.45)" stroke-width="0.85" stroke-linecap="round" />
+                                        <path class="pt-shaft-meatus" d="M 50 1.4 L 50 4.5" />
+                                    </g>
                                 </g>
+                                <!-- Front stretched sphincter collar gripping the penetrating shaft -->
+                                <path d="M 38 111.2 Q 50 116.2 62 111.2" fill="none" stroke="rgba(236,154,252,0.72)" stroke-width="1.9" stroke-linecap="round" />
                                 {{/if}}
 
-                                <!-- Semen Liquid -->
+                                <!-- Translucent Foreground Fluid Wash + Meniscus + Micro-bubbles (submerges shaft realistically) -->
+                                {{#if (gt stats.anal_fullness_pct 0)}}
                                 <g clip-path="url(#pt-anal-clip-{{@index}})">
-                                    <rect class="pt-anal-liquid" x="0" y="{{analFillTop stats.anal_fullness_pct}}" width="100" height="{{analFillHeight stats.anal_fullness_pct}}" />
-                                    <!-- Surface wave -->
-                                    <path class="pt-anal-surface" d="M 10 {{analFillTop stats.anal_fullness_pct}} C 30 {{add (analFillTop stats.anal_fullness_pct) 4}} 70 {{add (analFillTop stats.anal_fullness_pct) 4}} 90 {{analFillTop stats.anal_fullness_pct}}" />
+                                    <rect class="pt-anal-liquid" fill="url(#pt-anal-semen-grad-{{@index}})" opacity="0.34" x="0" y="{{analFillTop stats.anal_fullness_pct}}" width="100" height="{{analFillHeight stats.anal_fullness_pct}}" />
+                                    <ellipse class="pt-meniscus-top" cx="50" cy="{{analFillTop stats.anal_fullness_pct}}" rx="26" ry="3.2" opacity="0.88" />
+                                    <path class="pt-meniscus-glint" d="M 33 {{subtract (analFillTop stats.anal_fullness_pct) 0.3}} Q 47 {{add (analFillTop stats.anal_fullness_pct) 1.6}} 61 {{subtract (analFillTop stats.anal_fullness_pct) 0.2}}" />
+                                    <circle cx="38" cy="{{add (analFillTop stats.anal_fullness_pct) 8}}" r="1.2" fill="rgba(255,255,255,0.62)" />
+                                    <circle cx="60" cy="{{add (analFillTop stats.anal_fullness_pct) 12}}" r="1.0" fill="rgba(255,255,255,0.52)" />
                                 </g>
+                                {{/if}}
                             </svg>
                         </div>
                         <div class="pt-bio-panel">
@@ -10657,52 +11233,137 @@ var pulse_thread_tracker_default = {
                     {{/if}}
 
                     {{#if (or (eqi stats.sex "male") (eqi stats.sex "female") (eqi stats.sex "futanari") (eqi stats.sex "futa") (eqi stats.sex "both") (eqi stats.sex "intersex") (eqi stats.sex "hermaphrodite") (gt stats.bladder_fullness_pct 0) (gt stats.urination_need_pct 0) (gt stats.bladder_pressure_pct 0))}}
+                    <!-- BLADDER, KIDNEYS, URETERS & MUSCULAR SPHINCTER -->
                     <div class="pt-bio-zone">
                         <div class="pt-bladder-vessel">
-                            <svg class="pt-bladder-svg" viewBox="0 0 100 160" aria-hidden="true" focusable="false">
+                            <svg class="pt-bladder-svg" viewBox="-4 0 108 160" aria-hidden="true" focusable="false">
                                 <defs>
                                     <clipPath id="pt-bladder-clip-{{@index}}">
-                                        <!-- Inner cavity: dome at y≈70 down to the neck at y≈124 -->
                                         <path d="M 50 70 C 66 70 77 81 77 96 C 77 112 66 124 50 124 C 34 124 23 112 23 96 C 23 81 34 70 50 70 Z" />
                                     </clipPath>
-                                    <linearGradient id="pt-bladder-depth-{{@index}}" x1="0.5" y1="0" x2="0.5" y2="1">
-                                        <stop offset="0%" stop-color="#5c4a16" stop-opacity="0.6" />
-                                        <stop offset="100%" stop-color="#241d08" stop-opacity="0.85" />
+                                    <radialGradient id="pt-bladder-aura-{{@index}}" cx="50%" cy="60%" r="52%">
+                                        <stop offset="0%" stop-color="#f5c042" stop-opacity="0.16" />
+                                        <stop offset="60%" stop-color="#8a5a10" stop-opacity="0.05" />
+                                        <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+                                    </radialGradient>
+                                    <!-- 3D Bean-shaped Kidneys -->
+                                    <radialGradient id="pt-kidney-grad-{{@index}}" cx="36%" cy="32%" r="70%">
+                                        <stop offset="0%" stop-color="#e3a857" />
+                                        <stop offset="42%" stop-color="#9e5a22" />
+                                        <stop offset="82%" stop-color="#572a10" />
+                                        <stop offset="100%" stop-color="#2e1306" />
+                                    </radialGradient>
+                                    <!-- 3D Detrusor Bladder Outer Wall -->
+                                    <radialGradient id="pt-bladder-wall-grad-{{@index}}" cx="34%" cy="28%" r="72%">
+                                        <stop offset="0%" stop-color="#c99a3e" />
+                                        <stop offset="40%" stop-color="#7c5617" />
+                                        <stop offset="78%" stop-color="#3e2a09" />
+                                        <stop offset="100%" stop-color="#1e1303" />
+                                    </radialGradient>
+                                    <!-- Recessed Inner Bladder Cavity -->
+                                    <radialGradient id="pt-bladder-cav-{{@index}}" cx="50%" cy="46%" r="58%">
+                                        <stop offset="0%" stop-color="#5c4311" />
+                                        <stop offset="56%" stop-color="#2e2107" />
+                                        <stop offset="100%" stop-color="#130d02" />
+                                    </radialGradient>
+                                    <!-- Luminous Translucent Golden Urine Fill -->
+                                    <linearGradient id="pt-urine-grad-{{@index}}" x1="0" y1="0" x2="1" y2="0.18">
+                                        <stop offset="0%" stop-color="#d4921c" stop-opacity="0.88" />
+                                        <stop offset="28%" stop-color="#ffe785" stop-opacity="0.94" />
+                                        <stop offset="62%" stop-color="#f7be38" stop-opacity="0.92" />
+                                        <stop offset="100%" stop-color="#b57410" stop-opacity="0.88" />
                                     </linearGradient>
+                                    <!-- 3D Sphincter Torus -->
+                                    <radialGradient id="pt-bladder-sphincter-grad-{{@index}}" cx="36%" cy="32%" r="70%">
+                                        <stop offset="0%" stop-color="#ffe082" />
+                                        <stop offset="48%" stop-color="#b87e1e" />
+                                        <stop offset="100%" stop-color="#4d3107" />
+                                    </radialGradient>
                                 </defs>
 
-                                <!-- Urachus: dome ligament running up toward the navel -->
-                                <path class="pt-bladder-urachus" d="M 50 66 C 50 58 50 50 50 44" />
+                                <!-- Ambient glow & floor shadow -->
+                                <ellipse cx="50" cy="88" rx="48" ry="64" fill="url(#pt-bladder-aura-{{@index}})" />
+                                <ellipse cx="50" cy="154" rx="22" ry="4" fill="rgba(0,0,0,0.45)" />
 
-                                <!-- Kidneys feeding the bladder via the ureters -->
-                                <ellipse class="pt-bladder-kidney" cx="26" cy="20" rx="8" ry="12" transform="rotate(-16 26 20)" />
-                                <ellipse class="pt-bladder-kidney" cx="74" cy="20" rx="8" ry="12" transform="rotate(16 74 20)" />
-                                <path class="pt-bladder-ureter" d="M 27 32 C 30 45 37 55 44 66" />
-                                <path class="pt-bladder-ureter" d="M 73 32 C 70 45 63 55 56 66" />
+                                <!-- Urachus (median umbilical ligament) -->
+                                <path d="M 50 66 L 50 43" fill="none" stroke="rgba(255,216,115,0.24)" stroke-width="2" stroke-linecap="round" stroke-dasharray="2.5 3" />
 
-                                <!-- Outer outline: pulses while holding back a strong urge -->
-                                <path class="pt-bladder-outline {{#if (gt stats.bladder_pressure_pct 60)}}straining{{/if}}" d="M 50 66 C 69 66 80 79 80 96 C 80 114 68 127 50 127 C 32 127 20 114 20 96 C 20 79 31 66 50 66 Z" />
+                                <!-- Tubular 3-Pass Ureters descending from Renal Hilum to Bladder -->
+                                <path class="pt-bladder-ureter-wall" d="M 31 28 C 32 43 37 54 43 69" />
+                                <path class="pt-bladder-ureter-core" d="M 31 28 C 32 43 37 54 43 69" />
+                                <path class="pt-bladder-ureter-gloss" d="M 30.2 29 C 31.2 43 36.2 54 42 68" />
 
-                                <!-- Inner cavity with depth gradient -->
-                                <path class="pt-bladder-inner" style="fill:url(#pt-bladder-depth-{{@index}})" d="M 50 70 C 66 70 77 81 77 96 C 77 112 66 124 50 124 C 34 124 23 112 23 96 C 23 81 34 70 50 70 Z" />
+                                <path class="pt-bladder-ureter-wall" d="M 69 28 C 68 43 63 54 57 69" />
+                                <path class="pt-bladder-ureter-core" d="M 69 28 C 68 43 63 54 57 69" />
+                                <path class="pt-bladder-ureter-gloss" d="M 68.2 29 C 67.2 43 62.2 54 56 68" />
 
-                                <!-- Bladder wall trabeculae -->
-                                <path class="pt-bladder-rugae" d="M 33 88 Q 50 94 67 88 M 31 100 Q 50 106 69 100 M 35 112 Q 50 117 65 112" />
+                                <!-- Bean-shaped 3D Kidneys with Concave Hilum, Renal Calyx & Specular Highlight -->
+                                <g class="pt-bladder-kidney">
+                                    <!-- Left Kidney -->
+                                    <path fill="url(#pt-kidney-grad-{{@index}})"
+                                          d="M 27 8 C 19 7.5 14 15.5 15.5 25 C 17 33.5 23.5 38.5 30 35.5 C 33.2 34 34 29.5 31.4 26.8 C 29.4 24.8 29.4 20.5 31.2 18.2 C 33.4 15.2 31.8 8.3 27 8 Z" />
+                                    <path d="M 19.5 15 C 17.8 20 18.4 25.5 21 29.5" fill="none" stroke="rgba(255,244,218,0.45)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M 23.5 17.5 C 25.5 20.5 25.5 24.5 23.8 27.5" fill="none" stroke="rgba(255,220,140,0.30)" stroke-width="1" stroke-linecap="round" />
 
-                                <!-- Urethra + internal sphincter at the neck -->
-                                <path class="pt-bladder-urethra" d="M 47 127 C 47 133 48 138 49 141" />
-                                <path class="pt-bladder-urethra" d="M 53 127 C 53 133 52 138 51 141" />
-                                <ellipse class="pt-bladder-sphincter {{#if (gt stats.bladder_pressure_pct 60)}}straining{{/if}}" cx="50" cy="131" rx="6.5" ry="3.4" />
+                                    <!-- Right Kidney -->
+                                    <path fill="url(#pt-kidney-grad-{{@index}})"
+                                          d="M 73 8 C 81 7.5 86 15.5 84.5 25 C 83 33.5 76.5 38.5 70 35.5 C 66.8 34 66 29.5 68.6 26.8 C 70.6 24.8 70.6 20.5 68.8 18.2 C 66.6 15.2 68.2 8.3 73 8 Z" />
+                                    <path d="M 76.5 14 C 79.2 18 80.2 23.5 78.6 28.5" fill="none" stroke="rgba(255,244,218,0.32)" stroke-width="1.3" stroke-linecap="round" />
+                                    <path d="M 76.5 17.5 C 74.5 20.5 74.5 24.5 76.2 27.5" fill="none" stroke="rgba(255,220,140,0.30)" stroke-width="1" stroke-linecap="round" />
+                                </g>
 
-                                <!-- Urine fill, rising from the neck with bladder_fullness_pct -->
+                                {{#if (gt stats.bladder_pressure_pct 60)}}
+                                <!-- Expanding strain pulse rings under high pressure -->
+                                <ellipse class="pt-bladder-strain-ring" cx="50" cy="96.5" rx="34" ry="33" />
+                                <ellipse class="pt-bladder-strain-ring" cx="50" cy="96.5" rx="34" ry="33" style="animation-delay: 0.7s;" />
+                                {{/if}}
+
+                                <!-- Thick Muscular 3D Detrusor Bladder Shell -->
+                                <path class="pt-bladder-wall {{#if (gt stats.bladder_pressure_pct 60)}}straining{{/if}}" fill="url(#pt-bladder-wall-grad-{{@index}})"
+                                      d="M 50 64 C 70 64 82 78 82 96 C 82 115 69 129 50 129 C 31 129 18 115 18 96 C 18 78 30 64 50 64 Z" />
+                                <!-- Upper-left 3D dome glass specular arc -->
+                                <path d="M 24.5 89 C 26 75.5 35.5 68 48 67.2" fill="none" stroke="rgba(255,250,224,0.44)" stroke-width="1.8" stroke-linecap="round" />
+
+                                <!-- Recessed 3D Inner Bladder Cavity -->
+                                <path class="pt-bladder-inner" fill="url(#pt-bladder-cav-{{@index}})"
+                                      d="M 50 70 C 66 70 77 81 77 96 C 77 112 66 124 50 124 C 34 124 23 112 23 96 C 23 81 34 70 50 70 Z" />
+                                <!-- Sculpted Detrusor Trabeculae & Trigonum Vesicae -->
+                                <path class="pt-rugae-shadow" d="M 33 88 Q 50 94 67 88 M 31 100 Q 50 106 69 100 M 35 112 Q 50 117 65 112" />
+                                <path d="M 33.4 86.8 Q 50 92.6 66.6 86.8 M 31.4 98.8 Q 50 104.6 68.6 98.8 M 35.4 110.8 Q 50 115.6 64.6 110.8"
+                                      fill="none" stroke="rgba(255,228,150,0.18)" stroke-width="1" stroke-linecap="round" />
+                                <path d="M 41 112 L 59 112 L 50 122 Z" fill="rgba(255,214,110,0.08)" stroke="rgba(255,214,110,0.16)" stroke-width="0.7" />
+
+                                <!-- Urethral Neck & 3D Muscular Sphincter Torus -->
+                                <path d="M 45.2 127 C 45.2 135 46.8 140 47.6 144 L 52.4 144 C 53.2 140 54.8 135 54.8 127 Z"
+                                      fill="url(#pt-bladder-wall-grad-{{@index}})" stroke="rgba(255,224,130,0.5)" stroke-width="1" />
+                                <path d="M 48.2 128 L 49 143 M 51.8 128 L 51 143" fill="none" stroke="rgba(16,10,2,0.58)" stroke-width="1" />
+                                <g class="pt-bladder-sphincter {{#if (gt stats.bladder_pressure_pct 60)}}straining{{/if}}">
+                                    <ellipse cx="50" cy="133.5" rx="8.6" ry="4.4" fill="url(#pt-bladder-sphincter-grad-{{@index}})" />
+                                    <path d="M 43.8 132 Q 50 130.2 56.2 132" fill="none" stroke="rgba(255,250,224,0.52)" stroke-width="1" stroke-linecap="round" />
+                                </g>
+
+                                <!-- Luminous Golden 3D Urine Fill + Elliptical Meniscus + Micro-bubbles -->
                                 <g clip-path="url(#pt-bladder-clip-{{@index}})">
-                                    <rect class="pt-bladder-liquid" x="0" y="{{subtract 124 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)}}" width="100" height="{{multiply (clampPercent stats.bladder_fullness_pct) 0.54}}" />
-                                    <path class="pt-bladder-surface" d="M 30 {{subtract 124 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)}} C 38 {{add (subtract 124 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)) 3}} 62 {{add (subtract 124 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)) 3}} 70 {{subtract 124 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)}}" />
+                                    <rect class="pt-bladder-liquid" fill="url(#pt-urine-grad-{{@index}})" x="0" y="{{subtract 124 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)}}" width="100" height="{{multiply (clampPercent stats.bladder_fullness_pct) 0.54}}" />
+                                    {{#if (gt stats.bladder_fullness_pct 0)}}
+                                    <ellipse cx="50" cy="{{subtract 124 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)}}" rx="27" ry="3.4" fill="rgba(255,248,200,0.82)" stroke="rgba(255,255,235,0.9)" stroke-width="0.6" />
+                                    <path d="M 35 {{subtract 123.6 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)}} Q 47 {{subtract 125.6 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)}} 59 {{subtract 123.8 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)}}"
+                                          fill="none" stroke="rgba(255,255,255,0.94)" stroke-width="1.35" stroke-linecap="round" />
+                                    <circle cx="42" cy="{{add (subtract 124 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)) 8}}" r="1.2" fill="rgba(255,255,230,0.68)" />
+                                    <circle cx="57" cy="{{add (subtract 124 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)) 12}}" r="1.0" fill="rgba(255,255,230,0.55)" />
+                                    <circle cx="49" cy="{{add (subtract 124 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)) 16}}" r="1.35" fill="rgba(255,255,230,0.48)" />
+                                    {{/if}}
+                                    <!-- Cylindrical liquid shading inside cavity -->
+                                    <rect x="64" y="68" width="14" height="58" fill="rgba(40,24,2,0.24)" />
+                                    <rect x="23" y="68" width="7" height="58" fill="rgba(255,255,220,0.14)" />
                                 </g>
 
                                 {{#if (or (gt stats.bladder_pressure_pct 85) (gte stats.bladder_fullness_pct 95))}}
-                                <!-- Leaking: a drip escaping past the strained sphincter -->
-                                <ellipse class="pt-bladder-drip" cx="50" cy="146" rx="1.6" ry="2.4" />
+                                <!-- Animated glossy golden teardrop leaking past strained sphincter -->
+                                <g class="pt-bladder-drip">
+                                    <path d="M 50 144 C 50 144 52.3 147.8 52.3 149.4 C 52.3 150.7 51.3 151.7 50 151.7 C 48.7 151.7 47.7 150.7 47.7 149.4 C 47.7 147.8 50 144 50 144 Z" fill="rgba(255,230,115,0.96)" />
+                                    <circle cx="49.3" cy="148.8" r="0.65" fill="#ffffff" />
+                                </g>
                                 {{/if}}
                             </svg>
                         </div>
@@ -19112,89 +19773,187 @@ function fmtCoord(n) {
     return String(r);
   return r.toFixed(2).replace(/\.?0+$/, "");
 }
+function breastMetrics(xS, yS) {
+  const topY = 39;
+  const height = 16 + 40 * yS;
+  const bottomY = topY + height;
+  const apexY = topY + height * 0.62;
+  const innerY = topY + height * 0.58;
+  const innerOffset = Math.max(0.75, 5.4 - (xS - 0.55) * 6.2);
+  const outerOffset = 15 + 25.5 * xS;
+  const width = outerOffset - innerOffset;
+  const bottomOffset = innerOffset + width * 0.52;
+  const topOffset = innerOffset + width * 0.49;
+  return { topY, height, bottomY, apexY, innerY, innerOffset, outerOffset, width, bottomOffset, topOffset };
+}
 function buildBreastPath(side, xS, yS) {
   const sgn = side === "left" ? -1 : 1;
   const center = 50;
-  const top_y = 38;
-  const apex_y = top_y + 26 * yS;
-  const bottom_y = top_y + 52 * yS;
-  const top_x = center + sgn * 18;
-  const outer_x = center + sgn * 40 * xS;
-  const bottom_x = center + sgn * 20;
-  const inner_x = center + sgn * 4;
-  const c1a_x = top_x + (outer_x - top_x) * 0.45;
-  const c1a_y = top_y;
-  const c1b_x = outer_x + -sgn * 2;
-  const c1b_y = apex_y - 16 * yS;
-  const c2a_x = outer_x + sgn * 2;
-  const c2a_y = apex_y + 16 * yS;
-  const c2b_x = bottom_x + sgn * 14 * xS;
-  const c2b_y = bottom_y;
-  const c3a_x = bottom_x + -sgn * 12 * xS;
-  const c3a_y = bottom_y;
-  const c3b_x = inner_x;
-  const c3b_y = apex_y + 16 * yS;
-  const c4a_x = inner_x;
-  const c4a_y = apex_y - 14 * yS;
-  const c4b_x = top_x + -sgn * 8;
-  const c4b_y = top_y;
+  const m = breastMetrics(xS, yS);
+  const topX = center + sgn * m.topOffset;
+  const outerX = center + sgn * m.outerOffset;
+  const bottomX = center + sgn * m.bottomOffset;
+  const innerX = center + sgn * m.innerOffset;
+  const c1aX = topX + sgn * m.width * 0.36;
+  const c1aY = m.topY;
+  const c1bX = outerX + sgn * m.width * 0.01;
+  const c1bY = m.apexY - m.height * 0.34;
+  const c2aX = outerX + sgn * m.width * 0.05;
+  const c2aY = m.apexY + m.height * 0.25;
+  const c2bX = bottomX + sgn * m.width * 0.36;
+  const c2bY = m.bottomY + m.height * 0.02;
+  const c3aX = bottomX - sgn * m.width * 0.36;
+  const c3aY = m.bottomY + m.height * 0.01;
+  const c3bX = innerX - sgn * m.width * 0.02;
+  const c3bY = m.innerY + m.height * 0.26;
+  const c4aX = innerX + sgn * m.width * 0.02;
+  const c4aY = m.innerY - m.height * 0.34;
+  const c4bX = topX - sgn * m.width * 0.34;
+  const c4bY = m.topY;
   const F = fmtCoord;
   return [
-    `M ${F(top_x)} ${F(top_y)}`,
-    `C ${F(c1a_x)} ${F(c1a_y)}, ${F(c1b_x)} ${F(c1b_y)}, ${F(outer_x)} ${F(apex_y)}`,
-    `C ${F(c2a_x)} ${F(c2a_y)}, ${F(c2b_x)} ${F(c2b_y)}, ${F(bottom_x)} ${F(bottom_y)}`,
-    `C ${F(c3a_x)} ${F(c3a_y)}, ${F(c3b_x)} ${F(c3b_y)}, ${F(inner_x)} ${F(apex_y)}`,
-    `C ${F(c4a_x)} ${F(c4a_y)}, ${F(c4b_x)} ${F(c4b_y)}, ${F(top_x)} ${F(top_y)}`,
+    `M ${F(topX)} ${F(m.topY)}`,
+    `C ${F(c1aX)} ${F(c1aY)}, ${F(c1bX)} ${F(c1bY)}, ${F(outerX)} ${F(m.apexY)}`,
+    `C ${F(c2aX)} ${F(c2aY)}, ${F(c2bX)} ${F(c2bY)}, ${F(bottomX)} ${F(m.bottomY)}`,
+    `C ${F(c3aX)} ${F(c3aY)}, ${F(c3bX)} ${F(c3bY)}, ${F(innerX)} ${F(m.innerY)}`,
+    `C ${F(c4aX)} ${F(c4aY)}, ${F(c4bX)} ${F(c4bY)}, ${F(topX)} ${F(m.topY)}`,
     "Z"
+  ].join(" ");
+}
+function buildBreastContourPath(side, xS, yS) {
+  const sgn = side === "left" ? -1 : 1;
+  const center = 50;
+  const m = breastMetrics(xS, yS);
+  const startX = center + sgn * (m.outerOffset - m.width * 0.12);
+  const startY = m.topY + m.height * 0.24;
+  const outerX = center + sgn * m.outerOffset;
+  const bottomX = center + sgn * m.bottomOffset;
+  const innerX = center + sgn * m.innerOffset;
+  const endX = center + sgn * (m.innerOffset + m.width * 0.12);
+  const endY = m.topY + m.height * 0.3;
+  const F = fmtCoord;
+  return [
+    `M ${F(startX)} ${F(startY)}`,
+    `C ${F(outerX - sgn * m.width * 0.02)} ${F(m.apexY - m.height * 0.22)}, ${F(outerX + sgn * m.width * 0.01)} ${F(m.apexY - m.height * 0.06)}, ${F(outerX)} ${F(m.apexY)}`,
+    `C ${F(outerX + sgn * m.width * 0.05)} ${F(m.apexY + m.height * 0.24)}, ${F(bottomX + sgn * m.width * 0.36)} ${F(m.bottomY + m.height * 0.02)}, ${F(bottomX)} ${F(m.bottomY)}`,
+    `C ${F(bottomX - sgn * m.width * 0.36)} ${F(m.bottomY + m.height * 0.01)}, ${F(innerX - sgn * m.width * 0.02)} ${F(m.innerY + m.height * 0.25)}, ${F(innerX)} ${F(m.innerY)}`,
+    `C ${F(innerX)} ${F(m.innerY - m.height * 0.14)}, ${F(innerX + sgn * m.width * 0.04)} ${F(m.topY + m.height * 0.38)}, ${F(endX)} ${F(endY)}`
+  ].join(" ");
+}
+function buildBreastUnderShadePath(side, xS, yS) {
+  const sgn = side === "left" ? -1 : 1;
+  const center = 50;
+  const m = breastMetrics(xS, yS);
+  const outerX = center + sgn * m.outerOffset;
+  const bottomX = center + sgn * m.bottomOffset;
+  const innerX = center + sgn * m.innerOffset;
+  const F = fmtCoord;
+  return [
+    `M ${F(outerX)} ${F(m.apexY + m.height * 0.02)}`,
+    `C ${F(outerX + sgn * m.width * 0.05)} ${F(m.apexY + m.height * 0.24)}, ${F(bottomX + sgn * m.width * 0.36)} ${F(m.bottomY + m.height * 0.02)}, ${F(bottomX)} ${F(m.bottomY)}`,
+    `C ${F(bottomX - sgn * m.width * 0.36)} ${F(m.bottomY + m.height * 0.01)}, ${F(innerX - sgn * m.width * 0.02)} ${F(m.innerY + m.height * 0.25)}, ${F(innerX)} ${F(m.innerY + m.height * 0.04)}`,
+    `Q ${F(bottomX)} ${F(m.bottomY - m.height * 0.15)}, ${F(outerX)} ${F(m.apexY + m.height * 0.02)}`,
+    "Z"
+  ].join(" ");
+}
+function buildBreastSpecularPath(side, xS, yS) {
+  const sgn = side === "left" ? -1 : 1;
+  const center = 50;
+  const m = breastMetrics(xS, yS);
+  const p1X = center + sgn * (m.innerOffset + m.width * 0.26);
+  const p1Y = m.topY + m.height * 0.32;
+  const p2X = center + sgn * (m.innerOffset + m.width * 0.72);
+  const p2Y = m.topY + m.height * 0.44;
+  const ctrlX = center + sgn * (m.innerOffset + m.width * 0.54);
+  const ctrlY = m.topY + m.height * 0.22;
+  const F = fmtCoord;
+  return `M ${F(p1X)} ${F(p1Y)} Q ${F(ctrlX)} ${F(ctrlY)} ${F(p2X)} ${F(p2Y)}`;
+}
+function buildBreastDuctPath(side, apexX, areolaY, xS, yS) {
+  const sgn = side === "left" ? -1 : 1;
+  const m = breastMetrics(xS, yS);
+  const rX = m.width * 0.36;
+  const rY = m.height * 0.32;
+  const F = fmtCoord;
+  return [
+    `M ${F(apexX)} ${F(areolaY)} Q ${F(apexX + sgn * rX * 0.42)} ${F(areolaY - rY * 0.64)} ${F(apexX + sgn * rX * 0.78)} ${F(areolaY - rY * 1.12)}`,
+    `M ${F(apexX)} ${F(areolaY)} Q ${F(apexX + sgn * rX * 0.06)} ${F(areolaY - rY * 0.68)} ${F(apexX - sgn * rX * 0.08)} ${F(areolaY - rY * 1.18)}`,
+    `M ${F(apexX)} ${F(areolaY)} Q ${F(apexX - sgn * rX * 0.34)} ${F(areolaY - rY * 0.62)} ${F(apexX - sgn * rX * 0.62)} ${F(areolaY - rY * 0.92)}`,
+    `M ${F(apexX)} ${F(areolaY)} Q ${F(apexX + sgn * rX * 0.66)} ${F(areolaY - rY * 0.14)} ${F(apexX + sgn * rX * 0.94)} ${F(areolaY - rY * 0.32)}`,
+    `M ${F(apexX)} ${F(areolaY)} Q ${F(apexX + sgn * rX * 0.5)} ${F(areolaY + rY * 0.32)} ${F(apexX + sgn * rX * 0.68)} ${F(areolaY + rY * 0.56)}`,
+    `M ${F(apexX)} ${F(areolaY)} Q ${F(apexX - sgn * rX * 0.44)} ${F(areolaY + rY * 0.24)} ${F(apexX - sgn * rX * 0.64)} ${F(areolaY + rY * 0.46)}`
   ].join(" ");
 }
 function computeBreastGeometry(stats) {
   const { x: xS, y: yS } = cupScaleFor(stats);
-  const top_y = 38;
-  const apex_y = top_y + 26 * yS;
-  const bottom_y = top_y + 52 * yS;
+  const m = breastMetrics(xS, yS);
   const pathLeft = buildBreastPath("left", xS, yS);
   const pathRight = buildBreastPath("right", xS, yS);
+  const contourLeftPath = buildBreastContourPath("left", xS, yS);
+  const contourRightPath = buildBreastContourPath("right", xS, yS);
+  const underShadeLeftPath = buildBreastUnderShadePath("left", xS, yS);
+  const underShadeRightPath = buildBreastUnderShadePath("right", xS, yS);
+  const specularLeftPath = buildBreastSpecularPath("left", xS, yS);
+  const specularRightPath = buildBreastSpecularPath("right", xS, yS);
   const fullness = stats && typeof stats === "object" && !Array.isArray(stats) ? clampPercent(stats.breast_fullness_pct) : 0;
-  const range = bottom_y - top_y;
-  const fillTop = bottom_y - fullness / 100 * range;
+  const range = m.bottomY - m.topY;
+  const fillTop = m.bottomY - fullness / 100 * range;
   const fillHeight = fullness / 100 * range;
-  const outer_x_left = 50 - 40 * xS;
-  const outer_x_right = 50 + 40 * xS;
-  const inner_x_left = 46;
-  const inner_x_right = 54;
-  const apexXLeft = (outer_x_left + inner_x_left) / 2;
-  const apexXRight = (outer_x_right + inner_x_right) / 2;
-  const areolaY = apex_y + 8 * yS;
-  const areolaR = Math.max(2.5, Math.min(6, 4.6 * yS));
-  const nippleR = Math.max(1.2, Math.min(2.5, 1.8 * yS));
-  const cleavTop = apex_y - 10;
-  const cleavMid = apex_y - 2;
-  const cleavBotMid = apex_y + 10;
-  const cleavBot = apex_y + 18;
-  const cleavagePath = `M 50 ${fmtCoord(cleavTop)} C 48 ${fmtCoord(cleavMid)}, 48 ${fmtCoord(cleavBotMid)}, 50 ${fmtCoord(cleavBot)}`;
-  const foldY = bottom_y - 4;
-  const foldDipY = bottom_y + 3;
-  const foldLeftPath = `M 14 ${fmtCoord(foldY)} C 22 ${fmtCoord(foldDipY)}, 38 ${fmtCoord(foldDipY)}, 45 ${fmtCoord(foldY)}`;
-  const foldRightPath = `M 86 ${fmtCoord(foldY)} C 78 ${fmtCoord(foldDipY)}, 62 ${fmtCoord(foldDipY)}, 55 ${fmtCoord(foldY)}`;
-  const glossY = top_y + (apex_y - top_y) * 0.45;
-  const glossXLeft = 32 + (outer_x_left - 32) * 0.4;
-  const glossXRight = 68 + (outer_x_right - 68) * 0.4;
-  const glossRX = Math.max(5, Math.min(16, 11 * xS));
-  const glossRY = Math.max(3, Math.min(10, 6.5 * yS));
+  const apexXLeft = 50 - (m.innerOffset + m.width * 0.55);
+  const apexXRight = 50 + (m.innerOffset + m.width * 0.55);
+  const areolaY = m.topY + m.height * 0.66;
+  const areolaR = Math.max(3.2, Math.min(6.8, 4.8 * Math.sqrt(yS)));
+  const nippleR = Math.max(1.4, Math.min(2.8, 1.9 * Math.sqrt(yS)));
+  const nippleShadowY = areolaY + nippleR * 0.55;
+  const nippleHighlightXLeft = apexXLeft - nippleR * 0.34;
+  const nippleHighlightXRight = apexXRight - nippleR * 0.34;
+  const nippleHighlightY = areolaY - nippleR * 0.34;
+  const milkDropY = areolaY + nippleR + 1.8;
+  const ductLeftPath = buildBreastDuctPath("left", apexXLeft, areolaY, xS, yS);
+  const ductRightPath = buildBreastDuctPath("right", apexXRight, areolaY, xS, yS);
+  const cleavTop = m.innerY - m.height * 0.24;
+  const cleavMid = m.innerY + m.height * 0.04;
+  const cleavBot = m.innerY + m.height * 0.28;
+  const cleavagePath = `M 50 ${fmtCoord(cleavTop)} Q 49.5 ${fmtCoord(cleavMid)} 50 ${fmtCoord(cleavBot)}`;
+  const foldY = m.bottomY + 1.6;
+  const foldDipY = m.bottomY + 5.6;
+  const foldLeftOuter = 50 - (m.outerOffset - m.width * 0.14);
+  const foldLeftInner = 50 - (m.innerOffset + m.width * 0.14);
+  const foldRightOuter = 50 + (m.outerOffset - m.width * 0.14);
+  const foldRightInner = 50 + (m.innerOffset + m.width * 0.14);
+  const foldLeftPath = `M ${fmtCoord(foldLeftOuter)} ${fmtCoord(foldY - 1.4)} Q ${fmtCoord((foldLeftOuter + foldLeftInner) / 2)} ${fmtCoord(foldDipY)} ${fmtCoord(foldLeftInner)} ${fmtCoord(foldY - 0.2)}`;
+  const foldRightPath = `M ${fmtCoord(foldRightOuter)} ${fmtCoord(foldY - 1.4)} Q ${fmtCoord((foldRightOuter + foldRightInner) / 2)} ${fmtCoord(foldDipY)} ${fmtCoord(foldRightInner)} ${fmtCoord(foldY - 0.2)}`;
+  const glossY = m.topY + m.height * 0.35;
+  const glossXLeft = 50 - (m.innerOffset + m.width * 0.45);
+  const glossXRight = 50 + (m.innerOffset + m.width * 0.45);
+  const glossRX = Math.max(5.5, Math.min(15.5, m.width * 0.35));
+  const glossRY = Math.max(3.5, Math.min(10.5, m.height * 0.16));
   return {
     pathLeft,
     pathRight,
+    contourLeftPath,
+    contourRightPath,
+    underShadeLeftPath,
+    underShadeRightPath,
+    specularLeftPath,
+    specularRightPath,
+    ductLeftPath,
+    ductRightPath,
     fillTop: roundCoord(fillTop),
     fillHeight: roundCoord(fillHeight),
     fillSurfaceMid: roundCoord(fillTop + 3),
-    apexY: roundCoord(apex_y),
-    bottomY: roundCoord(bottom_y),
+    apexY: roundCoord(m.apexY),
+    bottomY: roundCoord(m.bottomY),
     apexXLeft: roundCoord(apexXLeft),
     apexXRight: roundCoord(apexXRight),
     areolaY: roundCoord(areolaY),
     areolaR: roundCoord(areolaR),
     nippleR: roundCoord(nippleR),
+    nippleShadowY: roundCoord(nippleShadowY),
+    nippleHighlightXLeft: roundCoord(nippleHighlightXLeft),
+    nippleHighlightXRight: roundCoord(nippleHighlightXRight),
+    nippleHighlightY: roundCoord(nippleHighlightY),
+    milkDropY: roundCoord(milkDropY),
     cleavagePath,
     foldLeftPath,
     foldRightPath,
