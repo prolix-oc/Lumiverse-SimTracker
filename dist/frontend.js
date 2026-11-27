@@ -8780,16 +8780,14 @@ var pulse_thread_tracker_default = {
        ========================================= */
     .pt-bio-stack {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, max(310px, calc(50% - 7px))), 1fr));
         gap: 12px;
         margin-bottom: 16px;
-        align-items: start;
+        align-items: stretch;
     }
 
-    .pt-bio-column {
-        display: grid;
-        gap: 12px;
-        align-content: start;
+    .pt-bio-stack > .pt-bio-zone:last-child:nth-child(odd) {
+        grid-column: 1 / -1;
     }
 
     .pt-bio-zone {
@@ -10305,9 +10303,8 @@ var pulse_thread_tracker_default = {
             {{#if (or (hasFertilityTracking stats) (hasRefractoryTracking stats) (hasLactationTracking stats) (hasAnalTracking stats) (eqi stats.sex "male") (eqi stats.sex "female") (eqi stats.sex "futanari") (eqi stats.sex "futa") (eqi stats.sex "both") (eqi stats.sex "intersex") (eqi stats.sex "hermaphrodite") (gt stats.bladder_fullness_pct 0) (gt stats.urination_need_pct 0) (gt stats.bladder_pressure_pct 0))}}
             <div class="pt-bio-stack">
                 {{#if (hasFertilityTracking stats)}}
-                <div class="pt-bio-column">
-                    <!-- CYCLE CHRONOMETER -->
-                    <div class="pt-bio-zone">
+                <!-- CYCLE CHRONOMETER -->
+                <div class="pt-bio-zone pt-zone-cycle">
                         <div class="pt-fertility-visuals">
                             <div class="pt-fertility-ring" style="--cycle-accent: {{#if (eq (cycleStage stats) "ovulation")}}var(--cy-ovu){{else if (eq (cycleStage stats) "menstruation")}}var(--cy-men){{else if (eq (cycleStage stats) "follicular")}}var(--cy-fol){{else if (eq (cycleStage stats) "luteal")}}var(--cy-lut){{else}}var(--cy-preg){{/if}};">
                                 <div class="pt-fertility-core"></div>
@@ -10350,10 +10347,190 @@ var pulse_thread_tracker_default = {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                </div>
+                {{/if}}
 
-                    <!-- WOMB, OVARIES, CERVIX & VAGINAL CANAL -->
-                    <div class="pt-bio-zone">
+                {{#if (hasLactationTracking stats)}}
+                <!-- FEMALE: 3D BREASTS, TORSO, MAMMARY DUCTS & LACTATION -->
+                <div class="pt-bio-zone pt-zone-breast">
+                        <div class="pt-breast-vessel">
+                            <svg class="pt-breast-svg" viewBox="-4 4 108 118" aria-hidden="true" focusable="false">
+                                <defs>
+                                    <clipPath id="pt-breast-clip-{{@index}}">
+                                        <path d="{{breastGeometry.pathLeft}}" />
+                                        <path d="{{breastGeometry.pathRight}}" />
+                                    </clipPath>
+                                    <radialGradient id="pt-breast-aura-{{@index}}" cx="50%" cy="56%" r="54%">
+                                        <stop offset="0%" stop-color="#ff7aa8" stop-opacity="0.16" />
+                                        <stop offset="60%" stop-color="#a83264" stop-opacity="0.05" />
+                                        <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+                                    </radialGradient>
+                                    <!-- 3D Spherical-Teardrop Breast Volume Shading (left & right offset key lights) -->
+                                    <radialGradient id="pt-breast-vol-l-{{@index}}" cx="38%" cy="30%" r="72%">
+                                        <stop offset="0%" stop-color="#e894b3" stop-opacity="0.72" />
+                                        <stop offset="36%" stop-color="#b44f79" stop-opacity="0.68" />
+                                        <stop offset="76%" stop-color="#621d3e" stop-opacity="0.82" />
+                                        <stop offset="100%" stop-color="#2b091c" stop-opacity="0.92" />
+                                    </radialGradient>
+                                    <radialGradient id="pt-breast-vol-r-{{@index}}" cx="32%" cy="30%" r="72%">
+                                        <stop offset="0%" stop-color="#e894b3" stop-opacity="0.72" />
+                                        <stop offset="36%" stop-color="#b44f79" stop-opacity="0.68" />
+                                        <stop offset="76%" stop-color="#621d3e" stop-opacity="0.82" />
+                                        <stop offset="100%" stop-color="#2b091c" stop-opacity="0.92" />
+                                    </radialGradient>
+                                    <!-- Warm creamy ivory-gold 3D milk reservoir -->
+                                    <linearGradient id="pt-milk-grad-{{@index}}" x1="0" y1="0" x2="1" y2="0.12">
+                                        <stop offset="0%" stop-color="#f2dfb8" stop-opacity="0.90" />
+                                        <stop offset="28%" stop-color="#fffdf4" stop-opacity="0.96" />
+                                        <stop offset="52%" stop-color="#f8ebd0" stop-opacity="0.92" />
+                                        <stop offset="76%" stop-color="#fffcf0" stop-opacity="0.96" />
+                                        <stop offset="100%" stop-color="#e3cca0" stop-opacity="0.88" />
+                                    </linearGradient>
+                                    <!-- Lower-pole gravitational crescent shadow (renders OVER milk fill for 3D depth) -->
+                                    <linearGradient id="pt-under-shade-{{@index}}" x1="0.5" y1="0" x2="0.5" y2="1">
+                                        <stop offset="0%" stop-color="#4e1330" stop-opacity="0" />
+                                        <stop offset="55%" stop-color="#3a0c24" stop-opacity="0.34" />
+                                        <stop offset="100%" stop-color="#180410" stop-opacity="0.62" />
+                                    </linearGradient>
+                                    <!-- Soft dome specular radial bloom -->
+                                    <radialGradient id="pt-breast-shade-{{@index}}" cx="40%" cy="35%" r="65%">
+                                        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.32" />
+                                        <stop offset="55%" stop-color="#ffeef5" stop-opacity="0.10" />
+                                        <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+                                    </radialGradient>
+                                    <!-- Soft 3D Areola gradient -->
+                                    <radialGradient id="pt-areola-grad-{{@index}}" cx="42%" cy="38%" r="62%">
+                                        <stop offset="0%" stop-color="#e8749b" stop-opacity="0.92" />
+                                        <stop offset="68%" stop-color="#b5406b" stop-opacity="0.82" />
+                                        <stop offset="100%" stop-color="#87264b" stop-opacity="0.18" />
+                                    </radialGradient>
+                                    <!-- Sculpted 3D Nipple gradient -->
+                                    <radialGradient id="pt-nipple-grad-{{@index}}" cx="34%" cy="30%" r="68%">
+                                        <stop offset="0%" stop-color="#ffd4e2" />
+                                        <stop offset="35%" stop-color="#e65383" />
+                                        <stop offset="80%" stop-color="#991d4a" />
+                                        <stop offset="100%" stop-color="#5e0d2c" />
+                                    </radialGradient>
+                                </defs>
+
+                                <!-- Ambient glow backdrop -->
+                                <ellipse cx="50" cy="64" rx="50" ry="50" fill="url(#pt-breast-aura-{{@index}})" />
+
+                                <!-- Subtle Anatomical Upper Torso Silhouette (neck, shoulders, clavicles, ribcage waist) -->
+                                <path class="pt-torso-silhouette"
+                                      d="M 40 7 C 40 15 36 19 22 22 C 11 24.5 4 31 3 43 L 6 70 C 10 86 15 99 17 115 L 83 115 C 85 99 90 86 94 70 L 97 43 C 96 31 89 24.5 78 22 C 64 19 60 15 60 7" />
+                                <!-- Collarbone (clavicle) relief & sternal notch -->
+                                <path class="pt-torso-clavicle-shadow" d="M 16 26.8 Q 33 23.2 46.5 27.6 M 84 26.8 Q 67 23.2 53.5 27.6" />
+                                <path class="pt-torso-clavicle" d="M 16 25.8 Q 33 22.2 46.5 26.6 M 84 25.8 Q 67 22.2 53.5 26.6" />
+                                <path d="M 46.5 26.6 Q 50 29 53.5 26.6" fill="none" stroke="rgba(255,220,235,0.22)" stroke-width="1" stroke-linecap="round" />
+
+                                <!-- Inframammary cast shadows on ribcage beneath breasts -->
+                                <path class="pt-breast-fold" d="{{breastGeometry.foldLeftPath}}" />
+                                <path class="pt-breast-fold" d="{{breastGeometry.foldRightPath}}" />
+
+                                <!-- 3D Breast Volume Bases -->
+                                <path fill="url(#pt-breast-vol-l-{{@index}})" d="{{breastGeometry.pathLeft}}" />
+                                <path fill="url(#pt-breast-vol-r-{{@index}})" d="{{breastGeometry.pathRight}}" />
+
+                                <!-- Clipped Interior: Mammary Duct Tree, Milk Fill, Meniscus, Lower-Pole Volume Shadow & Specular -->
+                                <g clip-path="url(#pt-breast-clip-{{@index}})">
+                                    <!-- Delicate branching lactiferous ducts radiating to each areola -->
+                                    <path class="pt-breast-duct {{#if (or stats.lactating (gt stats.breast_fullness_pct 50))}}active{{/if}}" d="{{breastGeometry.ductLeftPath}}" />
+                                    <path class="pt-breast-duct {{#if (or stats.lactating (gt stats.breast_fullness_pct 50))}}active{{/if}}" d="{{breastGeometry.ductRightPath}}" />
+
+                                    <!-- Milk Fill -->
+                                    <rect class="pt-milk-liquid" fill="url(#pt-milk-grad-{{@index}})" x="0" y="{{breastGeometry.fillTop}}" width="100" height="{{breastGeometry.fillHeight}}" />
+                                    {{#if (gt stats.breast_fullness_pct 0)}}
+                                    <!-- Curved 3D Milk Meniscus + Glint -->
+                                    <ellipse cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.fillTop}}" rx="26" ry="2.6" fill="rgba(255,255,245,0.78)" />
+                                    <ellipse cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.fillTop}}" rx="26" ry="2.6" fill="rgba(255,255,245,0.78)" />
+                                    <path d="M 8 {{breastGeometry.fillTop}} C 28 {{breastGeometry.fillSurfaceMid}} 72 {{breastGeometry.fillSurfaceMid}} 92 {{breastGeometry.fillTop}}"
+                                          fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="1.4" stroke-linecap="round" />
+                                    {{/if}}
+
+                                    <!-- Translucent Lower-Pole Gravitational Shadow (keeps 3D volume even at 100% milk!) -->
+                                    <path fill="url(#pt-under-shade-{{@index}})" d="{{breastGeometry.underShadeLeftPath}}" />
+                                    <path fill="url(#pt-under-shade-{{@index}})" d="{{breastGeometry.underShadeRightPath}}" />
+
+                                    <!-- Soft Upper-Dome Gloss & Curved Glass Specular Sheen -->
+                                    <ellipse class="pt-breast-gloss" cx="{{breastGeometry.glossXLeft}}" cy="{{breastGeometry.glossY}}" rx="{{breastGeometry.glossRX}}" ry="{{breastGeometry.glossRY}}" fill="url(#pt-breast-shade-{{@index}})" />
+                                    <ellipse class="pt-breast-gloss" cx="{{breastGeometry.glossXRight}}" cy="{{breastGeometry.glossY}}" rx="{{breastGeometry.glossRX}}" ry="{{breastGeometry.glossRY}}" fill="url(#pt-breast-shade-{{@index}})" />
+                                    <path class="pt-breast-specular" d="{{breastGeometry.specularLeftPath}}" />
+                                    <path class="pt-breast-specular" d="{{breastGeometry.specularRightPath}}" />
+                                </g>
+
+                                <!-- Sculpted Medial Cleavage Shadow -->
+                                <path class="pt-breast-cleavage" d="{{breastGeometry.cleavagePath}}" />
+
+                                <!-- Natural Anatomical Contour Outlines (open upper slope, luminous outer/lower/cleavage curves) -->
+                                <path class="pt-breast-outline {{#if stats.lactating}}lactating{{/if}}" d="{{breastGeometry.contourLeftPath}}" />
+                                <path class="pt-breast-outline {{#if stats.lactating}}lactating{{/if}}" d="{{breastGeometry.contourRightPath}}" />
+
+                                <!-- 3D Areola Disks + Subtle Highlight Rings -->
+                                <circle class="pt-areola {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.areolaR}}" fill="url(#pt-areola-grad-{{@index}})" />
+                                <circle class="pt-areola {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.areolaR}}" fill="url(#pt-areola-grad-{{@index}})" />
+
+                                <!-- Projected 3D Nipple Shadows + Sculpted Nipple Domes + Specular Dots -->
+                                <ellipse cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.nippleShadowY}}" rx="{{breastGeometry.nippleR}}" ry="1.8" fill="rgba(22,4,14,0.48)" />
+                                <ellipse cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.nippleShadowY}}" rx="{{breastGeometry.nippleR}}" ry="1.8" fill="rgba(22,4,14,0.48)" />
+                                <circle class="pt-nipple {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.nippleR}}" fill="url(#pt-nipple-grad-{{@index}})" />
+                                <circle class="pt-nipple {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.nippleR}}" fill="url(#pt-nipple-grad-{{@index}})" />
+                                <circle cx="{{breastGeometry.nippleHighlightXLeft}}" cy="{{breastGeometry.nippleHighlightY}}" r="0.95" fill="rgba(255,248,252,0.82)" />
+                                <circle cx="{{breastGeometry.nippleHighlightXRight}}" cy="{{breastGeometry.nippleHighlightY}}" r="0.95" fill="rgba(255,248,252,0.82)" />
+
+                                {{#if (and stats.lactating (gt stats.breast_fullness_pct 15))}}
+                                <!-- Animated Glistening Milk Droplets when actively lactating -->
+                                <g class="pt-milk-drip">
+                                    <path d="M {{breastGeometry.apexXLeft}} {{breastGeometry.milkDropY}} C {{breastGeometry.apexXLeft}} {{breastGeometry.milkDropY}} {{add breastGeometry.apexXLeft 1.9}} {{add breastGeometry.milkDropY 3.2}} {{add breastGeometry.apexXLeft 1.9}} {{add breastGeometry.milkDropY 4.5}} C {{add breastGeometry.apexXLeft 1.9}} {{add breastGeometry.milkDropY 5.6}} {{add breastGeometry.apexXLeft 1}} {{add breastGeometry.milkDropY 6.4}} {{breastGeometry.apexXLeft}} {{add breastGeometry.milkDropY 6.4}} C {{subtract breastGeometry.apexXLeft 1}} {{add breastGeometry.milkDropY 6.4}} {{subtract breastGeometry.apexXLeft 1.9}} {{add breastGeometry.milkDropY 5.6}} {{subtract breastGeometry.apexXLeft 1.9}} {{add breastGeometry.milkDropY 4.5}} C {{subtract breastGeometry.apexXLeft 1.9}} {{add breastGeometry.milkDropY 3.2}} {{breastGeometry.apexXLeft}} {{breastGeometry.milkDropY}} {{breastGeometry.apexXLeft}} {{breastGeometry.milkDropY}} Z" fill="rgba(255,252,238,0.95)" />
+                                </g>
+                                <g class="pt-milk-drip" style="animation-delay: 1.1s;">
+                                    <path d="M {{breastGeometry.apexXRight}} {{breastGeometry.milkDropY}} C {{breastGeometry.apexXRight}} {{breastGeometry.milkDropY}} {{add breastGeometry.apexXRight 1.9}} {{add breastGeometry.milkDropY 3.2}} {{add breastGeometry.apexXRight 1.9}} {{add breastGeometry.milkDropY 4.5}} C {{add breastGeometry.apexXRight 1.9}} {{add breastGeometry.milkDropY 5.6}} {{add breastGeometry.apexXRight 1}} {{add breastGeometry.milkDropY 6.4}} {{breastGeometry.apexXRight}} {{add breastGeometry.milkDropY 6.4}} C {{subtract breastGeometry.apexXRight 1}} {{add breastGeometry.milkDropY 6.4}} {{subtract breastGeometry.apexXRight 1.9}} {{add breastGeometry.milkDropY 5.6}} {{subtract breastGeometry.apexXRight 1.9}} {{add breastGeometry.milkDropY 4.5}} C {{subtract breastGeometry.apexXRight 1.9}} {{add breastGeometry.milkDropY 3.2}} {{breastGeometry.apexXRight}} {{breastGeometry.milkDropY}} {{breastGeometry.apexXRight}} {{breastGeometry.milkDropY}} Z" fill="rgba(255,252,238,0.95)" />
+                                </g>
+                                {{/if}}
+                            </svg>
+                        </div>
+                        <div class="pt-bio-panel">
+                            <div class="pt-bio-title-row">
+                                <h4>
+                                    Lactation
+                                    {{#if breastGeometry.cupLabel}}<span class="pt-cup-tag">{{breastGeometry.cupLabel}}</span>{{/if}}
+                                </h4>
+                                {{#if stats.lactating}}
+                                    <span class="pt-risk-badge risk-preg">Lactating</span>
+                                {{else if (gt stats.breast_fullness_pct 70)}}
+                                    <span class="pt-risk-badge risk-med">Engorged</span>
+                                {{else if (gt stats.breast_fullness_pct 30)}}
+                                    <span class="pt-risk-badge risk-low">Building</span>
+                                {{else}}
+                                    <span class="pt-risk-badge risk-unknown">Dry</span>
+                                {{/if}}
+                            </div>
+                            <div class="pt-bio-grid">
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">Milk</span>
+                                    <span class="pt-bio-value">
+                                        {{#if stats.milk_capacity_ml}}{{stats.milk_ml}} / {{stats.milk_capacity_ml}} ml{{else}}—{{/if}}
+                                    </span>
+                                </div>
+                                <div class="pt-metric-bar"><div class="pt-metric-fill" style="width: {{milkPercent stats}}%"></div></div>
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">Fullness</span>
+                                    <span class="pt-bio-value">{{clampPercent stats.breast_fullness_pct}}%</span>
+                                </div>
+                                <div class="pt-metric-bar"><div class="pt-metric-fill" style="width: {{clampPercent stats.breast_fullness_pct}}%"></div></div>
+                                <div class="pt-bio-row">
+                                    <span class="pt-bio-key">Nipple</span>
+                                    <span class="pt-bio-value">{{clampPercent stats.nipple_sensitivity_pct}}%</span>
+                                </div>
+                                <div class="pt-metric-bar"><div class="pt-metric-fill" style="width: {{clampPercent stats.nipple_sensitivity_pct}}%"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    {{/if}}
+
+                {{#if (hasFertilityTracking stats)}}
+                <!-- WOMB, OVARIES, CERVIX & VAGINAL CANAL -->
+                <div class="pt-bio-zone pt-zone-womb">
                         <div class="pt-womb-vessel" style="--cycle-accent: {{#if (eq (cycleStage stats) "ovulation")}}var(--cy-ovu){{else if (eq (cycleStage stats) "menstruation")}}var(--cy-men){{else if (eq (cycleStage stats) "follicular")}}var(--cy-fol){{else if (eq (cycleStage stats) "luteal")}}var(--cy-lut){{else}}var(--cy-preg){{/if}};">
                             <svg class="pt-womb-svg" viewBox="-8 -4 116 172" aria-hidden="true" focusable="false">
                                 <defs>
@@ -10670,15 +10847,12 @@ var pulse_thread_tracker_default = {
                                 </div>
                             </div>
                         </div>
-                    </div>
                 </div>
                 {{/if}}
 
-                {{#if (or (hasRefractoryTracking stats) (hasLactationTracking stats) (hasAnalTracking stats) (eqi stats.sex "male") (eqi stats.sex "female") (eqi stats.sex "futanari") (eqi stats.sex "futa") (eqi stats.sex "both") (eqi stats.sex "intersex") (eqi stats.sex "hermaphrodite") (gt stats.bladder_fullness_pct 0) (gt stats.urination_need_pct 0) (gt stats.bladder_pressure_pct 0))}}
-                <div class="pt-bio-column">
-                    {{#if (hasRefractoryTracking stats)}}
-                    <!-- MALE: SCULPTED 3D PHALLUS, SCROTUM, TESTES & VAS DEFERENS -->
-                    <div class="pt-bio-zone">
+                {{#if (hasRefractoryTracking stats)}}
+                <!-- MALE: SCULPTED 3D PHALLUS, SCROTUM, TESTES & VAS DEFERENS -->
+                <div class="pt-bio-zone pt-zone-male">
                         <div class="pt-male-visuals {{#if (eq stats.sex "futanari")}}pt-futa-accent{{/if}}">
                             <div class="pt-penis-container">
                                 <svg class="pt-penis-svg" viewBox="-4 -4 108 148" aria-hidden="true" focusable="false">
@@ -10853,187 +11027,9 @@ var pulse_thread_tracker_default = {
                     </div>
                     {{/if}}
 
-                    {{#if (hasLactationTracking stats)}}
-                    <!-- FEMALE: 3D BREASTS, TORSO, MAMMARY DUCTS & LACTATION -->
-                    <div class="pt-bio-zone">
-                        <div class="pt-breast-vessel">
-                            <svg class="pt-breast-svg" viewBox="-4 4 108 118" aria-hidden="true" focusable="false">
-                                <defs>
-                                    <clipPath id="pt-breast-clip-{{@index}}">
-                                        <path d="{{breastGeometry.pathLeft}}" />
-                                        <path d="{{breastGeometry.pathRight}}" />
-                                    </clipPath>
-                                    <radialGradient id="pt-breast-aura-{{@index}}" cx="50%" cy="56%" r="54%">
-                                        <stop offset="0%" stop-color="#ff7aa8" stop-opacity="0.16" />
-                                        <stop offset="60%" stop-color="#a83264" stop-opacity="0.05" />
-                                        <stop offset="100%" stop-color="#000000" stop-opacity="0" />
-                                    </radialGradient>
-                                    <!-- 3D Spherical-Teardrop Breast Volume Shading (left & right offset key lights) -->
-                                    <radialGradient id="pt-breast-vol-l-{{@index}}" cx="38%" cy="30%" r="72%">
-                                        <stop offset="0%" stop-color="#e894b3" stop-opacity="0.72" />
-                                        <stop offset="36%" stop-color="#b44f79" stop-opacity="0.68" />
-                                        <stop offset="76%" stop-color="#621d3e" stop-opacity="0.82" />
-                                        <stop offset="100%" stop-color="#2b091c" stop-opacity="0.92" />
-                                    </radialGradient>
-                                    <radialGradient id="pt-breast-vol-r-{{@index}}" cx="32%" cy="30%" r="72%">
-                                        <stop offset="0%" stop-color="#e894b3" stop-opacity="0.72" />
-                                        <stop offset="36%" stop-color="#b44f79" stop-opacity="0.68" />
-                                        <stop offset="76%" stop-color="#621d3e" stop-opacity="0.82" />
-                                        <stop offset="100%" stop-color="#2b091c" stop-opacity="0.92" />
-                                    </radialGradient>
-                                    <!-- Warm creamy ivory-gold 3D milk reservoir -->
-                                    <linearGradient id="pt-milk-grad-{{@index}}" x1="0" y1="0" x2="1" y2="0.12">
-                                        <stop offset="0%" stop-color="#f2dfb8" stop-opacity="0.90" />
-                                        <stop offset="28%" stop-color="#fffdf4" stop-opacity="0.96" />
-                                        <stop offset="52%" stop-color="#f8ebd0" stop-opacity="0.92" />
-                                        <stop offset="76%" stop-color="#fffcf0" stop-opacity="0.96" />
-                                        <stop offset="100%" stop-color="#e3cca0" stop-opacity="0.88" />
-                                    </linearGradient>
-                                    <!-- Lower-pole gravitational crescent shadow (renders OVER milk fill for 3D depth) -->
-                                    <linearGradient id="pt-under-shade-{{@index}}" x1="0.5" y1="0" x2="0.5" y2="1">
-                                        <stop offset="0%" stop-color="#4e1330" stop-opacity="0" />
-                                        <stop offset="55%" stop-color="#3a0c24" stop-opacity="0.34" />
-                                        <stop offset="100%" stop-color="#180410" stop-opacity="0.62" />
-                                    </linearGradient>
-                                    <!-- Soft dome specular radial bloom -->
-                                    <radialGradient id="pt-breast-shade-{{@index}}" cx="40%" cy="35%" r="65%">
-                                        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.32" />
-                                        <stop offset="55%" stop-color="#ffeef5" stop-opacity="0.10" />
-                                        <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
-                                    </radialGradient>
-                                    <!-- Soft 3D Areola gradient -->
-                                    <radialGradient id="pt-areola-grad-{{@index}}" cx="42%" cy="38%" r="62%">
-                                        <stop offset="0%" stop-color="#e8749b" stop-opacity="0.92" />
-                                        <stop offset="68%" stop-color="#b5406b" stop-opacity="0.82" />
-                                        <stop offset="100%" stop-color="#87264b" stop-opacity="0.18" />
-                                    </radialGradient>
-                                    <!-- Sculpted 3D Nipple gradient -->
-                                    <radialGradient id="pt-nipple-grad-{{@index}}" cx="34%" cy="30%" r="68%">
-                                        <stop offset="0%" stop-color="#ffd4e2" />
-                                        <stop offset="35%" stop-color="#e65383" />
-                                        <stop offset="80%" stop-color="#991d4a" />
-                                        <stop offset="100%" stop-color="#5e0d2c" />
-                                    </radialGradient>
-                                </defs>
-
-                                <!-- Ambient glow backdrop -->
-                                <ellipse cx="50" cy="64" rx="50" ry="50" fill="url(#pt-breast-aura-{{@index}})" />
-
-                                <!-- Subtle Anatomical Upper Torso Silhouette (neck, shoulders, clavicles, ribcage waist) -->
-                                <path class="pt-torso-silhouette"
-                                      d="M 40 7 C 40 15 36 19 22 22 C 11 24.5 4 31 3 43 L 6 70 C 10 86 15 99 17 115 L 83 115 C 85 99 90 86 94 70 L 97 43 C 96 31 89 24.5 78 22 C 64 19 60 15 60 7" />
-                                <!-- Collarbone (clavicle) relief & sternal notch -->
-                                <path class="pt-torso-clavicle-shadow" d="M 16 26.8 Q 33 23.2 46.5 27.6 M 84 26.8 Q 67 23.2 53.5 27.6" />
-                                <path class="pt-torso-clavicle" d="M 16 25.8 Q 33 22.2 46.5 26.6 M 84 25.8 Q 67 22.2 53.5 26.6" />
-                                <path d="M 46.5 26.6 Q 50 29 53.5 26.6" fill="none" stroke="rgba(255,220,235,0.22)" stroke-width="1" stroke-linecap="round" />
-
-                                <!-- Inframammary cast shadows on ribcage beneath breasts -->
-                                <path class="pt-breast-fold" d="{{breastGeometry.foldLeftPath}}" />
-                                <path class="pt-breast-fold" d="{{breastGeometry.foldRightPath}}" />
-
-                                <!-- 3D Breast Volume Bases -->
-                                <path fill="url(#pt-breast-vol-l-{{@index}})" d="{{breastGeometry.pathLeft}}" />
-                                <path fill="url(#pt-breast-vol-r-{{@index}})" d="{{breastGeometry.pathRight}}" />
-
-                                <!-- Clipped Interior: Mammary Duct Tree, Milk Fill, Meniscus, Lower-Pole Volume Shadow & Specular -->
-                                <g clip-path="url(#pt-breast-clip-{{@index}})">
-                                    <!-- Delicate branching lactiferous ducts radiating to each areola -->
-                                    <path class="pt-breast-duct {{#if (or stats.lactating (gt stats.breast_fullness_pct 50))}}active{{/if}}" d="{{breastGeometry.ductLeftPath}}" />
-                                    <path class="pt-breast-duct {{#if (or stats.lactating (gt stats.breast_fullness_pct 50))}}active{{/if}}" d="{{breastGeometry.ductRightPath}}" />
-
-                                    <!-- Milk Fill -->
-                                    <rect class="pt-milk-liquid" fill="url(#pt-milk-grad-{{@index}})" x="0" y="{{breastGeometry.fillTop}}" width="100" height="{{breastGeometry.fillHeight}}" />
-                                    {{#if (gt stats.breast_fullness_pct 0)}}
-                                    <!-- Curved 3D Milk Meniscus + Glint -->
-                                    <ellipse cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.fillTop}}" rx="26" ry="2.6" fill="rgba(255,255,245,0.78)" />
-                                    <ellipse cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.fillTop}}" rx="26" ry="2.6" fill="rgba(255,255,245,0.78)" />
-                                    <path d="M 8 {{breastGeometry.fillTop}} C 28 {{breastGeometry.fillSurfaceMid}} 72 {{breastGeometry.fillSurfaceMid}} 92 {{breastGeometry.fillTop}}"
-                                          fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="1.4" stroke-linecap="round" />
-                                    {{/if}}
-
-                                    <!-- Translucent Lower-Pole Gravitational Shadow (keeps 3D volume even at 100% milk!) -->
-                                    <path fill="url(#pt-under-shade-{{@index}})" d="{{breastGeometry.underShadeLeftPath}}" />
-                                    <path fill="url(#pt-under-shade-{{@index}})" d="{{breastGeometry.underShadeRightPath}}" />
-
-                                    <!-- Soft Upper-Dome Gloss & Curved Glass Specular Sheen -->
-                                    <ellipse class="pt-breast-gloss" cx="{{breastGeometry.glossXLeft}}" cy="{{breastGeometry.glossY}}" rx="{{breastGeometry.glossRX}}" ry="{{breastGeometry.glossRY}}" fill="url(#pt-breast-shade-{{@index}})" />
-                                    <ellipse class="pt-breast-gloss" cx="{{breastGeometry.glossXRight}}" cy="{{breastGeometry.glossY}}" rx="{{breastGeometry.glossRX}}" ry="{{breastGeometry.glossRY}}" fill="url(#pt-breast-shade-{{@index}})" />
-                                    <path class="pt-breast-specular" d="{{breastGeometry.specularLeftPath}}" />
-                                    <path class="pt-breast-specular" d="{{breastGeometry.specularRightPath}}" />
-                                </g>
-
-                                <!-- Sculpted Medial Cleavage Shadow -->
-                                <path class="pt-breast-cleavage" d="{{breastGeometry.cleavagePath}}" />
-
-                                <!-- Natural Anatomical Contour Outlines (open upper slope, luminous outer/lower/cleavage curves) -->
-                                <path class="pt-breast-outline {{#if stats.lactating}}lactating{{/if}}" d="{{breastGeometry.contourLeftPath}}" />
-                                <path class="pt-breast-outline {{#if stats.lactating}}lactating{{/if}}" d="{{breastGeometry.contourRightPath}}" />
-
-                                <!-- 3D Areola Disks + Subtle Highlight Rings -->
-                                <circle class="pt-areola {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.areolaR}}" fill="url(#pt-areola-grad-{{@index}})" />
-                                <circle class="pt-areola {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.areolaR}}" fill="url(#pt-areola-grad-{{@index}})" />
-
-                                <!-- Projected 3D Nipple Shadows + Sculpted Nipple Domes + Specular Dots -->
-                                <ellipse cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.nippleShadowY}}" rx="{{breastGeometry.nippleR}}" ry="1.8" fill="rgba(22,4,14,0.48)" />
-                                <ellipse cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.nippleShadowY}}" rx="{{breastGeometry.nippleR}}" ry="1.8" fill="rgba(22,4,14,0.48)" />
-                                <circle class="pt-nipple {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.nippleR}}" fill="url(#pt-nipple-grad-{{@index}})" />
-                                <circle class="pt-nipple {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.nippleR}}" fill="url(#pt-nipple-grad-{{@index}})" />
-                                <circle cx="{{breastGeometry.nippleHighlightXLeft}}" cy="{{breastGeometry.nippleHighlightY}}" r="0.95" fill="rgba(255,248,252,0.82)" />
-                                <circle cx="{{breastGeometry.nippleHighlightXRight}}" cy="{{breastGeometry.nippleHighlightY}}" r="0.95" fill="rgba(255,248,252,0.82)" />
-
-                                {{#if (and stats.lactating (gt stats.breast_fullness_pct 15))}}
-                                <!-- Animated Glistening Milk Droplets when actively lactating -->
-                                <g class="pt-milk-drip">
-                                    <path d="M {{breastGeometry.apexXLeft}} {{breastGeometry.milkDropY}} C {{breastGeometry.apexXLeft}} {{breastGeometry.milkDropY}} {{add breastGeometry.apexXLeft 1.9}} {{add breastGeometry.milkDropY 3.2}} {{add breastGeometry.apexXLeft 1.9}} {{add breastGeometry.milkDropY 4.5}} C {{add breastGeometry.apexXLeft 1.9}} {{add breastGeometry.milkDropY 5.6}} {{add breastGeometry.apexXLeft 1}} {{add breastGeometry.milkDropY 6.4}} {{breastGeometry.apexXLeft}} {{add breastGeometry.milkDropY 6.4}} C {{subtract breastGeometry.apexXLeft 1}} {{add breastGeometry.milkDropY 6.4}} {{subtract breastGeometry.apexXLeft 1.9}} {{add breastGeometry.milkDropY 5.6}} {{subtract breastGeometry.apexXLeft 1.9}} {{add breastGeometry.milkDropY 4.5}} C {{subtract breastGeometry.apexXLeft 1.9}} {{add breastGeometry.milkDropY 3.2}} {{breastGeometry.apexXLeft}} {{breastGeometry.milkDropY}} {{breastGeometry.apexXLeft}} {{breastGeometry.milkDropY}} Z" fill="rgba(255,252,238,0.95)" />
-                                </g>
-                                <g class="pt-milk-drip" style="animation-delay: 1.1s;">
-                                    <path d="M {{breastGeometry.apexXRight}} {{breastGeometry.milkDropY}} C {{breastGeometry.apexXRight}} {{breastGeometry.milkDropY}} {{add breastGeometry.apexXRight 1.9}} {{add breastGeometry.milkDropY 3.2}} {{add breastGeometry.apexXRight 1.9}} {{add breastGeometry.milkDropY 4.5}} C {{add breastGeometry.apexXRight 1.9}} {{add breastGeometry.milkDropY 5.6}} {{add breastGeometry.apexXRight 1}} {{add breastGeometry.milkDropY 6.4}} {{breastGeometry.apexXRight}} {{add breastGeometry.milkDropY 6.4}} C {{subtract breastGeometry.apexXRight 1}} {{add breastGeometry.milkDropY 6.4}} {{subtract breastGeometry.apexXRight 1.9}} {{add breastGeometry.milkDropY 5.6}} {{subtract breastGeometry.apexXRight 1.9}} {{add breastGeometry.milkDropY 4.5}} C {{subtract breastGeometry.apexXRight 1.9}} {{add breastGeometry.milkDropY 3.2}} {{breastGeometry.apexXRight}} {{breastGeometry.milkDropY}} {{breastGeometry.apexXRight}} {{breastGeometry.milkDropY}} Z" fill="rgba(255,252,238,0.95)" />
-                                </g>
-                                {{/if}}
-                            </svg>
-                        </div>
-                        <div class="pt-bio-panel">
-                            <div class="pt-bio-title-row">
-                                <h4>
-                                    Lactation
-                                    {{#if breastGeometry.cupLabel}}<span class="pt-cup-tag">{{breastGeometry.cupLabel}}</span>{{/if}}
-                                </h4>
-                                {{#if stats.lactating}}
-                                    <span class="pt-risk-badge risk-preg">Lactating</span>
-                                {{else if (gt stats.breast_fullness_pct 70)}}
-                                    <span class="pt-risk-badge risk-med">Engorged</span>
-                                {{else if (gt stats.breast_fullness_pct 30)}}
-                                    <span class="pt-risk-badge risk-low">Building</span>
-                                {{else}}
-                                    <span class="pt-risk-badge risk-unknown">Dry</span>
-                                {{/if}}
-                            </div>
-                            <div class="pt-bio-grid">
-                                <div class="pt-bio-row">
-                                    <span class="pt-bio-key">Milk</span>
-                                    <span class="pt-bio-value">
-                                        {{#if stats.milk_capacity_ml}}{{stats.milk_ml}} / {{stats.milk_capacity_ml}} ml{{else}}—{{/if}}
-                                    </span>
-                                </div>
-                                <div class="pt-metric-bar"><div class="pt-metric-fill" style="width: {{milkPercent stats}}%"></div></div>
-                                <div class="pt-bio-row">
-                                    <span class="pt-bio-key">Fullness</span>
-                                    <span class="pt-bio-value">{{clampPercent stats.breast_fullness_pct}}%</span>
-                                </div>
-                                <div class="pt-metric-bar"><div class="pt-metric-fill" style="width: {{clampPercent stats.breast_fullness_pct}}%"></div></div>
-                                <div class="pt-bio-row">
-                                    <span class="pt-bio-key">Nipple</span>
-                                    <span class="pt-bio-value">{{clampPercent stats.nipple_sensitivity_pct}}%</span>
-                                </div>
-                                <div class="pt-metric-bar"><div class="pt-metric-fill" style="width: {{clampPercent stats.nipple_sensitivity_pct}}%"></div></div>
-                            </div>
-                        </div>
-                    </div>
-                    {{/if}}
-
                     {{#if (hasAnalTracking stats)}}
                     <!-- ANAL CANAL, PROSTATE, SPHINCTER & LAYERED 3D PENETRATION -->
-                    <div class="pt-bio-zone">
+                <div class="pt-bio-zone pt-zone-anal">
                         <div class="pt-anal-vessel">
                             <svg class="pt-anal-svg" viewBox="-4 0 108 136" aria-hidden="true" focusable="false">
                                 <defs>
@@ -11234,7 +11230,7 @@ var pulse_thread_tracker_default = {
 
                     {{#if (or (eqi stats.sex "male") (eqi stats.sex "female") (eqi stats.sex "futanari") (eqi stats.sex "futa") (eqi stats.sex "both") (eqi stats.sex "intersex") (eqi stats.sex "hermaphrodite") (gt stats.bladder_fullness_pct 0) (gt stats.urination_need_pct 0) (gt stats.bladder_pressure_pct 0))}}
                     <!-- BLADDER, KIDNEYS, URETERS & MUSCULAR SPHINCTER -->
-                    <div class="pt-bio-zone">
+                <div class="pt-bio-zone pt-zone-bladder">
                         <div class="pt-bladder-vessel">
                             <svg class="pt-bladder-svg" viewBox="-4 0 108 160" aria-hidden="true" focusable="false">
                                 <defs>
@@ -11400,8 +11396,6 @@ var pulse_thread_tracker_default = {
                         </div>
                     </div>
                     {{/if}}
-                </div>
-                {{/if}}
             </div>
             {{/if}}
 
