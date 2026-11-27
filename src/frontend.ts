@@ -799,6 +799,436 @@ function analShaftTopY(stats: unknown): number {
   return ANAL_OPENING_Y - (depth / 100) * (ANAL_OPENING_Y - ANAL_DEEP_Y);
 }
 
+// -- Pulse Thread Physiology, Turn-Delta Choreography & Interactivity --
+//
+// Drives all three tiers of animation and tactile feedback:
+//   1. Continuous cross-organ CSS variables (--pt-bpm, --pt-clench-rate,
+//      --pt-clench-x, --pt-anal-clamp-x, --pt-slosh-deg, --pt-tremor, etc.)
+//   2. One-shot turn-to-turn event flags & previous-turn Y offsets from
+//      `previousData` so fills, thrusts, letdown, and conception animate in.
+//   3. Live anatomical HUD callout strings for hover/scrub inspection.
+
+interface PulsePhysiology {
+  bpmPeriodSec: string;
+  clenchPeriodSec: string;
+  clenchScaleX: string;
+  analClampScaleX: string;
+  sloshDeg: string;
+  tremorAmpPx: string;
+  dripPeriodSec: string;
+  ductPulseSec: string;
+  ureterPeriodSec: string;
+  isOvulating: boolean;
+  isFertileMucus: boolean;
+  isVagPenetrated: boolean;
+  isCervixKissed: boolean;
+  isWombBreached: boolean;
+  isAnalPenetrated: boolean;
+  isProstateHit: boolean;
+  isHighArousal: boolean;
+  isBladderStrained: boolean;
+  isMilkLetdown: boolean;
+  isMaleLoaded: boolean;
+  isMaleRecovering: boolean;
+  evtWombFillSurge: boolean;
+  evtVagThrustIn: boolean;
+  evtConceivedNow: boolean;
+  evtEjaculated: boolean;
+  evtMilkLetdown: boolean;
+  evtAnalFillSurge: boolean;
+  evtAnalThrustIn: boolean;
+  evtProstateSpike: boolean;
+  evtBladderSurge: boolean;
+  wombFillDeltaY: number;
+  vagThrustDeltaY: number;
+  analFillDeltaY: number;
+  analThrustDeltaY: number;
+  semenDeltaY: number;
+  cervixTip: string;
+  wombTip: string;
+  ovaryTip: string;
+  vagTip: string;
+  breastTip: string;
+  nippleTip: string;
+  maleTip: string;
+  testesTip: string;
+  analTip: string;
+  prostateTip: string;
+  bladderTip: string;
+  kidneyTip: string;
+}
+
+function computePulsePhysiology(
+  stats: CharacterStats,
+  prevStats: CharacterStats | null,
+): PulsePhysiology {
+  const dp = clampPercent(stats.dp);
+  const desire = clampPercent(stats.desire);
+  const receptivity = clampPercent(stats.womb_receptivity_pct);
+  const wombFull = clampPercent(stats.womb_fullness_pct);
+  const vagDepth = vagDepthValue(stats);
+  const analDepth = clampPercent(stats.anal_depth_pct);
+  const analFull = clampPercent(stats.anal_fullness_pct);
+  const analTight = clampPercent(stats.anal_tightness_pct);
+  const prostateStim = clampPercent(stats.prostate_stimulation_pct);
+  const breastFull = clampPercent(stats.breast_fullness_pct);
+  const nippleSens = clampPercent(stats.nipple_sensitivity_pct);
+  const bladderFull = clampPercent(stats.bladder_fullness_pct);
+  const bladderUrg = clampPercent(stats.urination_need_pct);
+  const bladderPress = clampPercent(stats.bladder_pressure_pct);
+  const semenPct = semenPercent(stats);
+  const refMin = Number(stats.refractory_minutes) || 0;
+  const stage = cycleStage(stats);
+  const cState = cervixState(stats);
+  const cLabel = cervixStateLabel(stats);
+  const osR = cervixOsR(stats);
+  const conceived = isConceived(stats);
+  const lactating = Boolean(stats.lactating);
+  const cup = cupSizeLabel(stats);
+
+  const arousal = Math.min(
+    100,
+    Math.max(
+      dp,
+      desire,
+      receptivity * 0.72,
+      prostateStim * 0.88,
+      nippleSens * 0.65,
+      vagDepth > 0 ? Math.min(95, 38 + vagDepth * 0.45) : 0,
+      analDepth > 0 ? Math.min(95, 35 + analDepth * 0.45) : 0,
+    ),
+  );
+  const arousalNorm = arousal / 100;
+  const depthNorm = Math.min(1, vagDepth / 120);
+
+  const bpmPeriodSec = `${(3.1 - arousalNorm * 2.05).toFixed(2)}s`;
+  const clenchPeriodSec = `${(2.25 - Math.min(1, arousalNorm * 0.6 + depthNorm * 0.4) * 1.25).toFixed(2)}s`;
+  const clenchScaleX = (0.945 - Math.min(1, arousalNorm * 0.5 + depthNorm * 0.5) * 0.085).toFixed(3);
+  const analClampScaleX = (0.95 - (analTight / 100) * 0.11).toFixed(3);
+  const sloshDeg = `${(1.1 + Math.min(1, arousalNorm * 0.45 + (vagDepth > 100 ? 0.55 : depthNorm * 0.35)) * 2.5).toFixed(2)}deg`;
+  const tremorAmpPx = `${(0.22 + (Math.max(0, bladderPress - 55) / 45) * 0.68).toFixed(2)}px`;
+  const dripPeriodSec = `${(2.35 - (Math.max(breastFull, bladderPress) / 100) * 1.15).toFixed(2)}s`;
+  const ductPulseSec = `${(2.8 - (breastFull / 100) * 1.25).toFixed(2)}s`;
+  const ureterPeriodSec = `${(3.8 - (bladderFull / 100) * 1.55).toFixed(2)}s`;
+
+  const isOvulating = stage === "ovulation";
+  const isFertileMucus = isOvulating || receptivity >= 65;
+  const isVagPenetrated = vagDepth > 0;
+  const isCervixKissed = vagDepth >= 95 || cState === "kissed" || cState === "split";
+  const isWombBreached = vagDepth > 100;
+  const isAnalPenetrated = analDepth > 0;
+  const isProstateHit = hasProstateTracking(stats) && analDepth >= 45 && prostateStim >= 25;
+  const isHighArousal = arousal >= 60;
+  const isBladderStrained = bladderPress >= 65 || bladderUrg >= 70;
+  const isMilkLetdown = lactating || breastFull >= 60;
+  const isMaleLoaded = semenPct >= 60 && refMin <= 0;
+  const isMaleRecovering = refMin > 0;
+
+  // Turn-to-turn event choreography from previousData
+  let evtWombFillSurge = false;
+  let evtVagThrustIn = false;
+  let evtConceivedNow = false;
+  let evtEjaculated = false;
+  let evtMilkLetdown = false;
+  let evtAnalFillSurge = false;
+  let evtAnalThrustIn = false;
+  let evtProstateSpike = false;
+  let evtBladderSurge = false;
+  let wombFillDeltaY = 0;
+  let vagThrustDeltaY = 0;
+  let analFillDeltaY = 0;
+  let analThrustDeltaY = 0;
+  let semenDeltaY = 0;
+
+  if (prevStats) {
+    const prevWombFull = clampPercent(prevStats.womb_fullness_pct);
+    const prevVagDepth = vagDepthValue(prevStats);
+    const prevAnalFull = clampPercent(prevStats.anal_fullness_pct);
+    const prevAnalDepth = clampPercent(prevStats.anal_depth_pct);
+    const prevProstate = clampPercent(prevStats.prostate_stimulation_pct);
+    const prevBladder = clampPercent(prevStats.bladder_fullness_pct);
+    const prevSemenPct = semenPercent(prevStats);
+    const prevRefMin = Number(prevStats.refractory_minutes) || 0;
+    const prevMilkMl = Number(prevStats.milk_ml) || 0;
+    const currMilkMl = Number(stats.milk_ml) || 0;
+
+    if (wombFull > prevWombFull) {
+      evtWombFillSurge = true;
+      wombFillDeltaY = roundCoord(wombFillTop(prevWombFull) - wombFillTop(wombFull));
+    }
+    if (vagDepth > prevVagDepth) {
+      evtVagThrustIn = true;
+      vagThrustDeltaY = roundCoord(vagShaftTopY(prevStats) - vagShaftTopY(stats));
+    }
+    evtConceivedNow = !isConceived(prevStats) && conceived;
+    if (semenPct < prevSemenPct || refMin > prevRefMin) {
+      evtEjaculated = true;
+      semenDeltaY = roundCoord(semenFillTop(prevSemenPct) - semenFillTop(semenPct));
+    }
+    evtMilkLetdown = currMilkMl < prevMilkMl || (!prevStats.lactating && lactating);
+    if (analFull > prevAnalFull) {
+      evtAnalFillSurge = true;
+      analFillDeltaY = roundCoord(analFillTop(prevAnalFull) - analFillTop(analFull));
+    }
+    if (analDepth > prevAnalDepth) {
+      evtAnalThrustIn = true;
+      analThrustDeltaY = roundCoord(analShaftTopY(prevStats) - analShaftTopY(stats));
+    }
+    evtProstateSpike = prostateStim - prevProstate >= 12;
+    evtBladderSurge = bladderFull - prevBladder >= 12;
+  }
+
+  const cervixTip = `Cervix · ${cLabel} · Os ${osR.toFixed(1)}mm`;
+  const wombTip = conceived
+    ? `Uterus · Pregnant (${Number(stats.days_preg) || 0}d) · ${wombFull}%`
+    : `Uterus · ${wombFull}% Full · ${receptivity}% Receptive`;
+  const ovaryTip = isOvulating
+    ? `Ovaries · Ovulating · ${fertilityRiskLabel(stats)} Risk`
+    : `Ovaries · ${cycleStageLabel(stats)} · ${fertilityRiskLabel(stats)}`;
+  const vagTip = isWombBreached
+    ? `Canal · ${vagDepth}% Womb Breach`
+    : isVagPenetrated
+      ? `Canal · ${vagDepth}% Depth · Clenching`
+      : isFertileMucus
+        ? `Canal · Fertile Mucus Active`
+        : `Canal · Resting`;
+  const breastTip = `Breasts${cup ? ` (${cup})` : ""} · ${breastFull}% Full${lactating ? " · Lactating" : ""}`;
+  const nippleTip = `Nipples · ${nippleSens}% Sensitivity${lactating ? " · Letdown" : ""}`;
+  const maleTip = refMin > 0
+    ? `Phallus · Recovery (~${refMin}m)`
+    : `Phallus · Ready · ${semenPct}% Loaded`;
+  const testesTip = `Testes · ${Number(stats.semen_ml ?? stats.semen_volume_ml) || 0}/${Number(stats.semen_capacity_ml) || 0} ml · ${maleFertilityLabel(stats)}`;
+  const analTip = isAnalPenetrated
+    ? `Rectum · ${analDepth}% Depth · ${analTight}% Tight`
+    : `Rectum · ${analFull}% Full · ${analTight}% Tight`;
+  const prostateTip = `Prostate · ${prostateStim}% Stimulated${isProstateHit ? " · Contact" : ""}`;
+  const bladderTip = `Bladder · ${bladderFull}% Full · ${bladderPress}% Pressure`;
+  const kidneyTip = `Renal · Ureters Active · ${bladderUrg}% Urge`;
+
+  return {
+    bpmPeriodSec,
+    clenchPeriodSec,
+    clenchScaleX,
+    analClampScaleX,
+    sloshDeg,
+    tremorAmpPx,
+    dripPeriodSec,
+    ductPulseSec,
+    ureterPeriodSec,
+    isOvulating,
+    isFertileMucus,
+    isVagPenetrated,
+    isCervixKissed,
+    isWombBreached,
+    isAnalPenetrated,
+    isProstateHit,
+    isHighArousal,
+    isBladderStrained,
+    isMilkLetdown,
+    isMaleLoaded,
+    isMaleRecovering,
+    evtWombFillSurge,
+    evtVagThrustIn,
+    evtConceivedNow,
+    evtEjaculated,
+    evtMilkLetdown,
+    evtAnalFillSurge,
+    evtAnalThrustIn,
+    evtProstateSpike,
+    evtBladderSurge,
+    wombFillDeltaY,
+    vagThrustDeltaY,
+    analFillDeltaY,
+    analThrustDeltaY,
+    semenDeltaY,
+    cervixTip,
+    wombTip,
+    ovaryTip,
+    vagTip,
+    breastTip,
+    nippleTip,
+    maleTip,
+    testesTip,
+    analTip,
+    prostateTip,
+    bladderTip,
+    kidneyTip,
+  };
+}
+
+const BOUND_PT_INTERACTION_HOSTS = new WeakSet<Element>();
+
+function triggerZoneTransientClass(el: Element | null, className: string, durationMs = 780): void {
+  if (!el || !(el instanceof HTMLElement)) return;
+  const timers = (el as HTMLElement & { __ptFxTimers?: Map<string, number> }).__ptFxTimers || new Map<string, number>();
+  (el as HTMLElement & { __ptFxTimers?: Map<string, number> }).__ptFxTimers = timers;
+  const existing = timers.get(className);
+  if (existing !== undefined) window.clearTimeout(existing);
+  el.classList.remove(className);
+  // Force reflow so rapid consecutive clicks cleanly restart the CSS keyframe
+  void el.offsetWidth;
+  el.classList.add(className);
+  timers.set(
+    className,
+    window.setTimeout(() => {
+      el.classList.remove(className);
+      timers.delete(className);
+    }, durationMs),
+  );
+}
+
+function showZoneHud(zone: Element | null, text: string, autoHideMs?: number): void {
+  if (!zone) return;
+  const hud = zone.querySelector<HTMLElement>(".pt-part-hud");
+  if (!hud) return;
+  const flagged = hud as HTMLElement & { __ptHudTimer?: number };
+  if (flagged.__ptHudTimer !== undefined) {
+    window.clearTimeout(flagged.__ptHudTimer);
+    flagged.__ptHudTimer = undefined;
+  }
+  hud.textContent = text;
+  hud.classList.add("is-visible");
+  if (autoHideMs) {
+    hud.classList.add("is-reflex");
+    flagged.__ptHudTimer = window.setTimeout(() => {
+      hud.classList.remove("is-visible", "is-reflex");
+      flagged.__ptHudTimer = undefined;
+    }, autoHideMs);
+  } else {
+    hud.classList.remove("is-reflex");
+  }
+}
+
+function hideZoneHud(zone: Element | null): void {
+  if (!zone) return;
+  const hud = zone.querySelector<HTMLElement>(".pt-part-hud");
+  if (!hud || hud.classList.contains("is-reflex")) return;
+  hud.classList.remove("is-visible");
+}
+
+function describeCycleDay(day: number): { phase: string; risk: string } {
+  if (day <= 5) return { phase: "Menstruation", risk: "Low" };
+  if (day <= 13) return { phase: "Follicular", risk: day >= 11 ? "Rising" : "Low" };
+  if (day <= 16) return { phase: "Ovulation", risk: "Peak" };
+  return { phase: "Luteal", risk: day <= 18 ? "Fading" : "Low" };
+}
+
+function bindPulseThreadInteractions(host: Element | null): void {
+  if (!host || BOUND_PT_INTERACTION_HOSTS.has(host)) return;
+  BOUND_PT_INTERACTION_HOSTS.add(host);
+
+  host.addEventListener("click", (event) => {
+    const target = event.target as Element | null;
+    const actionEl = target?.closest?.("[data-pt-action]") as Element | null;
+    if (!actionEl || !host.contains(actionEl)) return;
+    const zone = actionEl.closest(".pt-bio-zone");
+    const page = actionEl.closest(".pt-page");
+    const action = actionEl.getAttribute("data-pt-action") || "";
+
+    switch (action) {
+      case "clench-vag":
+        triggerZoneTransientClass(zone, "pt-fx-clench", 760);
+        showZoneHud(zone, "Reflex · Peristaltic Clench", 1150);
+        break;
+      case "pulse-cervix":
+        triggerZoneTransientClass(zone, "pt-fx-cervix", 820);
+        showZoneHud(zone, "Reflex · Cervical Spasm", 1150);
+        if (page) {
+          const breastZone = page.querySelector(".pt-zone-breast");
+          if (breastZone) {
+            triggerZoneTransientClass(breastZone, "pt-fx-oxytocin", 900);
+            showZoneHud(breastZone, "Coupled · Oxytocin Surge", 1100);
+          }
+        }
+        break;
+      case "pulse-ovary":
+        triggerZoneTransientClass(zone, "pt-fx-ovary", 860);
+        showZoneHud(zone, "Reflex · Follicular Pulse", 1150);
+        break;
+      case "pulse-breast":
+        triggerZoneTransientClass(zone, "pt-fx-letdown", 880);
+        showZoneHud(zone, "Reflex · Letdown Wave", 1150);
+        if (page) {
+          const wombZone = page.querySelector(".pt-zone-womb");
+          if (wombZone) {
+            triggerZoneTransientClass(wombZone, "pt-fx-oxytocin", 920);
+            showZoneHud(wombZone, "Coupled · Oxytocin Pulse", 1100);
+          }
+        }
+        break;
+      case "clench-anal":
+        triggerZoneTransientClass(zone, "pt-fx-clench", 760);
+        showZoneHud(zone, "Reflex · Sphincter Clamp", 1150);
+        break;
+      case "pulse-prostate":
+        triggerZoneTransientClass(zone, "pt-fx-prostate", 880);
+        showZoneHud(zone, "Reflex · Prostate Shockwave", 1150);
+        if (page) {
+          const maleZone = page.querySelector(".pt-zone-male");
+          if (maleZone) {
+            triggerZoneTransientClass(maleZone, "pt-fx-twitch", 880);
+            showZoneHud(maleZone, "Coupled · Arousal Twitch", 1100);
+          }
+        }
+        break;
+      case "pulse-male":
+        triggerZoneTransientClass(zone, "pt-fx-twitch", 780);
+        showZoneHud(zone, "Reflex · Vascular Throb", 1150);
+        break;
+      case "pulse-bladder":
+        triggerZoneTransientClass(zone, "pt-fx-strain", 800);
+        showZoneHud(zone, "Reflex · Detrusor Spasm", 1150);
+        break;
+      default:
+        break;
+    }
+  });
+
+  host.addEventListener("pointermove", (event) => {
+    const pointer = event as PointerEvent;
+    const target = pointer.target as Element | null;
+    if (!target || !host.contains(target)) return;
+
+    const ring = target.closest?.("[data-pt-ring]") as HTMLElement | null;
+    if (ring && host.contains(ring)) {
+      const rect = ring.getBoundingClientRect();
+      const dx = pointer.clientX - (rect.left + rect.width / 2);
+      const dy = pointer.clientY - (rect.top + rect.height / 2);
+      const deg = ((Math.atan2(dy, dx) * 180) / Math.PI + 90 + 360) % 360;
+      const day = Math.max(1, Math.min(28, Math.floor(deg / (360 / 28)) + 1));
+      const info = describeCycleDay(day);
+      ring.style.setProperty("--scrub-deg", `${deg.toFixed(1)}deg`);
+      ring.classList.add("is-scrubbing");
+      showZoneHud(ring.closest(".pt-bio-zone"), `Day ${day} · ${info.phase} · ${info.risk}`);
+      return;
+    }
+
+    const tipEl = target.closest?.("[data-pt-tip]") as Element | null;
+    if (tipEl && host.contains(tipEl)) {
+      const tip = tipEl.getAttribute("data-pt-tip");
+      if (tip) showZoneHud(tipEl.closest(".pt-bio-zone"), tip);
+    }
+  });
+
+  host.addEventListener("pointerout", (event) => {
+    const pointer = event as PointerEvent;
+    const target = pointer.target as Element | null;
+    const related = pointer.relatedTarget as Element | null;
+    if (!target) return;
+
+    const ring = target.closest?.("[data-pt-ring]") as HTMLElement | null;
+    if (ring && (!related || !ring.contains(related))) {
+      ring.classList.remove("is-scrubbing");
+      hideZoneHud(ring.closest(".pt-bio-zone"));
+    }
+
+    const zone = target.closest?.(".pt-bio-zone") as Element | null;
+    if (zone && (!related || !zone.contains(related))) {
+      hideZoneHud(zone);
+    }
+  });
+}
+
 function byId<T extends Element>(id: string): T | null {
   const scoped = panelRoot?.querySelector(`#${id}`) as T | null;
   if (scoped) return scoped;
@@ -1456,6 +1886,20 @@ function buildTemplateData(
   // an explicit opt-in for layouts that need one world panel around all cards.
   const trackerLevel = preset.extSettings?.renderMode === "tracker";
   const statChanges = calculateStatChanges(characters, previousData);
+  const prevCharByName = new Map<string, CharacterStats>();
+  if (previousData) {
+    for (const prevChar of normalizeCharacters(previousData)) {
+      const pStats = prevChar as CharacterStats;
+      const pName = typeof pStats.name === "string" ? pStats.name : "";
+      if (!pName) continue;
+      const pNested = pStats && typeof pStats === "object" && typeof pStats.stats === "object" && pStats.stats !== null;
+      const mergedPrev: CharacterStats = pNested
+        ? { ...pStats, ...(pStats.stats as CharacterStats) }
+        : { ...pStats };
+      if (pNested) delete mergedPrev.stats;
+      prevCharByName.set(pName, mergedPrev);
+    }
+  }
 
   const characterPayload = characters.map((character) => {
     const stats = character as CharacterStats;
@@ -1490,6 +1934,8 @@ function buildTemplateData(
       inactiveReason: Number(stats.inactiveReason || 0),
     };
 
+    const prevStats = prevCharByName.get(name) || null;
+
     return {
       name,
       characterName: name,
@@ -1497,6 +1943,7 @@ function buildTemplateData(
       currentTime,
       stats: resolvedStats,
       breastGeometry: computeBreastGeometry(resolvedStats),
+      physiology: computePulsePhysiology(resolvedStats, prevStats),
       bgColor,
       darkerBgColor: darkenColor(bgColor),
       reactionEmoji: getReactionEmoji(stats.last_react),
@@ -1555,6 +2002,7 @@ function renderTracker(
     return;
   }
   injectSanitized(markup.html);
+  bindPulseThreadInteractions(body);
 }
 
 function buildTrackerMarkup(
@@ -2093,6 +2541,7 @@ export function setup(ctx: SpindleFrontendContext) {
           sideAppMount.mount.root.innerHTML = `<div class="sst-side-tracker-root sst-side-${side}">${markup.html}</div>`;
         }
         bindSidePanelTabs(sideAppMount.mount.root);
+        bindPulseThreadInteractions(sideAppMount.mount.root);
         return;
       }
 
@@ -2108,6 +2557,7 @@ export function setup(ctx: SpindleFrontendContext) {
         mount.root.innerHTML = `<div class="sst-side-tracker-root sst-side-${side}">${markup.html}</div>`;
         sideAppMount = { mount, side };
         bindSidePanelTabs(mount.root);
+        bindPulseThreadInteractions(mount.root);
         return;
       } catch {
         // mountApp failed — fall through to legacy
@@ -2122,6 +2572,7 @@ export function setup(ctx: SpindleFrontendContext) {
     const wrapped = `<div class="sst-side-tracker-root ${sideClass}">${markup.html}</div>`;
     sideTrackerMount = ctx.dom.inject(sidebarRoot, wrapped, "beforeend");
     bindSidePanelTabs(sidebarRoot);
+    bindPulseThreadInteractions(sidebarRoot);
   };
 
   // Pulse Thread (and similar CSS-only tab templates) gate visibility on
@@ -2236,6 +2687,7 @@ export function setup(ctx: SpindleFrontendContext) {
       existingMount!.innerHTML = markup.html;
       trackerMessageRenders.set(messageId, { data, preset, previousData, mode });
       restoreFormControlState(existingMount!);
+      bindPulseThreadInteractions(existingMount!);
       return;
     }
 
@@ -2260,6 +2712,7 @@ export function setup(ctx: SpindleFrontendContext) {
     trackerMessageMounts.set(messageId, mount);
     trackerMessageRenders.set(messageId, { data, preset, previousData, mode });
     restoreFormControlState(mount);
+    bindPulseThreadInteractions(mount);
   };
 
   const handleTrackerPayload = (raw: string, sourceContent: string, messageId: string | null = null) => {

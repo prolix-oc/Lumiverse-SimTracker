@@ -4754,7 +4754,9 @@ var pulse_thread_tracker_default = {
     /* =========================================
        ROOT COLLAPSE BAR
        ========================================= */
-    .pt-root-toggle {
+    .pt-root-toggle,
+    .pt-motion-toggle,
+    .pt-xray-toggle {
         position: absolute;
         opacity: 0;
         pointer-events: none;
@@ -4766,12 +4768,83 @@ var pulse_thread_tracker_default = {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 12px 18px;
-        cursor: pointer;
+        gap: 10px;
+        padding: 10px 16px;
         user-select: none;
         position: relative;
         border-bottom: 1px solid transparent;
         transition: border-color var(--pt-transition-fast), background var(--pt-transition-fast);
+    }
+
+    .pt-root-hit {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        cursor: pointer;
+        padding: 2px 0;
+    }
+
+    .pt-root-controls {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        z-index: 2;
+        flex-shrink: 0;
+    }
+
+    .pt-mode-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 9px;
+        border-radius: 999px;
+        font-size: calc(9.5px * var(--pt-scale));
+        font-weight: 750;
+        text-transform: uppercase;
+        letter-spacing: 0.65px;
+        color: var(--pt-txt-dim);
+        background: color-mix(in srgb, var(--pt-bg-deep) 78%, transparent);
+        border: 1px solid var(--pt-border);
+        cursor: pointer;
+        transition: background var(--pt-transition-fast), border-color var(--pt-transition-fast), color var(--pt-transition-fast), box-shadow var(--pt-transition-fast);
+    }
+
+    .pt-mode-chip:hover {
+        border-color: var(--pt-border-hover);
+        color: var(--pt-txt);
+    }
+
+    .pt-mode-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.28);
+        transition: background var(--pt-transition-fast), box-shadow var(--pt-transition-fast);
+    }
+
+    .pt-motion-toggle:checked ~ .pt-root-bar .pt-mode-live {
+        color: #7ef2b8;
+        border-color: rgba(74, 222, 128, 0.36);
+        background: rgba(74, 222, 128, 0.10);
+    }
+
+    .pt-motion-toggle:checked ~ .pt-root-bar .pt-mode-live .pt-mode-dot {
+        background: #4ade80;
+        box-shadow: 0 0 7px rgba(74, 222, 128, 0.85);
+        animation: ptLiveDot 1.8s ease-in-out infinite;
+    }
+
+    @keyframes ptLiveDot {
+        0%, 100% { transform: scale(1); opacity: 0.9; }
+        50% { transform: scale(1.25); opacity: 1; }
+    }
+
+    .pt-xray-toggle:checked ~ .pt-root-bar .pt-mode-xray {
+        color: #7ee8ff;
+        border-color: rgba(56, 189, 248, 0.46);
+        background: rgba(56, 189, 248, 0.14);
+        box-shadow: 0 0 10px rgba(56, 189, 248, 0.22);
     }
 
     .pt-root-bar::after {
@@ -4807,16 +4880,22 @@ var pulse_thread_tracker_default = {
     }
 
     .pt-root-chevron {
-        opacity: 0.48;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px;
+        cursor: pointer;
+        opacity: 0.54;
         transition: transform var(--pt-transition), opacity var(--pt-transition-fast);
         z-index: 1;
     }
+
+    .pt-root-chevron:hover { opacity: 1; }
 
     .pt-root-toggle:checked ~ .pt-root-bar .pt-root-chevron {
         transform: rotate(180deg);
         opacity: 1;
     }
-
     .pt-root-body {
         max-height: 0;
         overflow: hidden;
@@ -4858,23 +4937,795 @@ var pulse_thread_tracker_default = {
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.22);
     }
+
+    /* =========================================
+       LIVING PHYSIOLOGY, X-RAY & TACTILE ENGINE
+       ========================================= */
+
+    /* Zero wasted GPU when collapsed, paused, or reduced-motion */
+    .pt-root-toggle:not(:checked) ~ .pt-root-body *,
+    .pt-motion-toggle:not(:checked) ~ .pt-root-body * {
+        animation-play-state: paused !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .pulse-tabbed-root * {
+            animation-play-state: paused !important;
+        }
+    }
+
+    /* Interactive hit affordances & floating anatomical HUD */
+    .pt-bio-zone [data-pt-action] {
+        cursor: pointer;
+    }
+
+    .pt-part-hud {
+        position: absolute;
+        top: 8px;
+        left: 10px;
+        max-width: calc(100% - 20px);
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: calc(9.5px * var(--pt-scale));
+        font-weight: 700;
+        letter-spacing: 0.35px;
+        color: #f8f5ff;
+        background: rgba(11, 9, 20, 0.90);
+        border: 1px solid color-mix(in srgb, var(--zone-tint, var(--pt-accent)) 45%, rgba(255, 255, 255, 0.16));
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+        pointer-events: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        opacity: 0;
+        transform: translateY(-3px) scale(0.97);
+        transition: opacity 150ms ease, transform 150ms ease, border-color 150ms ease;
+        z-index: 8;
+    }
+
+    .pt-part-hud.is-visible {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+    .pt-part-hud.is-reflex {
+        border-color: var(--zone-tint, var(--pt-accent));
+        box-shadow: 0 0 12px color-mix(in srgb, var(--zone-tint, var(--pt-accent)) 45%, transparent), 0 6px 16px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Localized Bio-Lens Hover Lift & Subtle Cutaway */
+    .pt-bio-zone svg {
+        transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1), filter 260ms ease;
+    }
+
+    .pt-bio-zone:hover svg {
+        transform: scale(1.028);
+    }
+
+    .pt-bio-zone:hover .pt-breast-duct,
+    .pt-bio-zone:hover .pt-penis-urethra,
+    .pt-bio-zone:hover .pt-vas-deferens,
+    .pt-bio-zone:hover .pt-womb-endometrium-bevel {
+        opacity: 0.95;
+    }
+
+    /* Press-and-hold tactile squeeze (works even without JS!) */
+    .pt-bio-zone:active svg {
+        transform: scale(0.992);
+    }
+
+    /* Global X-Ray Cutaway Mode */
+    .pt-xray-toggle:checked ~ .pt-root-body .pt-bio-zone {
+        border-color: rgba(56, 189, 248, 0.28);
+        box-shadow: inset 0 1px 0 rgba(125, 211, 252, 0.16), 0 10px 26px rgba(0, 0, 0, 0.34);
+    }
+
+    .pt-xray-toggle:checked ~ .pt-root-body .pt-womb-wall,
+    .pt-xray-toggle:checked ~ .pt-root-body .pt-vag-wall,
+    .pt-xray-toggle:checked ~ .pt-root-body .pt-anal-wall,
+    .pt-xray-toggle:checked ~ .pt-root-body .pt-bladder-wall,
+    .pt-xray-toggle:checked ~ .pt-root-body .pt-scrotum-sac,
+    .pt-xray-toggle:checked ~ .pt-root-body .pt-penis-shaft-body,
+    .pt-xray-toggle:checked ~ .pt-root-body .pt-penis-glans-body,
+    .pt-xray-toggle:checked ~ .pt-root-body .pt-breast-vol-layer {
+        opacity: 0.34;
+        stroke: rgba(125, 211, 252, 0.72);
+    }
+
+    .pt-xray-toggle:checked ~ .pt-root-body .pt-breast-duct,
+    .pt-xray-toggle:checked ~ .pt-root-body .pt-penis-urethra,
+    .pt-xray-toggle:checked ~ .pt-root-body .pt-vas-deferens,
+    .pt-xray-toggle:checked ~ .pt-root-body .pt-epididymis,
+    .pt-xray-toggle:checked ~ .pt-root-body .pt-rugae-light,
+    .pt-xray-toggle:checked ~ .pt-root-body .pt-womb-endometrium-bevel,
+    .pt-xray-toggle:checked ~ .pt-root-body .pt-bladder-ureter-core {
+        stroke: #7ee8ff;
+        opacity: 1;
+    }
+
+    .pt-xray-toggle:checked ~ .pt-root-body .pt-xray-layer {
+        opacity: 0.92;
+    }
+
+    .pt-xray-layer {
+        opacity: 0;
+        transition: opacity 240ms ease;
+        pointer-events: none;
+    }
+
+    /* --- Cycle Chronometer Interactive Scrub Pip --- */
+    .pt-fertility-ring {
+        cursor: crosshair;
+    }
+
+    .pt-scrub-marker {
+        position: absolute;
+        inset: -3px;
+        transform: rotate(var(--scrub-deg, 0deg));
+        opacity: 0;
+        pointer-events: none;
+        z-index: 6;
+        transition: opacity 140ms ease;
+    }
+
+    .pt-scrub-marker::after {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #7ee8ff;
+        border: 1.5px solid #ffffff;
+        box-shadow: 0 0 10px rgba(126, 232, 255, 0.95);
+    }
+
+    .pt-fertility-ring.is-scrubbing .pt-scrub-marker {
+        opacity: 1;
+    }
+
+    .pt-zone-cycle.is-ovulating .pt-fertility-ring {
+        animation: ptOvuRingPulse var(--pt-bpm, 2.2s) ease-in-out infinite;
+    }
+
+    @keyframes ptOvuRingPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.022); }
+    }
+
+    /* --- Haptic Click Ripple Ring --- */
+    .pt-haptic-ring {
+        fill: none;
+        stroke: var(--zone-tint, #ff8fb8);
+        stroke-width: 1.5;
+        opacity: 0;
+        transform-box: fill-box;
+        transform-origin: center;
+        pointer-events: none;
+    }
+
+    .pt-fx-clench .pt-haptic-ring-canal,
+    .pt-fx-cervix .pt-haptic-ring-cervix,
+    .pt-fx-ovary .pt-haptic-ring-ovary,
+    .pt-fx-letdown .pt-haptic-ring-breast,
+    .pt-fx-oxytocin .pt-haptic-ring-oxytocin,
+    .pt-fx-prostate .pt-haptic-ring-prostate,
+    .pt-fx-twitch .pt-haptic-ring-male,
+    .pt-fx-strain .pt-haptic-ring-bladder {
+        animation: ptHapticBurst 720ms cubic-bezier(0.16, 1, 0.3, 1) 1;
+    }
+
+    @keyframes ptHapticBurst {
+        0% { transform: scale(0.45); opacity: 0.92; }
+        100% { transform: scale(2.15); opacity: 0; }
+    }
+
+    /* Cross-organ coupled border highlight flash */
+    .pt-fx-oxytocin,
+    .pt-fx-prostate,
+    .pt-fx-twitch,
+    .pt-fx-clench,
+    .pt-fx-cervix,
+    .pt-fx-letdown,
+    .pt-fx-ovary,
+    .pt-fx-strain {
+        border-color: color-mix(in srgb, var(--zone-tint, var(--pt-accent)) 62%, rgba(255, 255, 255, 0.25)) !important;
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.16),
+            0 0 20px color-mix(in srgb, var(--zone-tint, var(--pt-accent)) 26%, transparent),
+            0 12px 28px rgba(0, 0, 0, 0.30) !important;
+    }
+
+    /* --- WOMB & VAGINAL CANAL: Ovulation, Mucus, Peristaltic Clench & Breach --- */
+    .pt-ovum-trail {
+        fill: none;
+        stroke: #ffe58f;
+        stroke-width: 2.2;
+        stroke-linecap: round;
+        stroke-dasharray: 3.5 42;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .pt-zone-womb.is-ovulating .pt-ovum-trail,
+    .pt-zone-womb.evt-conceived-now .pt-ovum-trail,
+    .pt-zone-womb.pt-fx-ovary .pt-ovum-trail {
+        opacity: 0.92;
+        animation: ptOvumGlide 3.4s linear infinite;
+    }
+
+    .pt-zone-womb.evt-conceived-now .pt-ovum-trail {
+        stroke: #ffd700;
+        stroke-width: 2.8;
+        animation: ptOvumGlide 1.6s cubic-bezier(0.25, 0.8, 0.25, 1) 2;
+    }
+
+    @keyframes ptOvumGlide {
+        0% { stroke-dashoffset: 0; }
+        100% { stroke-dashoffset: -45.5; }
+    }
+
+    .pt-zone-womb.is-ovulating .pt-womb-fimbria,
+    .pt-zone-womb.pt-fx-ovary .pt-womb-fimbria {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: ptFimbriaSway var(--pt-bpm, 2.2s) ease-in-out infinite;
+    }
+
+    @keyframes ptFimbriaSway {
+        0%, 100% { transform: rotate(0deg) scale(1); }
+        50% { transform: rotate(3.2deg) scale(1.04); }
+    }
+
+    /* Fertile Cervical Mucus descending through the vaginal canal */
+    .pt-fertile-mucus {
+        fill: none;
+        stroke: rgba(255, 240, 248, 0.62);
+        stroke-width: 1.5;
+        stroke-linecap: round;
+        stroke-dasharray: 8 14;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .pt-zone-womb.is-fertile .pt-fertile-mucus,
+    .pt-zone-womb.is-ovulating .pt-fertile-mucus {
+        opacity: 0.78;
+        animation: ptMucusFlow 2.6s linear infinite;
+    }
+
+    @keyframes ptMucusFlow {
+        0% { stroke-dashoffset: 22; }
+        100% { stroke-dashoffset: 0; }
+    }
+
+    /* Warm capillary arousal flush inside canal when fertile/penetrated */
+    .pt-canal-flush {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 320ms ease;
+    }
+
+    .pt-zone-womb.is-fertile .pt-canal-flush,
+    .pt-zone-womb.is-penetrated .pt-canal-flush {
+        opacity: 0.55;
+        animation: ptFlushBreathe var(--pt-bpm, 2.2s) ease-in-out infinite;
+    }
+
+    @keyframes ptFlushBreathe {
+        0%, 100% { opacity: 0.28; }
+        50% { opacity: 0.68; }
+    }
+
+    /* Staggered Peristaltic Vaginal Rugae Clench Wave (bottom -> top) */
+    .pt-ruga-band {
+        transform-box: fill-box;
+        transform-origin: center;
+    }
+
+    .pt-ruga-5 { --band-delay: 0s; }
+    .pt-ruga-4 { --band-delay: 0.11s; }
+    .pt-ruga-3 { --band-delay: 0.22s; }
+    .pt-ruga-2 { --band-delay: 0.33s; }
+    .pt-ruga-1 { --band-delay: 0.44s; }
+
+    .pt-zone-womb.is-penetrated .pt-ruga-band {
+        animation: ptPeristalticClench var(--pt-clench-rate, 1.5s) ease-in-out var(--band-delay, 0s) infinite;
+    }
+
+    .pt-zone-womb.is-penetrated.evt-thrust-in .pt-ruga-band {
+        animation:
+            ptPeristalticReflex 620ms cubic-bezier(0.22, 1, 0.36, 1) var(--band-delay, 0s) 1,
+            ptPeristalticClench var(--pt-clench-rate, 1.5s) ease-in-out calc(0.64s + var(--band-delay, 0s)) infinite;
+    }
+
+    .pt-bio-zone.pt-zone-womb.pt-fx-clench .pt-ruga-band,
+    .pt-bio-zone.pt-zone-womb.pt-fx-oxytocin .pt-ruga-band {
+        animation: ptPeristalticReflex 620ms cubic-bezier(0.22, 1, 0.36, 1) var(--band-delay, 0s) 1;
+    }
+    @keyframes ptPeristalticClench {
+        0%, 100% { transform: scaleX(1) scaleY(1); }
+        42% { transform: scaleX(var(--pt-clench-x, 0.90)) scaleY(1.06); }
+        72% { transform: scaleX(1.02) scaleY(0.98); }
+    }
+
+    @keyframes ptPeristalticReflex {
+        0% { transform: scaleX(1) scaleY(1); }
+        36% { transform: scaleX(0.84) scaleY(1.12); }
+        70% { transform: scaleX(1.03) scaleY(0.97); }
+        100% { transform: scaleX(1) scaleY(1); }
+    }
+
+    /* Labial cushions hug shaft when penetrated & squeeze on clench */
+    .pt-labia-left, .pt-labia-right {
+        transform-box: fill-box;
+        transform-origin: center;
+        transition: transform 240ms ease;
+    }
+
+    .pt-zone-womb.is-penetrated .pt-labia-left {
+        animation: ptLabiaLeftFlex var(--pt-clench-rate, 1.5s) ease-in-out infinite;
+    }
+    .pt-zone-womb.is-penetrated .pt-labia-right {
+        animation: ptLabiaRightFlex var(--pt-clench-rate, 1.5s) ease-in-out infinite;
+    }
+    .pt-zone-womb.pt-fx-clench .pt-labia-left {
+        animation: ptLabiaLeftFlex 520ms ease-in-out 1;
+    }
+    .pt-zone-womb.pt-fx-clench .pt-labia-right {
+        animation: ptLabiaRightFlex 520ms ease-in-out 1;
+    }
+
+    @keyframes ptLabiaLeftFlex {
+        0%, 100% { transform: translateX(-1px) scale(1); }
+        45% { transform: translateX(0.8px) scale(0.96); }
+    }
+    @keyframes ptLabiaRightFlex {
+        0%, 100% { transform: translateX(1px) scale(1); }
+        45% { transform: translateX(-0.8px) scale(0.96); }
+    }
+
+    /* Cervical Breathing, Kissed/Breach Clamp & Click Spasm */
+    .pt-cervix {
+        transform-box: fill-box;
+        transform-origin: center;
+    }
+
+    .pt-zone-womb.is-ovulating .pt-cervix-os,
+    .pt-zone-womb.is-fertile .pt-cervix-os {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: ptOsBreathe var(--pt-bpm, 2.2s) ease-in-out infinite;
+    }
+
+    @keyframes ptOsBreathe {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.16); }
+    }
+
+    .pt-zone-womb.is-cervix-kissed .pt-cervix,
+    .pt-zone-womb.is-breaching .pt-cervix {
+        animation: ptCervixClamp var(--pt-clench-rate, 1.4s) ease-in-out infinite;
+    }
+
+    .pt-zone-womb.pt-fx-cervix .pt-cervix,
+    .pt-zone-womb.pt-fx-oxytocin .pt-cervix {
+        animation: ptCervixSpasm 720ms cubic-bezier(0.22, 1, 0.36, 1) 1;
+    }
+
+    @keyframes ptCervixClamp {
+        0%, 100% { transform: scale(1); }
+        45% { transform: scaleX(1.06) scaleY(0.93); }
+        72% { transform: scaleX(0.97) scaleY(1.04); }
+    }
+
+    @keyframes ptCervixSpasm {
+        0% { transform: scale(1); }
+        28% { transform: scaleX(0.90) scaleY(1.12); }
+        58% { transform: scaleX(1.08) scaleY(0.92); }
+        100% { transform: scale(1); }
+    }
+
+    /* Penetrating Phallus Micro-Bob, Vein Pulse & Turn-Delta Thrust-In */
+    .pt-vag-shaft-motion,
+    .pt-anal-shaft-motion {
+        transform-box: fill-box;
+        transform-origin: center;
+    }
+
+    .pt-zone-womb.is-penetrated .pt-vag-shaft-motion,
+    .pt-zone-anal.is-penetrated .pt-anal-shaft-motion {
+        animation: ptShaftMicroBob var(--pt-clench-rate, 1.6s) ease-in-out infinite;
+    }
+
+    .pt-zone-womb.evt-thrust-in .pt-vag-shaft-motion,
+    .pt-zone-anal.evt-thrust-in .pt-anal-shaft-motion {
+        animation:
+            ptThrustIn 820ms cubic-bezier(0.18, 0.9, 0.24, 1.04) 1,
+            ptShaftMicroBob var(--pt-clench-rate, 1.6s) ease-in-out 840ms infinite;
+    }
+
+    @keyframes ptThrustIn {
+        0% { transform: translateY(var(--delta-thrust-y, 18px)); }
+        72% { transform: translateY(-2.4px); }
+        100% { transform: translateY(0); }
+    }
+
+    @keyframes ptShaftMicroBob {
+        0%, 100% { transform: translateY(0); }
+        45% { transform: translateY(-2.2px); }
+    }
+
+    .pt-zone-womb.is-penetrated .pt-shaft-vein,
+    .pt-zone-anal.is-penetrated .pt-shaft-vein,
+    .pt-zone-male.is-loaded .pt-shaft-vein,
+    .pt-zone-male.is-aroused .pt-shaft-vein {
+        animation: ptVeinPulse var(--pt-bpm, 1.8s) ease-in-out infinite;
+    }
+
+    @keyframes ptVeinPulse {
+        0%, 100% { opacity: 0.45; }
+        40% { opacity: 0.95; }
+    }
+
+    /* Fluid Turn-Delta Surge + Meniscus Slosh + Rising Bubbles */
+    .pt-fluid-surge-group {
+        transform-box: fill-box;
+        transform-origin: center bottom;
+    }
+
+    .pt-zone-womb.evt-fill-surge .pt-fluid-surge-group,
+    .pt-zone-anal.evt-fill-surge .pt-fluid-surge-group,
+    .pt-zone-bladder.evt-bladder-surge .pt-fluid-surge-group {
+        animation: ptFluidRise 950ms cubic-bezier(0.16, 1, 0.3, 1) 1;
+    }
+
+    @keyframes ptFluidRise {
+        0% { transform: translateY(var(--delta-fill-y, 16px)); }
+        78% { transform: translateY(-1.8px); }
+        100% { transform: translateY(0); }
+    }
+
+    .pt-meniscus-slosh {
+        transform-box: fill-box;
+        transform-origin: center;
+    }
+
+    .pt-zone-womb.is-penetrated .pt-meniscus-slosh,
+    .pt-zone-womb.is-breaching .pt-meniscus-slosh,
+    .pt-zone-anal.is-penetrated .pt-meniscus-slosh,
+    .pt-zone-bladder.is-strained .pt-meniscus-slosh {
+        animation: ptMeniscusRock var(--pt-clench-rate, 1.8s) ease-in-out infinite;
+    }
+
+    .pt-zone-womb.evt-fill-surge .pt-meniscus-slosh,
+    .pt-zone-anal.evt-fill-surge .pt-meniscus-slosh,
+    .pt-zone-bladder.evt-bladder-surge .pt-meniscus-slosh {
+        animation: ptMeniscusSplash 740ms ease-in-out 1;
+    }
+
+    .pt-zone-womb.is-penetrated.evt-fill-surge .pt-meniscus-slosh,
+    .pt-zone-womb.is-breaching.evt-fill-surge .pt-meniscus-slosh,
+    .pt-zone-anal.is-penetrated.evt-fill-surge .pt-meniscus-slosh,
+    .pt-zone-bladder.is-strained.evt-bladder-surge .pt-meniscus-slosh {
+        animation:
+            ptMeniscusSplash 740ms ease-in-out 1,
+            ptMeniscusRock var(--pt-clench-rate, 1.8s) ease-in-out 760ms infinite;
+    }
+
+    .pt-bio-zone.pt-zone-womb.pt-fx-clench .pt-meniscus-slosh,
+    .pt-bio-zone.pt-zone-womb.pt-fx-cervix .pt-meniscus-slosh,
+    .pt-bio-zone.pt-zone-anal.pt-fx-clench .pt-meniscus-slosh,
+    .pt-bio-zone.pt-zone-bladder.pt-fx-strain .pt-meniscus-slosh {
+        animation: ptMeniscusSplash 740ms ease-in-out 1;
+    }
+
+    @keyframes ptMeniscusRock {
+        0%, 100% { transform: rotate(0deg) scaleY(1); }
+        30% { transform: rotate(var(--pt-slosh-deg, 2deg)) scaleY(1.12); }
+        70% { transform: rotate(calc(var(--pt-slosh-deg, 2deg) * -1)) scaleY(0.94); }
+    }
+
+    @keyframes ptMeniscusSplash {
+        0% { transform: rotate(0deg) scaleY(1); }
+        25% { transform: rotate(3.4deg) scaleY(1.26); }
+        55% { transform: rotate(-2.8deg) scaleY(0.88); }
+        80% { transform: rotate(1.4deg) scaleY(1.08); }
+        100% { transform: rotate(0deg) scaleY(1); }
+    }
+
+    .pt-fluid-bubble {
+        animation: ptBubbleDrift 3.6s ease-in-out infinite;
+    }
+
+    @keyframes ptBubbleDrift {
+        0%, 100% { transform: translateY(0); opacity: 0.48; }
+        50% { transform: translateY(-3.5px); opacity: 0.85; }
+    }
+
+    /* Fertilization Bloom when conceived this turn */
+    .pt-zone-womb.evt-conceived-now .pt-womb-seed-halo {
+        animation: ptConceptionBloom 1.4s cubic-bezier(0.16, 1, 0.3, 1) 1, seedHalo 2.6s ease-in-out 1.4s infinite;
+    }
+
+    @keyframes ptConceptionBloom {
+        0% { transform: scale(0.2); opacity: 0; }
+        45% { transform: scale(1.75); opacity: 1; }
+        100% { transform: scale(1); opacity: 0.65; }
+    }
+
+    /* --- BREASTS: Lactiferous Duct Letdown Wave & Oxytocin Pulse --- */
+    .pt-breast-duct-flow {
+        fill: none;
+        stroke: rgba(255, 250, 224, 0.85);
+        stroke-width: 1.35;
+        stroke-linecap: round;
+        stroke-dasharray: 5 18;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .pt-zone-breast.is-letdown .pt-breast-duct-flow {
+        opacity: 0.72;
+        animation: ptDuctLetdown var(--pt-duct-rate, 2.2s) linear infinite;
+    }
+
+    .pt-zone-breast.is-letdown.evt-letdown .pt-breast-duct-flow {
+        opacity: 0.94;
+        stroke: #fff7cf;
+        animation:
+            ptDuctLetdown 820ms linear 2,
+            ptDuctLetdown var(--pt-duct-rate, 2.2s) linear 1640ms infinite;
+    }
+
+    .pt-bio-zone.pt-zone-breast.pt-fx-letdown .pt-breast-duct-flow,
+    .pt-bio-zone.pt-zone-breast.pt-fx-oxytocin .pt-breast-duct-flow {
+        opacity: 0.98;
+        stroke: #fff7cf;
+        animation: ptDuctLetdown 820ms linear 2;
+    }
+
+    @keyframes ptDuctLetdown {
+        0% { stroke-dashoffset: 0; }
+        100% { stroke-dashoffset: 23; }
+    }
+
+    .pt-milk-drip {
+        animation-duration: var(--pt-drip-rate, 2.2s);
+    }
+
+    .pt-zone-breast.pt-fx-letdown .pt-areola,
+    .pt-zone-breast.pt-fx-oxytocin .pt-areola {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: ptAreolaPulse 760ms ease-in-out 1;
+    }
+
+    @keyframes ptAreolaPulse {
+        0%, 100% { transform: scale(1); }
+        45% { transform: scale(1.16); }
+    }
+
+    /* --- MALE: Vas Deferens Pulse, Ejaculation Surge & Arousal Twitch --- */
+    .pt-vas-pulse {
+        fill: none;
+        stroke: rgba(255, 248, 255, 0.88);
+        stroke-width: 1.9;
+        stroke-linecap: round;
+        stroke-dasharray: 5 26;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .pt-zone-male.is-recovering .pt-vas-pulse {
+        opacity: 0.48;
+        animation: ptVasFlow 3.2s linear infinite;
+    }
+
+    .pt-zone-male.is-recovering.evt-ejaculated .pt-vas-pulse {
+        opacity: 0.85;
+        animation:
+            ptVasFlow 640ms linear 2,
+            ptVasFlow 3.2s linear 1280ms infinite;
+    }
+
+    .pt-zone-male.evt-ejaculated .pt-vas-pulse,
+    .pt-bio-zone.pt-zone-male.pt-fx-twitch .pt-vas-pulse {
+        opacity: 0.96;
+        animation: ptVasFlow 640ms linear 2;
+    }
+
+    @keyframes ptVasFlow {
+        0% { stroke-dashoffset: 31; }
+        100% { stroke-dashoffset: 0; }
+    }
+
+    .pt-male-shaft-group {
+        transform-box: fill-box;
+        transform-origin: center bottom;
+    }
+
+    .pt-zone-male.is-loaded .pt-male-shaft-group,
+    .pt-zone-male.is-aroused .pt-male-shaft-group {
+        animation: ptMaleBreathe var(--pt-bpm, 2.1s) ease-in-out infinite;
+    }
+
+    .pt-zone-male.is-loaded.evt-ejaculated .pt-male-shaft-group,
+    .pt-zone-male.is-aroused.evt-ejaculated .pt-male-shaft-group {
+        animation:
+            ptMaleTwitch 620ms cubic-bezier(0.22, 1, 0.36, 1) 1,
+            ptMaleBreathe var(--pt-bpm, 2.1s) ease-in-out 640ms infinite;
+    }
+
+    .pt-zone-male.evt-ejaculated .pt-male-shaft-group,
+    .pt-bio-zone.pt-zone-male.pt-fx-twitch .pt-male-shaft-group {
+        animation: ptMaleTwitch 620ms cubic-bezier(0.22, 1, 0.36, 1) 1;
+    }
+
+    @keyframes ptMaleBreathe {
+        0%, 100% { transform: translateY(0) scaleY(1); }
+        45% { transform: translateY(-1.2px) scaleY(1.012); }
+    }
+
+    @keyframes ptMaleTwitch {
+        0% { transform: translateY(0) scaleY(1); }
+        28% { transform: translateY(-3.2px) scaleY(1.032); }
+        56% { transform: translateY(0.5px) scaleY(0.992); }
+        80% { transform: translateY(-1.5px) scaleY(1.015); }
+        100% { transform: translateY(0) scaleY(1); }
+    }
+
+    /* --- ANAL & PROSTATE: Tightness-Driven Clench & Prostate Compression --- */
+    .pt-anal-fold {
+        transform-box: fill-box;
+        transform-origin: center;
+    }
+
+    .pt-fold-4 { --band-delay: 0s; }
+    .pt-fold-3 { --band-delay: 0.12s; }
+    .pt-fold-2 { --band-delay: 0.24s; }
+    .pt-fold-1 { --band-delay: 0.36s; }
+
+    .pt-zone-anal.is-penetrated .pt-anal-fold {
+        animation: ptAnalClench var(--pt-clench-rate, 1.55s) ease-in-out var(--band-delay, 0s) infinite;
+    }
+
+    .pt-zone-anal.is-penetrated.evt-thrust-in .pt-anal-fold {
+        animation:
+            ptAnalReflex 620ms cubic-bezier(0.22, 1, 0.36, 1) var(--band-delay, 0s) 1,
+            ptAnalClench var(--pt-clench-rate, 1.55s) ease-in-out calc(0.64s + var(--band-delay, 0s)) infinite;
+    }
+
+    .pt-bio-zone.pt-zone-anal.pt-fx-clench .pt-anal-fold {
+        animation: ptAnalReflex 620ms cubic-bezier(0.22, 1, 0.36, 1) var(--band-delay, 0s) 1;
+    }
+    @keyframes ptAnalClench {
+        0%, 100% { transform: scaleX(1); }
+        45% { transform: scaleX(var(--pt-anal-clamp-x, 0.89)); }
+    }
+
+    @keyframes ptAnalReflex {
+        0% { transform: scaleX(1); }
+        35% { transform: scaleX(0.82); }
+        100% { transform: scaleX(1); }
+    }
+
+    .pt-sphincter-left, .pt-sphincter-right {
+        transform-box: fill-box;
+        transform-origin: center;
+    }
+
+    .pt-zone-anal.is-penetrated .pt-sphincter-left,
+    .pt-zone-anal.pt-fx-clench .pt-sphincter-left {
+        animation: ptSphincterL var(--pt-clench-rate, 1.5s) ease-in-out infinite;
+    }
+    .pt-zone-anal.is-penetrated .pt-sphincter-right,
+    .pt-zone-anal.pt-fx-clench .pt-sphincter-right {
+        animation: ptSphincterR var(--pt-clench-rate, 1.5s) ease-in-out infinite;
+    }
+
+    @keyframes ptSphincterL {
+        0%, 100% { transform: translateX(0); }
+        45% { transform: translateX(1.6px); }
+    }
+    @keyframes ptSphincterR {
+        0%, 100% { transform: translateX(0); }
+        45% { transform: translateX(-1.6px); }
+    }
+
+    .pt-zone-anal.is-prostate-hit .pt-prostate,
+    .pt-zone-anal.pt-fx-prostate .pt-prostate,
+    .pt-zone-anal.evt-prostate-spike .pt-prostate {
+        transform-box: fill-box;
+        transform-origin: right center;
+        animation: ptProstateCompress var(--pt-bpm, 1.5s) ease-in-out infinite;
+    }
+
+    @keyframes ptProstateCompress {
+        0%, 100% { transform: scaleX(1) scaleY(1); }
+        40% { transform: scaleX(0.86) scaleY(1.08) translateX(-1.2px); }
+        72% { transform: scaleX(1.05) scaleY(0.97); }
+    }
+
+    /* --- BLADDER & KIDNEYS: Ureteral Peristaltic Boluses & Pressure Tremor --- */
+    .pt-ureter-flow {
+        fill: none;
+        stroke: rgba(255, 240, 160, 0.88);
+        stroke-width: 2.1;
+        stroke-linecap: round;
+        stroke-dasharray: 4.5 38;
+        animation: ptUreterBolus var(--pt-ureter-rate, 3.2s) linear infinite;
+        pointer-events: none;
+    }
+
+    .pt-ureter-flow-r {
+        animation-delay: 1.4s;
+    }
+
+    @keyframes ptUreterBolus {
+        0% { stroke-dashoffset: 42.5; }
+        100% { stroke-dashoffset: 0; }
+    }
+
+    .pt-bladder-body-group {
+        transform-box: fill-box;
+        transform-origin: center;
+    }
+
+    .pt-zone-bladder.is-strained .pt-bladder-body-group {
+        animation: ptBladderTremor 280ms ease-in-out infinite;
+    }
+
+    .pt-zone-bladder.pt-fx-strain .pt-bladder-body-group {
+        animation: ptBladderSpasm 650ms ease-in-out 1;
+    }
+
+    @keyframes ptBladderTremor {
+        0%, 100% { transform: translate(0, 0); }
+        25% { transform: translate(var(--pt-tremor, 0.45px), -0.25px); }
+        75% { transform: translate(calc(var(--pt-tremor, 0.45px) * -1), 0.25px); }
+    }
+
+    @keyframes ptBladderSpasm {
+        0%, 100% { transform: scale(1); }
+        30% { transform: scaleX(0.95) scaleY(1.04); }
+        65% { transform: scaleX(1.03) scaleY(0.97); }
+    }
+
+    .pt-bladder-drip {
+        animation-duration: var(--pt-drip-rate, 1.6s);
+    }
 </style>
 
 <div class="pulse-tabbed-root sim-tracker-tabs">
     <input type="checkbox" id="pt-root-toggle" class="pt-root-toggle" checked>
+    <input type="checkbox" id="pt-motion-toggle" class="pt-motion-toggle" checked>
+    <input type="checkbox" id="pt-xray-toggle" class="pt-xray-toggle">
 
-    <!-- Collapse bar: global summary -->
-    <label for="pt-root-toggle" class="pt-root-bar">
-        <div class="pt-root-summary">
-            <span class="pt-accent-text">{{characters.length}} Tracking</span>
-            <span>\u2022</span>
-            <span>{{currentDate}}</span>
-            {{#if currentTime}}<span>\u2022</span><span>{{currentTime}}</span>{{/if}}
+    <!-- Collapse bar: global summary + Live / X-Ray mode controls -->
+    <div class="pt-root-bar">
+        <label for="pt-root-toggle" class="pt-root-hit">
+            <div class="pt-root-summary">
+                <span class="pt-accent-text">{{characters.length}} Tracking</span>
+                <span>\u2022</span>
+                <span>{{currentDate}}</span>
+                {{#if currentTime}}<span>\u2022</span><span>{{currentTime}}</span>{{/if}}
+            </div>
+        </label>
+        <div class="pt-root-controls">
+            <label for="pt-motion-toggle" class="pt-mode-chip pt-mode-live" title="Toggle live physiological motion">
+                <span class="pt-mode-dot"></span><span>Live</span>
+            </label>
+            <label for="pt-xray-toggle" class="pt-mode-chip pt-mode-xray" title="Toggle anatomical X-Ray cutaway">
+                <span>X-Ray</span>
+            </label>
+            <label for="pt-root-toggle" class="pt-root-chevron" title="Collapse or expand tracker">
+                <svg class="icon-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </label>
         </div>
-        <div class="pt-root-chevron">
-            <svg class="icon-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-    </label>
+    </div>
 
     <div class="pt-root-body">
         <div class="pt-root-inner">
@@ -4899,7 +5750,7 @@ var pulse_thread_tracker_default = {
             <!-- Viewport -->
             <div class="pt-viewport">
                 {{#each characters}}
-                <div class="pt-page" data-index="{{@index}}" style="{{#if bgColor}}--marker-deg: {{multiply (subtract stats.cycle_day 1) 12.86}}deg; --ref-angle: {{divide (multiply stats.refractory_minutes 180) stats.refractory_total}}deg;{{/if}}">
+                <div class="pt-page" data-index="{{@index}}" style="--marker-deg: {{multiply (subtract stats.cycle_day 1) 12.86}}deg; --ref-angle: {{divide (multiply stats.refractory_minutes 180) stats.refractory_total}}deg; --pt-bpm: {{physiology.bpmPeriodSec}}; --pt-clench-rate: {{physiology.clenchPeriodSec}}; --pt-clench-x: {{physiology.clenchScaleX}}; --pt-anal-clamp-x: {{physiology.analClampScaleX}}; --pt-slosh-deg: {{physiology.sloshDeg}}; --pt-tremor: {{physiology.tremorAmpPx}}; --pt-drip-rate: {{physiology.dripPeriodSec}}; --pt-duct-rate: {{physiology.ductPulseSec}}; --pt-ureter-rate: {{physiology.ureterPeriodSec}};">
 
                     <!-- Subtle meta line replacing the old big header -->
                     <div class="pt-page-meta">
@@ -4918,12 +5769,14 @@ var pulse_thread_tracker_default = {
             <div class="pt-bio-stack">
                 {{#if (hasFertilityTracking stats)}}
                 <!-- CYCLE CHRONOMETER -->
-                <div class="pt-bio-zone pt-zone-cycle">
+                <div class="pt-bio-zone pt-zone-cycle {{#if physiology.isOvulating}}is-ovulating{{/if}}">
+                        <div class="pt-part-hud" aria-hidden="true"></div>
                         <div class="pt-fertility-visuals">
-                            <div class="pt-fertility-ring" style="--cycle-accent: {{#if (eq (cycleStage stats) "ovulation")}}var(--cy-ovu){{else if (eq (cycleStage stats) "menstruation")}}var(--cy-men){{else if (eq (cycleStage stats) "follicular")}}var(--cy-fol){{else if (eq (cycleStage stats) "luteal")}}var(--cy-lut){{else}}var(--cy-preg){{/if}};">
+                            <div class="pt-fertility-ring" data-pt-ring="1" style="--cycle-accent: {{#if (eq (cycleStage stats) "ovulation")}}var(--cy-ovu){{else if (eq (cycleStage stats) "menstruation")}}var(--cy-men){{else if (eq (cycleStage stats) "follicular")}}var(--cy-fol){{else if (eq (cycleStage stats) "luteal")}}var(--cy-lut){{else}}var(--cy-preg){{/if}};">
                                 <div class="pt-fertility-core"></div>
                                 <div class="pt-fertility-marker {{#if (eq (cycleStage stats) "ovulation")}}ovulation-glow{{/if}}"
                                      style="color: {{#if (eq (cycleStage stats) "ovulation")}}var(--cy-ovu){{else if (eq (cycleStage stats) "menstruation")}}var(--cy-men){{else if (eq (cycleStage stats) "follicular")}}var(--cy-fol){{else if (eq (cycleStage stats) "luteal")}}var(--cy-lut){{else}}var(--cy-preg){{/if}};"></div>
+                                <div class="pt-scrub-marker"></div>
                                 <div class="pt-fertility-label">
                                     {{#if (or stats.preg (eq (cycleStage stats) "pregnancy"))}}
                                         <strong>{{#if stats.days_preg}}{{stats.days_preg}}{{else}}0{{/if}}</strong><span>Preg</span>
@@ -4966,7 +5819,8 @@ var pulse_thread_tracker_default = {
 
                 {{#if (hasLactationTracking stats)}}
                 <!-- FEMALE: 3D BREASTS, TORSO, MAMMARY DUCTS & LACTATION -->
-                <div class="pt-bio-zone pt-zone-breast">
+                <div class="pt-bio-zone pt-zone-breast {{#if physiology.isMilkLetdown}}is-letdown{{/if}} {{#if physiology.evtMilkLetdown}}evt-letdown{{/if}}">
+                        <div class="pt-part-hud" aria-hidden="true"></div>
                         <div class="pt-breast-vessel">
                             <svg class="pt-breast-svg" viewBox="-4 4 108 118" aria-hidden="true" focusable="false">
                                 <defs>
@@ -5042,24 +5896,30 @@ var pulse_thread_tracker_default = {
                                 <path class="pt-breast-fold" d="{{breastGeometry.foldLeftPath}}" />
                                 <path class="pt-breast-fold" d="{{breastGeometry.foldRightPath}}" />
 
-                                <!-- 3D Breast Volume Bases -->
-                                <path fill="url(#pt-breast-vol-l-{{@index}})" d="{{breastGeometry.pathLeft}}" />
-                                <path fill="url(#pt-breast-vol-r-{{@index}})" d="{{breastGeometry.pathRight}}" />
+                                <!-- 3D Breast Volume Bases (interactive letdown trigger) -->
+                                <g data-pt-action="pulse-breast" data-pt-tip="{{physiology.breastTip}}">
+                                    <path class="pt-breast-vol-layer" fill="url(#pt-breast-vol-l-{{@index}})" d="{{breastGeometry.pathLeft}}" />
+                                    <path class="pt-breast-vol-layer" fill="url(#pt-breast-vol-r-{{@index}})" d="{{breastGeometry.pathRight}}" />
+                                </g>
 
-                                <!-- Clipped Interior: Mammary Duct Tree, Milk Fill, Meniscus, Lower-Pole Volume Shadow & Specular -->
-                                <g clip-path="url(#pt-breast-clip-{{@index}})">
-                                    <!-- Delicate branching lactiferous ducts radiating to each areola -->
+                                <!-- Clipped Interior: Mammary Duct Tree, Animated Letdown Flow, Milk Fill & Specular -->
+                                <g clip-path="url(#pt-breast-clip-{{@index}})" pointer-events="none">
+                                    <!-- Delicate branching lactiferous ducts + animated letdown flow shimmer -->
                                     <path class="pt-breast-duct {{#if (or stats.lactating (gt stats.breast_fullness_pct 50))}}active{{/if}}" d="{{breastGeometry.ductLeftPath}}" />
                                     <path class="pt-breast-duct {{#if (or stats.lactating (gt stats.breast_fullness_pct 50))}}active{{/if}}" d="{{breastGeometry.ductRightPath}}" />
+                                    <path class="pt-breast-duct-flow" d="{{breastGeometry.ductLeftPath}}" />
+                                    <path class="pt-breast-duct-flow" d="{{breastGeometry.ductRightPath}}" />
 
                                     <!-- Milk Fill -->
                                     <rect class="pt-milk-liquid" fill="url(#pt-milk-grad-{{@index}})" x="0" y="{{breastGeometry.fillTop}}" width="100" height="{{breastGeometry.fillHeight}}" />
                                     {{#if (gt stats.breast_fullness_pct 0)}}
                                     <!-- Curved 3D Milk Meniscus + Glint -->
-                                    <ellipse cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.fillTop}}" rx="26" ry="2.6" fill="rgba(255,255,245,0.78)" />
-                                    <ellipse cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.fillTop}}" rx="26" ry="2.6" fill="rgba(255,255,245,0.78)" />
-                                    <path d="M 8 {{breastGeometry.fillTop}} C 28 {{breastGeometry.fillSurfaceMid}} 72 {{breastGeometry.fillSurfaceMid}} 92 {{breastGeometry.fillTop}}"
-                                          fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="1.4" stroke-linecap="round" />
+                                    <g class="pt-meniscus-slosh">
+                                        <ellipse cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.fillTop}}" rx="26" ry="2.6" fill="rgba(255,255,245,0.78)" />
+                                        <ellipse cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.fillTop}}" rx="26" ry="2.6" fill="rgba(255,255,245,0.78)" />
+                                        <path d="M 8 {{breastGeometry.fillTop}} C 28 {{breastGeometry.fillSurfaceMid}} 72 {{breastGeometry.fillSurfaceMid}} 92 {{breastGeometry.fillTop}}"
+                                              fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="1.4" stroke-linecap="round" />
+                                    </g>
                                     {{/if}}
 
                                     <!-- Translucent Lower-Pole Gravitational Shadow (keeps 3D volume even at 100% milk!) -->
@@ -5074,23 +5934,26 @@ var pulse_thread_tracker_default = {
                                 </g>
 
                                 <!-- Sculpted Medial Cleavage Shadow -->
-                                <path class="pt-breast-cleavage" d="{{breastGeometry.cleavagePath}}" />
+                                <path class="pt-breast-cleavage" pointer-events="none" d="{{breastGeometry.cleavagePath}}" />
 
                                 <!-- Natural Anatomical Contour Outlines (open upper slope, luminous outer/lower/cleavage curves) -->
-                                <path class="pt-breast-outline {{#if stats.lactating}}lactating{{/if}}" d="{{breastGeometry.contourLeftPath}}" />
-                                <path class="pt-breast-outline {{#if stats.lactating}}lactating{{/if}}" d="{{breastGeometry.contourRightPath}}" />
+                                <path class="pt-breast-outline {{#if stats.lactating}}lactating{{/if}}" pointer-events="none" d="{{breastGeometry.contourLeftPath}}" />
+                                <path class="pt-breast-outline {{#if stats.lactating}}lactating{{/if}}" pointer-events="none" d="{{breastGeometry.contourRightPath}}" />
 
-                                <!-- 3D Areola Disks + Subtle Highlight Rings -->
-                                <circle class="pt-areola {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.areolaR}}" fill="url(#pt-areola-grad-{{@index}})" />
-                                <circle class="pt-areola {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.areolaR}}" fill="url(#pt-areola-grad-{{@index}})" />
-
-                                <!-- Projected 3D Nipple Shadows + Sculpted Nipple Domes + Specular Dots -->
-                                <ellipse cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.nippleShadowY}}" rx="{{breastGeometry.nippleR}}" ry="1.8" fill="rgba(22,4,14,0.48)" />
-                                <ellipse cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.nippleShadowY}}" rx="{{breastGeometry.nippleR}}" ry="1.8" fill="rgba(22,4,14,0.48)" />
-                                <circle class="pt-nipple {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.nippleR}}" fill="url(#pt-nipple-grad-{{@index}})" />
-                                <circle class="pt-nipple {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.nippleR}}" fill="url(#pt-nipple-grad-{{@index}})" />
-                                <circle cx="{{breastGeometry.nippleHighlightXLeft}}" cy="{{breastGeometry.nippleHighlightY}}" r="0.95" fill="rgba(255,248,252,0.82)" />
-                                <circle cx="{{breastGeometry.nippleHighlightXRight}}" cy="{{breastGeometry.nippleHighlightY}}" r="0.95" fill="rgba(255,248,252,0.82)" />
+                                <!-- 3D Areola Disks + Sculpted Nipple Domes (click triggers letdown + Womb oxytocin reflex) -->
+                                <g data-pt-action="pulse-breast" data-pt-tip="{{physiology.nippleTip}}">
+                                    <circle class="pt-areola {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.areolaR}}" fill="url(#pt-areola-grad-{{@index}})" />
+                                    <circle class="pt-areola {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.areolaR}}" fill="url(#pt-areola-grad-{{@index}})" />
+                                    <ellipse cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.nippleShadowY}}" rx="{{breastGeometry.nippleR}}" ry="1.8" fill="rgba(22,4,14,0.48)" />
+                                    <ellipse cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.nippleShadowY}}" rx="{{breastGeometry.nippleR}}" ry="1.8" fill="rgba(22,4,14,0.48)" />
+                                    <circle class="pt-nipple {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.nippleR}}" fill="url(#pt-nipple-grad-{{@index}})" />
+                                    <circle class="pt-nipple {{#if (gt stats.nipple_sensitivity_pct 60)}}engorged{{/if}}" cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.areolaY}}" r="{{breastGeometry.nippleR}}" fill="url(#pt-nipple-grad-{{@index}})" />
+                                    <circle cx="{{breastGeometry.nippleHighlightXLeft}}" cy="{{breastGeometry.nippleHighlightY}}" r="0.95" fill="rgba(255,248,252,0.82)" />
+                                    <circle cx="{{breastGeometry.nippleHighlightXRight}}" cy="{{breastGeometry.nippleHighlightY}}" r="0.95" fill="rgba(255,248,252,0.82)" />
+                                </g>
+                                <!-- Haptic ripple rings on nipple stimulation / oxytocin coupling -->
+                                <circle class="pt-haptic-ring pt-haptic-ring-breast pt-haptic-ring-oxytocin" cx="{{breastGeometry.apexXLeft}}" cy="{{breastGeometry.areolaY}}" r="7" />
+                                <circle class="pt-haptic-ring pt-haptic-ring-breast pt-haptic-ring-oxytocin" cx="{{breastGeometry.apexXRight}}" cy="{{breastGeometry.areolaY}}" r="7" />
 
                                 {{#if (and stats.lactating (gt stats.breast_fullness_pct 15))}}
                                 <!-- Animated Glistening Milk Droplets when actively lactating -->
@@ -5144,8 +6007,9 @@ var pulse_thread_tracker_default = {
 
                 {{#if (hasFertilityTracking stats)}}
                 <!-- WOMB, OVARIES, CERVIX & VAGINAL CANAL -->
-                <div class="pt-bio-zone pt-zone-womb">
-                        <div class="pt-womb-vessel" style="--cycle-accent: {{#if (eq (cycleStage stats) "ovulation")}}var(--cy-ovu){{else if (eq (cycleStage stats) "menstruation")}}var(--cy-men){{else if (eq (cycleStage stats) "follicular")}}var(--cy-fol){{else if (eq (cycleStage stats) "luteal")}}var(--cy-lut){{else}}var(--cy-preg){{/if}};">
+                <div class="pt-bio-zone pt-zone-womb {{#if physiology.isOvulating}}is-ovulating{{/if}} {{#if physiology.isFertileMucus}}is-fertile{{/if}} {{#if physiology.isVagPenetrated}}is-penetrated{{/if}} {{#if physiology.isCervixKissed}}is-cervix-kissed{{/if}} {{#if physiology.isWombBreached}}is-breaching{{/if}} {{#if physiology.evtWombFillSurge}}evt-fill-surge{{/if}} {{#if physiology.evtVagThrustIn}}evt-thrust-in{{/if}} {{#if physiology.evtConceivedNow}}evt-conceived-now{{/if}}">
+                        <div class="pt-part-hud" aria-hidden="true"></div>
+                        <div class="pt-womb-vessel" style="--cycle-accent: {{#if (eq (cycleStage stats) "ovulation")}}var(--cy-ovu){{else if (eq (cycleStage stats) "menstruation")}}var(--cy-men){{else if (eq (cycleStage stats) "follicular")}}var(--cy-fol){{else if (eq (cycleStage stats) "luteal")}}var(--cy-lut){{else}}var(--cy-preg){{/if}}; --delta-fill-y: {{physiology.wombFillDeltaY}}px; --delta-thrust-y: {{physiology.vagThrustDeltaY}}px;">
                             <svg class="pt-womb-svg" viewBox="-8 -4 116 172" aria-hidden="true" focusable="false">
                                 <defs>
                                     <clipPath id="pt-womb-clip-{{@index}}">
@@ -5258,103 +6122,139 @@ var pulse_thread_tracker_default = {
                                 <!-- Ovarian ligaments -->
                                 <path d="M 24 41 Q 17 39 12 34 M 76 41 Q 83 39 88 34" fill="none" stroke="rgba(220,140,175,0.28)" stroke-width="1.3" stroke-linecap="round" />
 
-                                <!-- Fallopian tubes: 3-pass tubular shading (dark wall, fleshy core, top wet specular) -->
-                                <path class="pt-womb-tube-wall" d="M 32 32 C 25 22 14 14 4 21 C -1 25 0 32 5 35" />
-                                <path class="pt-womb-tube-core" d="M 32 32 C 25 22 14 14 4 21 C -1 25 0 32 5 35" />
-                                <path class="pt-womb-tube-gloss" d="M 30 30 C 24 21 14 14.5 5.5 20" />
+                                <!-- Fallopian tubes: 3-pass tubular shading + animated ovum travel trail -->
+                                <g data-pt-action="pulse-ovary" data-pt-tip="{{physiology.ovaryTip}}">
+                                    <path class="pt-womb-tube-wall" d="M 32 32 C 25 22 14 14 4 21 C -1 25 0 32 5 35" />
+                                    <path class="pt-womb-tube-core" d="M 32 32 C 25 22 14 14 4 21 C -1 25 0 32 5 35" />
+                                    <path class="pt-womb-tube-gloss" d="M 30 30 C 24 21 14 14.5 5.5 20" />
+                                    <path class="pt-ovum-trail" d="M 5 35 C 0 32 -1 25 4 21 C 14 14 25 22 36 36" />
 
-                                <path class="pt-womb-tube-wall" d="M 68 32 C 75 22 86 14 96 21 C 101 25 100 32 95 35" />
-                                <path class="pt-womb-tube-core" d="M 68 32 C 75 22 86 14 96 21 C 101 25 100 32 95 35" />
-                                <path class="pt-womb-tube-gloss" d="M 70 30 C 76 21 86 14.5 94.5 20" />
+                                    <path class="pt-womb-tube-wall" d="M 68 32 C 75 22 86 14 96 21 C 101 25 100 32 95 35" />
+                                    <path class="pt-womb-tube-core" d="M 68 32 C 75 22 86 14 96 21 C 101 25 100 32 95 35" />
+                                    <path class="pt-womb-tube-gloss" d="M 70 30 C 76 21 86 14.5 94.5 20" />
+                                    <path class="pt-ovum-trail" style="animation-delay: 1.5s;" d="M 95 35 C 100 32 101 25 96 21 C 86 14 75 22 64 36" />
 
-                                <!-- Fimbriae fronds cradling each ovary -->
-                                <path class="pt-womb-fimbria" d="M 4 33 L 1 39 M 6 35 L 5 41 M 9 35 L 11 40 M 96 33 L 99 39 M 94 35 L 95 41 M 91 35 L 89 40" />
+                                    <!-- Fimbriae fronds cradling each ovary -->
+                                    <path class="pt-womb-fimbria" d="M 4 33 L 1 39 M 6 35 L 5 41 M 9 35 L 11 40 M 96 33 L 99 39 M 94 35 L 95 41 M 91 35 L 89 40" />
 
-                                <!-- Left Ovary (3D almond sphere + internal follicles + wet glint) -->
-                                <ellipse class="pt-womb-ovary-halo {{#if (isConceived stats)}}pulse{{/if}}" cx="9.5" cy="36" rx="7" ry="5" transform="rotate(-18 9.5 36)" />
-                                <g class="pt-womb-ovary {{#if (isConceived stats)}}pulse{{/if}}">
-                                    <ellipse cx="9.5" cy="36" rx="6.6" ry="4.7" transform="rotate(-18 9.5 36)" fill="url(#pt-ovary-grad-{{@index}})" />
-                                    <circle cx="8" cy="35.5" r="1.2" fill="rgba(255,245,250,0.48)" stroke="none" />
-                                    <circle cx="11.2" cy="37.2" r="0.95" fill="rgba(255,235,245,0.42)" stroke="none" />
-                                    <ellipse cx="7.4" cy="34.2" rx="2.1" ry="0.9" transform="rotate(-24 7.4 34.2)" fill="rgba(255,255,255,0.58)" stroke="none" />
+                                    <!-- Left Ovary -->
+                                    <ellipse class="pt-womb-ovary-halo {{#if (or (isConceived stats) physiology.isOvulating)}}pulse{{/if}}" cx="9.5" cy="36" rx="7" ry="5" transform="rotate(-18 9.5 36)" />
+                                    <g class="pt-womb-ovary {{#if (or (isConceived stats) physiology.isOvulating)}}pulse{{/if}}">
+                                        <ellipse cx="9.5" cy="36" rx="6.6" ry="4.7" transform="rotate(-18 9.5 36)" fill="url(#pt-ovary-grad-{{@index}})" />
+                                        <circle cx="8" cy="35.5" r="1.2" fill="rgba(255,245,250,0.48)" stroke="none" />
+                                        <circle cx="11.2" cy="37.2" r="0.95" fill="rgba(255,235,245,0.42)" stroke="none" />
+                                        <ellipse cx="7.4" cy="34.2" rx="2.1" ry="0.9" transform="rotate(-24 7.4 34.2)" fill="rgba(255,255,255,0.58)" stroke="none" />
+                                    </g>
+
+                                    <!-- Right Ovary -->
+                                    <ellipse class="pt-womb-ovary-halo {{#if (or (isConceived stats) physiology.isOvulating)}}pulse{{/if}}" cx="90.5" cy="36" rx="7" ry="5" transform="rotate(18 90.5 36)" />
+                                    <g class="pt-womb-ovary {{#if (or (isConceived stats) physiology.isOvulating)}}pulse{{/if}}">
+                                        <ellipse cx="90.5" cy="36" rx="6.6" ry="4.7" transform="rotate(18 90.5 36)" fill="url(#pt-ovary-grad-{{@index}})" />
+                                        <circle cx="91.8" cy="35.5" r="1.2" fill="rgba(255,245,250,0.48)" stroke="none" />
+                                        <circle cx="88.6" cy="37.2" r="0.95" fill="rgba(255,235,245,0.42)" stroke="none" />
+                                        <ellipse cx="89.2" cy="34.2" rx="2.1" ry="0.9" transform="rotate(12 89.2 34.2)" fill="rgba(255,255,255,0.58)" stroke="none" />
+                                    </g>
+                                </g>
+                                <circle class="pt-haptic-ring pt-haptic-ring-ovary" cx="9.5" cy="36" r="8" />
+                                <circle class="pt-haptic-ring pt-haptic-ring-ovary" cx="90.5" cy="36" r="8" />
+
+                                <!-- Thick 3D Myometrium outer shell & Endometrial Cavity -->
+                                <g data-pt-action="pulse-cervix" data-pt-tip="{{physiology.wombTip}}">
+                                    <path class="pt-womb-wall" fill="url(#pt-womb-wall-grad-{{@index}})"
+                                          d="M 50 18 C 66 18 78 30 78 46 C 78 60 70 70 61 80 C 57 84 55 88 54 92 L 46 92 C 45 88 43 84 39 80 C 30 70 22 60 22 46 C 22 30 34 18 50 18 Z" />
+                                    <path class="pt-womb-rim-highlight" d="M 27 42 C 27.5 30 36 22 48 21.5" />
+                                    <path d="M 73 46 C 72.5 56 67 65 60 73" fill="none" stroke="rgba(255,190,220,0.16)" stroke-width="1.2" stroke-linecap="round" />
+                                    <path class="pt-womb-inner" fill="url(#pt-womb-cav-{{@index}})"
+                                          d="M 50 24 C 62 24 72 34 72 46 C 72 57 66 66 58 74 C 54 78 52 83 50 88 C 48 83 46 78 42 74 C 34 66 28 57 28 46 C 28 34 38 24 50 24 Z" />
+                                    <path class="pt-womb-endometrium-bevel"
+                                          d="M 50 25.5 C 61 25.5 70.3 34.8 70.3 46 C 70.3 56.2 64.6 64.8 57 72.6" />
+                                    <path d="M 35 42 Q 50 47 65 42 M 34 54 Q 50 59 66 54 M 40 66 Q 50 70 60 66"
+                                          fill="none" stroke="rgba(255,175,210,0.10)" stroke-width="1" stroke-linecap="round" />
                                 </g>
 
-                                <!-- Right Ovary (3D almond sphere + internal follicles + wet glint) -->
-                                <ellipse class="pt-womb-ovary-halo {{#if (isConceived stats)}}pulse{{/if}}" cx="90.5" cy="36" rx="7" ry="5" transform="rotate(18 90.5 36)" />
-                                <g class="pt-womb-ovary {{#if (isConceived stats)}}pulse{{/if}}">
-                                    <ellipse cx="90.5" cy="36" rx="6.6" ry="4.7" transform="rotate(18 90.5 36)" fill="url(#pt-ovary-grad-{{@index}})" />
-                                    <circle cx="91.8" cy="35.5" r="1.2" fill="rgba(255,245,250,0.48)" stroke="none" />
-                                    <circle cx="88.6" cy="37.2" r="0.95" fill="rgba(255,235,245,0.42)" stroke="none" />
-                                    <ellipse cx="89.2" cy="34.2" rx="2.1" ry="0.9" transform="rotate(12 89.2 34.2)" fill="rgba(255,255,255,0.58)" stroke="none" />
+                                <!-- Thick 3D Vaginal Outer Wall, Cylindrical Lumen & Peristaltic Rugae (click triggers clench wave) -->
+                                <g data-pt-action="clench-vag" data-pt-tip="{{physiology.vagTip}}">
+                                    <path class="pt-vag-wall" fill="url(#pt-vag-wall-grad-{{@index}})"
+                                          d="M 38.5 94 C 33 111 31 126 33.2 139.5 C 35 149 39.5 154 44.2 156.5 C 47.8 158.4 52.2 158.4 55.8 156.5 C 60.5 154 65 149 66.8 139.5 C 69 126 67 111 61.5 94 Z" />
+                                    <path d="M 36.2 114 C 34.4 126 35.4 137 38.2 146" fill="none" stroke="rgba(255,220,235,0.22)" stroke-width="1.2" stroke-linecap="round" />
+                                    <path class="pt-vag-inner" fill="url(#pt-vag-tunnel-{{@index}})"
+                                          d="M 42 96 C 37 112 35 126 37 138 C 38.5 146 42 150 45 152.5 C 48 154.5 52 154.5 55 152.5 C 58 150 61.5 146 63 138 C 65 126 63 112 58 96 C 55.5 100 44.5 100 42 96 Z" />
+                                    <!-- Warm capillary flush inside canal during ovulation/arousal/penetration -->
+                                    <path class="pt-canal-flush" fill="rgba(255,105,155,0.26)"
+                                          d="M 42 96 C 37 112 35 126 37 138 C 38.5 146 42 150 45 152.5 C 48 154.5 52 154.5 55 152.5 C 58 150 61.5 146 63 138 C 65 126 63 112 58 96 C 55.5 100 44.5 100 42 96 Z" />
+
+                                    <!-- Staggered Peristaltic Vaginal Rugae Bands (5 -> 1 traveling wave) -->
+                                    <g class="pt-ruga-band pt-ruga-1">
+                                        <path class="pt-rugae-shadow" d="M 38.8 108 Q 50 113.5 61.2 108" />
+                                        <path class="pt-rugae-light" d="M 39.2 106.8 Q 50 112 60.8 106.8" />
+                                    </g>
+                                    <g class="pt-ruga-band pt-ruga-2">
+                                        <path class="pt-rugae-shadow" d="M 37 118 Q 50 124 63 118" />
+                                        <path class="pt-rugae-light" d="M 37.4 116.8 Q 50 122.6 62.6 116.8" />
+                                    </g>
+                                    <g class="pt-ruga-band pt-ruga-3">
+                                        <path class="pt-rugae-shadow" d="M 36.4 128 Q 50 134 63.6 128" />
+                                        <path class="pt-rugae-light" d="M 36.8 126.8 Q 50 132.6 63.2 126.8" />
+                                    </g>
+                                    <g class="pt-ruga-band pt-ruga-4">
+                                        <path class="pt-rugae-shadow" d="M 37.5 138 Q 50 143.5 62.5 138" />
+                                        <path class="pt-rugae-light" d="M 37.9 136.8 Q 50 142.2 62.1 136.8" />
+                                    </g>
+                                    <g class="pt-ruga-band pt-ruga-5">
+                                        <path class="pt-rugae-shadow" d="M 40.2 146.5 Q 50 150.5 59.8 146.5" />
+                                        <path class="pt-rugae-light" d="M 40.6 145.4 Q 50 149.2 59.4 145.4" />
+                                    </g>
+
+                                    <!-- Shimmering Fertile Cervical Mucus Strands (active during ovulation / high receptivity) -->
+                                    <path class="pt-fertile-mucus" d="M 47.5 96 C 46 112 48.5 128 47.5 150" />
+                                    <path class="pt-fertile-mucus" style="animation-delay: 1.1s;" d="M 52.5 96 C 54 114 51.2 130 52.5 150" />
+
+                                    <!-- Deep Fornix Pockets -->
+                                    <path class="pt-fornix" d="M 37.5 96.5 Q 42 102.2 47.5 100.5 M 62.5 96.5 Q 58 102.2 52.5 100.5" />
+                                    <path class="pt-fornix-rim" d="M 38.2 95.5 Q 42 100.5 47 99.2 M 61.8 95.5 Q 58 100.5 53 99.2" />
+
+                                    <!-- Plush 3D Labial / Introitus Cushions (flex around shaft on penetration/clench) -->
+                                    <g class="pt-labia-left">
+                                        <path class="pt-labia-cushion" fill="url(#pt-labia-grad-{{@index}})"
+                                              d="M 41 151.5 C 37.5 154 38.5 158.8 44.5 159.4 C 47.2 159.6 49 158.2 49.4 156.2 C 46.8 155.8 43.8 154 41 151.5 Z" />
+                                        <path d="M 41 154.6 C 43 156.6 45.6 157.4 47.6 157.4" fill="none" stroke="rgba(255,235,244,0.34)" stroke-width="0.9" stroke-linecap="round" />
+                                    </g>
+                                    <g class="pt-labia-right">
+                                        <path class="pt-labia-cushion" fill="url(#pt-labia-grad-{{@index}})"
+                                              d="M 59 151.5 C 62.5 154 61.5 158.8 55.5 159.4 C 52.8 159.6 51 158.2 50.6 156.2 C 53.2 155.8 56.2 154 59 151.5 Z" />
+                                        <path d="M 59 154.6 C 57 156.6 54.4 157.4 52.4 157.4" fill="none" stroke="rgba(255,235,244,0.34)" stroke-width="0.9" stroke-linecap="round" />
+                                    </g>
                                 </g>
-
-                                <!-- Thick 3D Myometrium outer shell -->
-                                <path class="pt-womb-wall" fill="url(#pt-womb-wall-grad-{{@index}})"
-                                      d="M 50 18 C 66 18 78 30 78 46 C 78 60 70 70 61 80 C 57 84 55 88 54 92 L 46 92 C 45 88 43 84 39 80 C 30 70 22 60 22 46 C 22 30 34 18 50 18 Z" />
-                                <!-- Upper-left 3D dome specular rim on myometrium -->
-                                <path class="pt-womb-rim-highlight" d="M 27 42 C 27.5 30 36 22 48 21.5" />
-                                <path d="M 73 46 C 72.5 56 67 65 60 73" fill="none" stroke="rgba(255,190,220,0.16)" stroke-width="1.2" stroke-linecap="round" />
-
-                                <!-- Recessed Endometrial Cavity (3D dark velvet interior) -->
-                                <path class="pt-womb-inner" fill="url(#pt-womb-cav-{{@index}})"
-                                      d="M 50 24 C 62 24 72 34 72 46 C 72 57 66 66 58 74 C 54 78 52 83 50 88 C 48 83 46 78 42 74 C 34 66 28 57 28 46 C 28 34 38 24 50 24 Z" />
-                                <!-- Inner cutaway bevel & subtle endometrial ridges -->
-                                <path class="pt-womb-endometrium-bevel"
-                                      d="M 50 25.5 C 61 25.5 70.3 34.8 70.3 46 C 70.3 56.2 64.6 64.8 57 72.6" />
-                                <path d="M 35 42 Q 50 47 65 42 M 34 54 Q 50 59 66 54 M 40 66 Q 50 70 60 66"
-                                      fill="none" stroke="rgba(255,175,210,0.10)" stroke-width="1" stroke-linecap="round" />
-
-                                <!-- Thick 3D Vaginal Outer Wall -->
-                                <path class="pt-vag-wall" fill="url(#pt-vag-wall-grad-{{@index}})"
-                                      d="M 38.5 94 C 33 111 31 126 33.2 139.5 C 35 149 39.5 154 44.2 156.5 C 47.8 158.4 52.2 158.4 55.8 156.5 C 60.5 154 65 149 66.8 139.5 C 69 126 67 111 61.5 94 Z" />
-                                <path d="M 36.2 114 C 34.4 126 35.4 137 38.2 146" fill="none" stroke="rgba(255,220,235,0.22)" stroke-width="1.2" stroke-linecap="round" />
-
-                                <!-- Recessed 3D Cylindrical Vaginal Lumen -->
-                                <path class="pt-vag-inner" fill="url(#pt-vag-tunnel-{{@index}})"
-                                      d="M 42 96 C 37 112 35 126 37 138 C 38.5 146 42 150 45 152.5 C 48 154.5 52 154.5 55 152.5 C 58 150 61.5 146 63 138 C 65 126 63 112 58 96 C 55.5 100 44.5 100 42 96 Z" />
-
-                                <!-- Sculpted 3D Vaginal Rugae (paired shadow groove + wet highlight crest) -->
-                                <path class="pt-rugae-shadow" d="M 38.8 108 Q 50 113.5 61.2 108 M 37 118 Q 50 124 63 118 M 36.4 128 Q 50 134 63.6 128 M 37.5 138 Q 50 143.5 62.5 138 M 40.2 146.5 Q 50 150.5 59.8 146.5" />
-                                <path class="pt-rugae-light" d="M 39.2 106.8 Q 50 112 60.8 106.8 M 37.4 116.8 Q 50 122.6 62.6 116.8 M 36.8 126.8 Q 50 132.6 63.2 126.8 M 37.9 136.8 Q 50 142.2 62.1 136.8 M 40.6 145.4 Q 50 149.2 59.4 145.4" />
-
-                                <!-- Deep Fornix Pockets -->
-                                <path class="pt-fornix" d="M 37.5 96.5 Q 42 102.2 47.5 100.5 M 62.5 96.5 Q 58 102.2 52.5 100.5" />
-                                <path class="pt-fornix-rim" d="M 38.2 95.5 Q 42 100.5 47 99.2 M 61.8 95.5 Q 58 100.5 53 99.2" />
-
-                                <!-- Plush 3D Labial / Introitus Cushions -->
-                                <path class="pt-labia-cushion" fill="url(#pt-labia-grad-{{@index}})"
-                                      d="M 41 151.5 C 37.5 154 38.5 158.8 44.5 159.4 C 47.2 159.6 49 158.2 49.4 156.2 C 46.8 155.8 43.8 154 41 151.5 Z" />
-                                <path class="pt-labia-cushion" fill="url(#pt-labia-grad-{{@index}})"
-                                      d="M 59 151.5 C 62.5 154 61.5 158.8 55.5 159.4 C 52.8 159.6 51 158.2 50.6 156.2 C 53.2 155.8 56.2 154 59 151.5 Z" />
-                                <path d="M 41 154.6 C 43 156.6 45.6 157.4 47.6 157.4 M 59 154.6 C 57 156.6 54.4 157.4 52.4 157.4"
-                                      fill="none" stroke="rgba(255,235,244,0.34)" stroke-width="0.9" stroke-linecap="round" />
 
                                 {{#if (and (eq (cervixState stats) "split") (gt stats.womb_fullness_pct 0))}}
                                 <!-- Split cervix: creamy leak pooling & rivulets down the canal -->
-                                <g clip-path="url(#pt-vag-clip-{{@index}})">
+                                <g clip-path="url(#pt-vag-clip-{{@index}})" pointer-events="none">
                                     <rect class="pt-canal-leak" fill="url(#pt-leak-grad-{{@index}})" x="0" y="{{subtract 152 (divide (multiply (clampPercent stats.womb_fullness_pct) 52) 100)}}" width="100" height="62" />
                                     <path d="M 46 98 C 45 112 48 122 46 136 M 53 99 C 54 115 51 128 53 144"
                                           fill="none" stroke="rgba(255,255,255,0.52)" stroke-width="1.6" stroke-linecap="round" />
                                     <ellipse cx="50" cy="{{subtract 152 (divide (multiply (clampPercent stats.womb_fullness_pct) 52) 100)}}" rx="15" ry="2.6" fill="rgba(255,255,255,0.82)" />
                                 </g>
                                 <!-- Animated glistening pearl teardrop -->
-                                <g class="pt-canal-drip">
+                                <g class="pt-canal-drip" pointer-events="none">
                                     <path d="M 50 156 C 50 156 52.4 160 52.4 161.6 C 52.4 163 51.3 164 50 164 C 48.7 164 47.6 163 47.6 161.6 C 47.6 160 50 156 50 156 Z" fill="rgba(255,255,255,0.94)" />
                                     <circle cx="49.2" cy="161" r="0.65" fill="#ffffff" />
                                 </g>
                                 {{/if}}
 
-                                <!-- Pearlescent 3D Womb Fluid + Meniscus + Micro-bubbles -->
-                                <g clip-path="url(#pt-womb-clip-{{@index}})">
-                                    <rect class="pt-womb-liquid" fill="url(#pt-womb-semen-grad-{{@index}})" x="0" y="{{wombFillTop stats.womb_fullness_pct}}" width="100" height="{{wombFillHeight stats.womb_fullness_pct}}" />
-                                    {{#if (gt stats.womb_fullness_pct 0)}}
-                                    <!-- 3D liquid meniscus ellipse + specular rim + pearl bubbles -->
-                                    <ellipse class="pt-meniscus-top" cx="50" cy="{{wombFillTop stats.womb_fullness_pct}}" rx="24" ry="3.2" />
-                                    <path class="pt-meniscus-glint" d="M 36 {{subtract (wombFillTop stats.womb_fullness_pct) 0.4}} Q 46 {{add (wombFillTop stats.womb_fullness_pct) 1.5}} 56 {{subtract (wombFillTop stats.womb_fullness_pct) 0.2}}" />
-                                    <circle cx="43" cy="{{add (wombFillTop stats.womb_fullness_pct) 7}}" r="1.2" fill="rgba(255,255,255,0.62)" />
-                                    <circle cx="56" cy="{{add (wombFillTop stats.womb_fullness_pct) 11}}" r="0.9" fill="rgba(255,255,255,0.52)" />
-                                    <circle cx="49" cy="{{add (wombFillTop stats.womb_fullness_pct) 15}}" r="1.4" fill="rgba(255,255,255,0.45)" />
-                                    {{/if}}
+                                <!-- Pearlescent 3D Womb Fluid + Turn-Delta Rise + Sloshing Meniscus + Floating Bubbles -->
+                                <g clip-path="url(#pt-womb-clip-{{@index}})" pointer-events="none">
+                                    <g class="pt-fluid-surge-group">
+                                        <rect class="pt-womb-liquid" fill="url(#pt-womb-semen-grad-{{@index}})" x="0" y="{{wombFillTop stats.womb_fullness_pct}}" width="100" height="{{wombFillHeight stats.womb_fullness_pct}}" />
+                                        {{#if (gt stats.womb_fullness_pct 0)}}
+                                        <g class="pt-meniscus-slosh">
+                                            <ellipse class="pt-meniscus-top" cx="50" cy="{{wombFillTop stats.womb_fullness_pct}}" rx="24" ry="3.2" />
+                                            <path class="pt-meniscus-glint" d="M 36 {{subtract (wombFillTop stats.womb_fullness_pct) 0.4}} Q 46 {{add (wombFillTop stats.womb_fullness_pct) 1.5}} 56 {{subtract (wombFillTop stats.womb_fullness_pct) 0.2}}" />
+                                        </g>
+                                        <circle class="pt-fluid-bubble" cx="43" cy="{{add (wombFillTop stats.womb_fullness_pct) 7}}" r="1.2" fill="rgba(255,255,255,0.62)" />
+                                        <circle class="pt-fluid-bubble" style="animation-delay: 1.1s;" cx="56" cy="{{add (wombFillTop stats.womb_fullness_pct) 11}}" r="0.9" fill="rgba(255,255,255,0.52)" />
+                                        <circle class="pt-fluid-bubble" style="animation-delay: 2.2s;" cx="49" cy="{{add (wombFillTop stats.womb_fullness_pct) 15}}" r="1.4" fill="rgba(255,255,255,0.45)" />
+                                        {{/if}}
+                                    </g>
                                     <!-- Subtle inner cavity shadow along right edge so liquid looks cylindrical -->
                                     <rect x="61" y="22" width="14" height="70" fill="rgba(35,8,24,0.22)" />
                                     <rect x="28" y="22" width="6" height="70" fill="rgba(255,255,255,0.10)" />
@@ -5368,14 +6268,17 @@ var pulse_thread_tracker_default = {
                                 <ellipse cx="48.5" cy="52.4" rx="1.3" ry="0.8" transform="rotate(-25 48.5 52.4)" fill="rgba(255,255,255,0.85)" />
                                 {{/if}}
 
-                                <!-- 3D Cervical Torus Collar + Recessed Os Aperture -->
-                                <g class="pt-cervix {{cervixOsClass stats}}">
-                                    <!-- Cast shadow below cervix onto fornix -->
+                                <!-- X-Ray diagnostic axis & pelvic nerve telemetry lines -->
+                                <g class="pt-xray-layer">
+                                    <line x1="50" y1="18" x2="50" y2="156" stroke="rgba(126,232,255,0.34)" stroke-width="0.7" stroke-dasharray="2 3" />
+                                    <line x1="26" y1="90" x2="74" y2="90" stroke="rgba(126,232,255,0.42)" stroke-width="0.7" stroke-dasharray="2 2" />
+                                </g>
+
+                                <!-- 3D Cervical Torus Collar + Recessed Os Aperture (click triggers spasm + Breast oxytocin reflex) -->
+                                <g class="pt-cervix {{cervixOsClass stats}}" data-pt-action="pulse-cervix" data-pt-tip="{{physiology.cervixTip}}">
                                     <ellipse cx="50" cy="94" rx="12" ry="5.5" fill="rgba(10,2,8,0.55)" />
                                     <ellipse class="pt-cervix-collar" cx="50" cy="90" rx="12.2" ry="8.2" fill="url(#pt-cervix-grad-{{@index}})" />
-                                    <!-- Upper specular crescent on torus lip -->
                                     <path d="M 41 86.2 Q 50 82.6 59 86.2" fill="none" stroke="rgba(255,238,246,0.48)" stroke-width="1.35" stroke-linecap="round" />
-                                    <!-- Recessed os funnel + dark interior -->
                                     <circle class="pt-cervix-os" cx="50" cy="90.2" r="{{cervixOsR stats}}" />
                                     {{#if (eq (cervixState stats) "split")}}
                                     <path class="pt-cervix-tear" d="M 40.5 86 L 44.2 89.8 L 40 92.2 L 43.8 95.4 M 59.5 86 L 55.8 89.8 L 60 92.2 L 56.2 95.4" />
@@ -5383,46 +6286,47 @@ var pulse_thread_tracker_default = {
                                 </g>
 
                                 {{#if (gt stats.vag_depth_pct 0)}}
-                                <!-- Sculpted 3D Penetrating Phallus (translated to vagShaftTopY, clipped at canal floor) -->
-                                <g clip-path="url(#pt-vag-shaft-clip-{{@index}})">
+                                <!-- Sculpted 3D Penetrating Phallus (turn-delta thrust-in + subtle micro-bob) -->
+                                <g clip-path="url(#pt-vag-shaft-clip-{{@index}})" data-pt-action="clench-vag" data-pt-tip="{{physiology.vagTip}}">
                                     <g transform="translate(0, {{vagShaftTopY stats}})">
-                                        <!-- Soft drop shadow cast onto rear vaginal wall -->
-                                        <path d="M 52 10 C 60 11 60.5 22 59.5 148 L 44 148 C 43 22 44 11 52 10 Z" fill="rgba(8,1,6,0.42)" />
-                                        <!-- Cylindrical 3D Shaft -->
-                                        <path class="pt-shaft-body" fill="url(#pt-shaft-skin-{{@index}})"
-                                              d="M 43.2 13 C 42.4 36 42.2 76 42.6 150 L 57.4 150 C 57.8 76 57.6 36 56.8 13 Z" />
-                                        <!-- Wet specular strip along upper-left shaft cylinder -->
-                                        <path d="M 46.2 16 L 45.8 145" fill="none" stroke="rgba(255,244,236,0.42)" stroke-width="2.1" stroke-linecap="round" />
-                                        <!-- Subtle dorsal vein relief -->
-                                        <path class="pt-shaft-vein" d="M 52.8 19 C 54.6 34 51.2 49 53.5 67 C 55 82 51.8 98 53.6 122" />
-                                        <path class="pt-shaft-vein-gloss" d="M 52.2 19 C 54 34 50.6 49 52.9 67 C 54.4 82 51.2 98 53 122" />
-                                        <!-- Coronal Sulcus undercut shadow -->
-                                        <path class="pt-shaft-sulcus" d="M 42.4 13.6 Q 50 17.8 57.6 13.6" />
-                                        <!-- Flared Coronal Ridge -->
-                                        <path fill="url(#pt-corona-skin-{{@index}})" stroke="rgba(90,26,38,0.48)" stroke-width="0.6"
-                                              d="M 41.2 11.4 C 41.2 14.8 45.2 16.4 50 16.4 C 54.8 16.4 58.8 14.8 58.8 11.4 C 58.8 9.2 55 8.2 50 8.2 C 45 8.2 41.2 9.2 41.2 11.4 Z" />
-                                        <!-- Sculpted Domed 3D Glans -->
-                                        <path class="pt-shaft-glans" fill="url(#pt-glans-skin-{{@index}})"
-                                              d="M 50 0 C 55.6 0 58.8 5.2 58.4 11.2 C 58.1 13.8 54.6 15.2 50 15.2 C 45.4 15.2 41.9 13.8 41.6 11.2 C 41.2 5.2 44.4 0 50 0 Z" />
-                                        <!-- Glossy wet dome highlight & coronal rim shine -->
-                                        <path d="M 44.8 4.4 C 45.8 2.2 48.2 1.6 49.4 2.4 C 47.4 4.2 46.2 7.2 45.6 10.2 C 44.2 9.4 44.1 6.4 44.8 4.4 Z" fill="rgba(255,248,250,0.58)" />
-                                        <path d="M 43.2 12.2 Q 49.5 14.5 55.6 12.4" fill="none" stroke="rgba(255,235,240,0.45)" stroke-width="0.85" stroke-linecap="round" />
-                                        <!-- Recessed urethral meatus -->
-                                        <path class="pt-shaft-meatus" d="M 50 1.4 L 50 4.3" />
+                                        <g class="pt-vag-shaft-motion">
+                                            <path d="M 52 10 C 60 11 60.5 22 59.5 148 L 44 148 C 43 22 44 11 52 10 Z" fill="rgba(8,1,6,0.42)" />
+                                            <path class="pt-shaft-body" fill="url(#pt-shaft-skin-{{@index}})"
+                                                  d="M 43.2 13 C 42.4 36 42.2 76 42.6 150 L 57.4 150 C 57.8 76 57.6 36 56.8 13 Z" />
+                                            <path d="M 46.2 16 L 45.8 145" fill="none" stroke="rgba(255,244,236,0.42)" stroke-width="2.1" stroke-linecap="round" />
+                                            <path class="pt-shaft-vein" d="M 52.8 19 C 54.6 34 51.2 49 53.5 67 C 55 82 51.8 98 53.6 122" />
+                                            <path class="pt-shaft-vein-gloss" d="M 52.2 19 C 54 34 50.6 49 52.9 67 C 54.4 82 51.2 98 53 122" />
+                                            <path class="pt-shaft-sulcus" d="M 42.4 13.6 Q 50 17.8 57.6 13.6" />
+                                            <path fill="url(#pt-corona-skin-{{@index}})" stroke="rgba(90,26,38,0.48)" stroke-width="0.6"
+                                                  d="M 41.2 11.4 C 41.2 14.8 45.2 16.4 50 16.4 C 54.8 16.4 58.8 14.8 58.8 11.4 C 58.8 9.2 55 8.2 50 8.2 C 45 8.2 41.2 9.2 41.2 11.4 Z" />
+                                            <path class="pt-shaft-glans" fill="url(#pt-glans-skin-{{@index}})"
+                                                  d="M 50 0 C 55.6 0 58.8 5.2 58.4 11.2 C 58.1 13.8 54.6 15.2 50 15.2 C 45.4 15.2 41.9 13.8 41.6 11.2 C 41.2 5.2 44.4 0 50 0 Z" />
+                                            <path d="M 44.8 4.4 C 45.8 2.2 48.2 1.6 49.4 2.4 C 47.4 4.2 46.2 7.2 45.6 10.2 C 44.2 9.4 44.1 6.4 44.8 4.4 Z" fill="rgba(255,248,250,0.58)" />
+                                            <path d="M 43.2 12.2 Q 49.5 14.5 55.6 12.4" fill="none" stroke="rgba(255,235,240,0.45)" stroke-width="0.85" stroke-linecap="round" />
+                                            <path class="pt-shaft-meatus" d="M 50 1.4 L 50 4.3" />
+                                        </g>
                                     </g>
                                 </g>
                                 {{#if (gt stats.vag_depth_pct 100)}}
                                 {{#if (gt stats.womb_fullness_pct 0)}}
                                 <!-- Translucent womb fluid sheen over glans tip during deep breach -->
-                                <g clip-path="url(#pt-womb-clip-{{@index}})">
-                                    <rect class="pt-womb-liquid" fill="url(#pt-womb-semen-grad-{{@index}})" opacity="0.34" x="0" y="{{wombFillTop stats.womb_fullness_pct}}" width="100" height="{{wombFillHeight stats.womb_fullness_pct}}" />
-                                    <ellipse class="pt-meniscus-top" cx="50" cy="{{wombFillTop stats.womb_fullness_pct}}" rx="24" ry="3.2" opacity="0.86" />
+                                <g clip-path="url(#pt-womb-clip-{{@index}})" pointer-events="none">
+                                    <g class="pt-fluid-surge-group">
+                                        <rect class="pt-womb-liquid" fill="url(#pt-womb-semen-grad-{{@index}})" opacity="0.34" x="0" y="{{wombFillTop stats.womb_fullness_pct}}" width="100" height="{{wombFillHeight stats.womb_fullness_pct}}" />
+                                        <g class="pt-meniscus-slosh">
+                                            <ellipse class="pt-meniscus-top" cx="50" cy="{{wombFillTop stats.womb_fullness_pct}}" rx="24" ry="3.2" opacity="0.86" />
+                                        </g>
+                                    </g>
                                 </g>
                                 {{/if}}
                                 <!-- Subtle stretched cervical lip rim overlapping shaft at deep womb breach -->
-                                <path d="M 40.5 92.4 Q 50 96.4 59.5 92.4" fill="none" stroke="rgba(255,175,204,0.68)" stroke-width="1.6" stroke-linecap="round" />
+                                <path d="M 40.5 92.4 Q 50 96.4 59.5 92.4" fill="none" stroke="rgba(255,175,204,0.68)" stroke-width="1.6" stroke-linecap="round" pointer-events="none" />
                                 {{/if}}
                                 {{/if}}
+
+                                <!-- Haptic Click / Reflex Ripple Rings -->
+                                <circle class="pt-haptic-ring pt-haptic-ring-cervix pt-haptic-ring-oxytocin" cx="50" cy="90" r="11" />
+                                <circle class="pt-haptic-ring pt-haptic-ring-canal" cx="50" cy="126" r="11" />
                             </svg>
                         </div>
                         <div class="pt-bio-panel">
@@ -5466,8 +6370,9 @@ var pulse_thread_tracker_default = {
 
                 {{#if (hasRefractoryTracking stats)}}
                 <!-- MALE: SCULPTED 3D PHALLUS, SCROTUM, TESTES & VAS DEFERENS -->
-                <div class="pt-bio-zone pt-zone-male">
-                        <div class="pt-male-visuals {{#if (eq stats.sex "futanari")}}pt-futa-accent{{/if}}">
+                <div class="pt-bio-zone pt-zone-male {{#if physiology.isMaleLoaded}}is-loaded{{/if}} {{#if physiology.isMaleRecovering}}is-recovering{{/if}} {{#if physiology.isHighArousal}}is-aroused{{/if}} {{#if physiology.evtEjaculated}}evt-ejaculated{{/if}}">
+                        <div class="pt-part-hud" aria-hidden="true"></div>
+                        <div class="pt-male-visuals {{#if (eq stats.sex "futanari")}}pt-futa-accent{{/if}}" style="--delta-semen-y: {{physiology.semenDeltaY}}px;">
                             <div class="pt-penis-container">
                                 <svg class="pt-penis-svg" viewBox="-4 -4 108 148" aria-hidden="true" focusable="false">
                                     <defs>
@@ -5527,78 +6432,71 @@ var pulse_thread_tracker_default = {
                                     <ellipse cx="50" cy="137" rx="34" ry="4.5" fill="rgba(0,0,0,0.48)" />
 
                                     <!-- Sculpted Bilobed Scrotal Sac -->
-                                    <path class="pt-scrotum-sac" fill="url(#pt-scrotum-grad-{{@index}})"
-                                          d="M 34 78 C 20 82 10 96 12 113 C 14 128 24 136 37 135 C 44 134.5 48 130.5 50 127.5 C 52 130.5 56 134.5 63 135 C 76 136 86 128 88 113 C 90 96 80 82 66 78 Z" />
-                                    <!-- Median raphe crease & soft lateral rim glints -->
-                                    <path d="M 50 86 C 49.6 102 50.4 114 50 127" fill="none" stroke="rgba(16,4,12,0.45)" stroke-width="1.6" stroke-linecap="round" />
-                                    <path d="M 16.5 103 C 15.5 113 18.5 123 25 129" fill="none" stroke="rgba(255,235,244,0.22)" stroke-width="1.3" stroke-linecap="round" />
+                                    <!-- Sculpted Bilobed Scrotal Sac, Vas Deferens & Testes (interactive) -->
+                                    <g data-pt-action="pulse-male" data-pt-tip="{{physiology.testesTip}}">
+                                        <path class="pt-scrotum-sac" fill="url(#pt-scrotum-grad-{{@index}})"
+                                              d="M 34 78 C 20 82 10 96 12 113 C 14 128 24 136 37 135 C 44 134.5 48 130.5 50 127.5 C 52 130.5 56 134.5 63 135 C 76 136 86 128 88 113 C 90 96 80 82 66 78 Z" />
+                                        <path d="M 50 86 C 49.6 102 50.4 114 50 127" fill="none" stroke="rgba(16,4,12,0.45)" stroke-width="1.6" stroke-linecap="round" />
+                                        <path d="M 16.5 103 C 15.5 113 18.5 123 25 129" fill="none" stroke="rgba(255,235,244,0.22)" stroke-width="1.3" stroke-linecap="round" />
 
-                                    <!-- Vas Deferens ascending ducts -->
-                                    <path class="pt-vas-deferens" d="M 27 89 C 30 78 39 74 44 64 M 73 89 C 70 78 61 74 56 64" />
+                                        <!-- Vas Deferens ascending ducts + animated impulse trail -->
+                                        <path class="pt-vas-deferens" d="M 27 89 C 30 78 39 74 44 64 M 73 89 C 70 78 61 74 56 64" />
+                                        <path class="pt-vas-pulse" d="M 27 89 C 30 78 39 74 44 64 M 73 89 C 70 78 61 74 56 64" />
 
-                                    <!-- Paired Anatomical Testes (translucent cutaway chambers) -->
-                                    <ellipse cx="32" cy="108" rx="16.5" ry="20" transform="rotate(9 32 108)" fill="url(#pt-testicle-cav-{{@index}})" />
-                                    <ellipse cx="68" cy="108" rx="16.5" ry="20" transform="rotate(-9 68 108)" fill="url(#pt-testicle-cav-{{@index}})" />
+                                        <!-- Paired Anatomical Testes (translucent cutaway chambers) -->
+                                        <ellipse cx="32" cy="108" rx="16.5" ry="20" transform="rotate(9 32 108)" fill="url(#pt-testicle-cav-{{@index}})" />
+                                        <ellipse cx="68" cy="108" rx="16.5" ry="20" transform="rotate(-9 68 108)" fill="url(#pt-testicle-cav-{{@index}})" />
+                                        <path class="pt-epididymis" d="M 20 100 C 21 90 28 85 36 87 M 80 100 C 79 90 72 85 64 87" />
 
-                                    <!-- Epididymis caps hugging upper lateral poles -->
-                                    <path class="pt-epididymis" d="M 20 100 C 21 90 28 85 36 87 M 80 100 C 79 90 72 85 64 87" />
+                                        <!-- Clipped 3D Pearlescent Semen Reservoir + Dual Meniscus -->
+                                        <g clip-path="url(#pt-penis-clip-{{@index}})" pointer-events="none">
+                                            <rect class="pt-semen-fill" fill="url(#pt-semen-grad-{{@index}})" x="0" y="{{semenFillTop (semenPercent stats)}}" width="100" height="{{semenFillHeight (semenPercent stats)}}" />
+                                            {{#if (gt (semenPercent stats) 0)}}
+                                            <ellipse class="pt-meniscus-top" cx="32" cy="{{semenFillTop (semenPercent stats)}}" rx="17" ry="2.8" />
+                                            <ellipse class="pt-meniscus-top" cx="68" cy="{{semenFillTop (semenPercent stats)}}" rx="17" ry="2.8" />
+                                            <path class="pt-meniscus-glint" d="M 22 {{subtract (semenFillTop (semenPercent stats)) 0.3}} Q 31 {{add (semenFillTop (semenPercent stats)) 1.2}} 40 {{subtract (semenFillTop (semenPercent stats)) 0.2}}" />
+                                            <path class="pt-meniscus-glint" d="M 58 {{subtract (semenFillTop (semenPercent stats)) 0.3}} Q 67 {{add (semenFillTop (semenPercent stats)) 1.2}} 76 {{subtract (semenFillTop (semenPercent stats)) 0.2}}" />
+                                            <circle class="pt-fluid-bubble" cx="29" cy="{{add (semenFillTop (semenPercent stats)) 7}}" r="1.1" fill="rgba(255,255,255,0.62)" />
+                                            <circle class="pt-fluid-bubble" style="animation-delay: 1.4s;" cx="71" cy="{{add (semenFillTop (semenPercent stats)) 8}}" r="1.0" fill="rgba(255,255,255,0.58)" />
+                                            {{/if}}
+                                            <rect x="40" y="84" width="10" height="48" fill="rgba(20,6,18,0.22)" />
+                                            <rect x="77" y="84" width="10" height="48" fill="rgba(20,6,18,0.24)" />
+                                        </g>
 
-                                    <!-- Clipped 3D Pearlescent Semen Reservoir + Dual Meniscus -->
-                                    <g clip-path="url(#pt-penis-clip-{{@index}})">
-                                        <rect class="pt-semen-fill" fill="url(#pt-semen-grad-{{@index}})" x="0" y="{{semenFillTop (semenPercent stats)}}" width="100" height="{{semenFillHeight (semenPercent stats)}}" />
-                                        {{#if (gt (semenPercent stats) 0)}}
-                                        <ellipse class="pt-meniscus-top" cx="32" cy="{{semenFillTop (semenPercent stats)}}" rx="17" ry="2.8" />
-                                        <ellipse class="pt-meniscus-top" cx="68" cy="{{semenFillTop (semenPercent stats)}}" rx="17" ry="2.8" />
-                                        <path class="pt-meniscus-glint" d="M 22 {{subtract (semenFillTop (semenPercent stats)) 0.3}} Q 31 {{add (semenFillTop (semenPercent stats)) 1.2}} 40 {{subtract (semenFillTop (semenPercent stats)) 0.2}}" />
-                                        <path class="pt-meniscus-glint" d="M 58 {{subtract (semenFillTop (semenPercent stats)) 0.3}} Q 67 {{add (semenFillTop (semenPercent stats)) 1.2}} 76 {{subtract (semenFillTop (semenPercent stats)) 0.2}}" />
-                                        <circle cx="29" cy="{{add (semenFillTop (semenPercent stats)) 7}}" r="1.1" fill="rgba(255,255,255,0.62)" />
-                                        <circle cx="71" cy="{{add (semenFillTop (semenPercent stats)) 8}}" r="1.0" fill="rgba(255,255,255,0.58)" />
-                                        {{/if}}
-                                        <!-- Cylindrical side shadows inside chambers -->
-                                        <rect x="40" y="84" width="10" height="48" fill="rgba(20,6,18,0.22)" />
-                                        <rect x="77" y="84" width="10" height="48" fill="rgba(20,6,18,0.24)" />
+                                        <ellipse class="pt-testicle-wall" cx="32" cy="108" rx="16.5" ry="20" transform="rotate(9 32 108)" fill="none" />
+                                        <ellipse class="pt-testicle-wall" cx="68" cy="108" rx="16.5" ry="20" transform="rotate(-9 68 108)" fill="none" />
+                                        <path d="M 23.5 96 C 21.5 102 21.5 109 23.8 115" fill="none" stroke="rgba(255,255,255,0.34)" stroke-width="1.6" stroke-linecap="round" />
+                                        <path d="M 59.5 96 C 57.8 102 58 109 60.2 115" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1.5" stroke-linecap="round" />
                                     </g>
-
-                                    <!-- Testicle glass-like rims + curved specular highlights -->
-                                    <ellipse class="pt-testicle-wall" cx="32" cy="108" rx="16.5" ry="20" transform="rotate(9 32 108)" fill="none" />
-                                    <ellipse class="pt-testicle-wall" cx="68" cy="108" rx="16.5" ry="20" transform="rotate(-9 68 108)" fill="none" />
-                                    <path d="M 23.5 96 C 21.5 102 21.5 109 23.8 115" fill="none" stroke="rgba(255,255,255,0.34)" stroke-width="1.6" stroke-linecap="round" />
-                                    <path d="M 59.5 96 C 57.8 102 58 109 60.2 115" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1.5" stroke-linecap="round" />
 
                                     <!-- Cast shadow of shaft base onto upper scrotum -->
                                     <ellipse cx="50" cy="84" rx="16" ry="5.5" fill="rgba(12,3,10,0.46)" />
 
-                                    <!-- Erect 3D Cylindrical Shaft -->
-                                    <path class="pt-penis-shaft-body" fill="url(#pt-male-shaft-grad-{{@index}})"
-                                          d="M 35.8 84 C 34.8 66 34.5 46 36.2 28 L 63.8 28 C 65.5 46 65.2 66 64.2 84 C 60 88.5 40 88.5 35.8 84 Z" />
-                                    <!-- Internal faint translucent urethral core -->
-                                    <path class="pt-penis-urethra" d="M 50 18 L 50 82" />
-                                    <!-- Wet specular highlight strip & dorsal vein along shaft -->
-                                    <path d="M 41.2 31 C 40.4 49 40.6 66 41.4 81" fill="none" stroke="rgba(255,244,238,0.40)" stroke-width="2.6" stroke-linecap="round" />
-                                    <path class="pt-shaft-vein" d="M 55.2 33 C 58 45 52.8 58 56.2 71 C 57.4 76 55.2 81 53.5 84" />
-                                    <path class="pt-shaft-vein-gloss" d="M 54.5 33 C 57.3 45 52.1 58 55.5 71" />
+                                    <!-- Erect 3D Shaft & Glans (arousal breathe, ejaculation/prostate-coupled twitch) -->
+                                    <g class="pt-male-shaft-group" data-pt-action="pulse-male" data-pt-tip="{{physiology.maleTip}}">
+                                        <path class="pt-penis-shaft-body" fill="url(#pt-male-shaft-grad-{{@index}})"
+                                              d="M 35.8 84 C 34.8 66 34.5 46 36.2 28 L 63.8 28 C 65.5 46 65.2 66 64.2 84 C 60 88.5 40 88.5 35.8 84 Z" />
+                                        <path class="pt-penis-urethra" d="M 50 18 L 50 82" />
+                                        <path class="pt-vas-pulse" d="M 50 82 L 50 12" />
+                                        <path d="M 41.2 31 C 40.4 49 40.6 66 41.4 81" fill="none" stroke="rgba(255,244,238,0.40)" stroke-width="2.6" stroke-linecap="round" />
+                                        <path class="pt-shaft-vein" d="M 55.2 33 C 58 45 52.8 58 56.2 71 C 57.4 76 55.2 81 53.5 84" />
+                                        <path class="pt-shaft-vein-gloss" d="M 54.5 33 C 57.3 45 52.1 58 55.5 71" />
+                                        <path class="pt-shaft-sulcus" d="M 35.6 29.2 Q 50 36.2 64.4 29.2" />
+                                        <path fill="url(#pt-male-corona-grad-{{@index}})" stroke="rgba(85,24,38,0.45)" stroke-width="0.7"
+                                              d="M 33.4 25.4 C 33.4 30.8 40.5 33.6 50 33.6 C 59.5 33.6 66.6 30.8 66.6 25.4 C 66.6 21.8 59.5 20.4 50 20.4 C 40.5 20.4 33.4 21.8 33.4 25.4 Z" />
+                                        <path class="pt-penis-glans-body" fill="url(#pt-male-glans-grad-{{@index}})"
+                                              d="M 50 2.5 C 59.2 2.5 66.2 12 65.8 24.4 C 65.4 29.4 58.6 31.6 50 31.6 C 41.4 31.6 34.6 29.4 34.2 24.4 C 33.8 12 40.8 2.5 50 2.5 Z" />
+                                        <path d="M 40.5 11.4 C 42.4 7.2 46.2 5.4 48.6 6.8 C 45.2 10.2 43.2 15.8 42.4 21.4 C 39.8 20.2 39.2 14.8 40.5 11.4 Z" fill="rgba(255,248,252,0.56)" />
+                                        <path d="M 37.5 27.6 Q 50 31.2 61.5 27.6" fill="none" stroke="rgba(255,235,242,0.44)" stroke-width="1.15" stroke-linecap="round" />
+                                        <path class="pt-shaft-meatus" d="M 50 5.5 L 50 11" />
+                                        {{#if (gt (semenPercent stats) 55)}}
+                                        <circle class="pt-penis-precum" cx="50" cy="4.4" r="2.2" />
+                                        <circle cx="49.3" cy="3.8" r="0.7" fill="#ffffff" />
+                                        {{/if}}
+                                    </g>
 
-                                    <!-- Coronal Sulcus undercut shadow -->
-                                    <path class="pt-shaft-sulcus" d="M 35.6 29.2 Q 50 36.2 64.4 29.2" />
-
-                                    <!-- Flared 3D Coronal Ridge -->
-                                    <path fill="url(#pt-male-corona-grad-{{@index}})" stroke="rgba(85,24,38,0.45)" stroke-width="0.7"
-                                          d="M 33.4 25.4 C 33.4 30.8 40.5 33.6 50 33.6 C 59.5 33.6 66.6 30.8 66.6 25.4 C 66.6 21.8 59.5 20.4 50 20.4 C 40.5 20.4 33.4 21.8 33.4 25.4 Z" />
-
-                                    <!-- Sculpted Domed 3D Glans -->
-                                    <path class="pt-penis-glans-body" fill="url(#pt-male-glans-grad-{{@index}})"
-                                          d="M 50 2.5 C 59.2 2.5 66.2 12 65.8 24.4 C 65.4 29.4 58.6 31.6 50 31.6 C 41.4 31.6 34.6 29.4 34.2 24.4 C 33.8 12 40.8 2.5 50 2.5 Z" />
-                                    <!-- Glossy curved specular highlight on upper-left glans dome + coronal shine -->
-                                    <path d="M 40.5 11.4 C 42.4 7.2 46.2 5.4 48.6 6.8 C 45.2 10.2 43.2 15.8 42.4 21.4 C 39.8 20.2 39.2 14.8 40.5 11.4 Z" fill="rgba(255,248,252,0.56)" />
-                                    <path d="M 37.5 27.6 Q 50 31.2 61.5 27.6" fill="none" stroke="rgba(255,235,242,0.44)" stroke-width="1.15" stroke-linecap="round" />
-                                    <!-- Recessed Urethral Meatus -->
-                                    <path class="pt-shaft-meatus" d="M 50 5.5 L 50 11" />
-
-                                    {{#if (gt (semenPercent stats) 55)}}
-                                    <!-- Shimmering pre-cum pearl bead at meatus when loaded -->
-                                    <circle class="pt-penis-precum" cx="50" cy="4.4" r="2.2" />
-                                    <circle cx="49.3" cy="3.8" r="0.7" fill="#ffffff" />
-                                    {{/if}}
+                                    <!-- Haptic click / prostate-coupled twitch ring -->
+                                    <circle class="pt-haptic-ring pt-haptic-ring-male" cx="50" cy="22" r="14" />
                                 </svg>
                             </div>
                             <div class="pt-male-footer">
@@ -5643,8 +6541,9 @@ var pulse_thread_tracker_default = {
 
                     {{#if (hasAnalTracking stats)}}
                     <!-- ANAL CANAL, PROSTATE, SPHINCTER & LAYERED 3D PENETRATION -->
-                <div class="pt-bio-zone pt-zone-anal">
-                        <div class="pt-anal-vessel">
+                <div class="pt-bio-zone pt-zone-anal {{#if physiology.isAnalPenetrated}}is-penetrated{{/if}} {{#if physiology.isProstateHit}}is-prostate-hit{{/if}} {{#if physiology.evtAnalFillSurge}}evt-fill-surge{{/if}} {{#if physiology.evtAnalThrustIn}}evt-thrust-in{{/if}} {{#if physiology.evtProstateSpike}}evt-prostate-spike{{/if}}">
+                        <div class="pt-part-hud" aria-hidden="true"></div>
+                        <div class="pt-anal-vessel" style="--delta-fill-y: {{physiology.analFillDeltaY}}px; --delta-thrust-y: {{physiology.analThrustDeltaY}}px;">
                             <svg class="pt-anal-svg" viewBox="-4 0 108 136" aria-hidden="true" focusable="false">
                                 <defs>
                                     <clipPath id="pt-anal-clip-{{@index}}">
@@ -5722,89 +6621,107 @@ var pulse_thread_tracker_default = {
 
                                 {{#if (hasProstateTracking stats)}}
                                 <!-- Sculpted 3D Walnut Prostate (anterior wall) + Pleasure Nerve Waves -->
-                                {{#if (gt stats.prostate_stimulation_pct 50)}}
+                                {{#if (gt stats.prostate_stimulation_pct 45)}}
                                 <circle class="pt-prostate-wave" cx="20.5" cy="76" r="11" />
                                 <circle class="pt-prostate-wave" cx="20.5" cy="76" r="11" style="animation-delay: 0.9s;" />
                                 {{/if}}
-                                <g class="pt-prostate {{#if (gt stats.prostate_stimulation_pct 50)}}glow{{/if}}">
+                                <g class="pt-prostate {{#if (gt stats.prostate_stimulation_pct 45)}}glow{{/if}}" data-pt-action="pulse-prostate" data-pt-tip="{{physiology.prostateTip}}">
                                     <path fill="url(#pt-prostate-grad-{{@index}})"
                                           d="M 27 62 C 19 59 11.5 67.5 12.5 77.5 C 13.5 87.5 22 93.5 28.5 89.5 C 31.8 87.4 31.5 79.5 30 72 C 29.2 68 29 63 27 62 Z" />
-                                    <!-- Lobular crease & wet specular bead -->
                                     <path d="M 20.5 64 C 19 72 20 80 22 87" fill="none" stroke="rgba(90,10,45,0.42)" stroke-width="0.9" stroke-linecap="round" />
                                     <ellipse cx="17.2" cy="70.5" rx="2.6" ry="1.4" transform="rotate(-24 17.2 70.5)" fill="rgba(255,245,250,0.62)" stroke="none" />
                                 </g>
+                                <circle class="pt-haptic-ring pt-haptic-ring-prostate" cx="20.5" cy="76" r="10" />
                                 {{/if}}
 
-                                <!-- Thick 3D Rectal Outer Wall -->
-                                <path class="pt-anal-wall" fill="url(#pt-anal-wall-grad-{{@index}})"
-                                      d="M 36.5 12 C 27 28 19 50 23.2 81.5 C 25.8 98.5 38 109.5 43.5 111.5 C 47.5 113 52.5 113 56.5 111.5 C 62 109.5 74.2 98.5 76.8 81.5 C 81 50 73 28 63.5 12 C 56 17.5 44 17.5 36.5 12 Z" />
-                                <!-- Upper-left 3D outer rim highlight -->
-                                <path d="M 34 22 C 27 38 23.8 57 26.2 78" fill="none" stroke="rgba(255,225,255,0.34)" stroke-width="1.5" stroke-linecap="round" />
+                                <!-- Interactive Rectal Wall, Lumen, Peristaltic Folds & Sphincter Cushions -->
+                                <g data-pt-action="clench-anal" data-pt-tip="{{physiology.analTip}}">
+                                    <path class="pt-anal-wall" fill="url(#pt-anal-wall-grad-{{@index}})"
+                                          d="M 36.5 12 C 27 28 19 50 23.2 81.5 C 25.8 98.5 38 109.5 43.5 111.5 C 47.5 113 52.5 113 56.5 111.5 C 62 109.5 74.2 98.5 76.8 81.5 C 81 50 73 28 63.5 12 C 56 17.5 44 17.5 36.5 12 Z" />
+                                    <path d="M 34 22 C 27 38 23.8 57 26.2 78" fill="none" stroke="rgba(255,225,255,0.34)" stroke-width="1.5" stroke-linecap="round" />
+                                    <path class="pt-anal-inner" fill="url(#pt-anal-cav-{{@index}})"
+                                          d="M 40 15 C 32 30 24 50 28 80 C 30 95 42 105 45 106 C 48 107 52 107 55 106 C 58 105 70 95 72 80 C 76 50 68 30 60 15 C 55 20 45 20 40 15 Z" />
 
-                                <!-- Recessed 3D Cylindrical Rectal Lumen -->
-                                <path class="pt-anal-inner" fill="url(#pt-anal-cav-{{@index}})"
-                                      d="M 40 15 C 32 30 24 50 28 80 C 30 95 42 105 45 106 C 48 107 52 107 55 106 C 58 105 70 95 72 80 C 76 50 68 30 60 15 C 55 20 45 20 40 15 Z" />
+                                    <!-- Staggered Mucosal Folds (tightness-driven peristaltic squeeze) -->
+                                    <g class="pt-anal-fold pt-fold-1">
+                                        <path class="pt-rugae-shadow" d="M 33.5 34 Q 50 41.5 66.5 34" />
+                                        <path class="pt-rugae-light" d="M 34 32.8 Q 50 40 66 32.8" />
+                                    </g>
+                                    <g class="pt-anal-fold pt-fold-2">
+                                        <path class="pt-rugae-shadow" d="M 27.8 54 Q 50 63.5 72.2 54" />
+                                        <path class="pt-rugae-light" d="M 28.2 52.8 Q 50 62 71.8 52.8" />
+                                    </g>
+                                    <g class="pt-anal-fold pt-fold-3">
+                                        <path class="pt-rugae-shadow" d="M 28.8 75 Q 50 83 71.2 75" />
+                                        <path class="pt-rugae-light" d="M 29.2 73.8 Q 50 81.6 70.8 73.8" />
+                                    </g>
+                                    <g class="pt-anal-fold pt-fold-4">
+                                        <path class="pt-rugae-shadow" d="M 35 92 Q 50 97.5 65 92" />
+                                        <path class="pt-rugae-light" d="M 35.4 90.8 Q 50 96 64.6 90.8" />
+                                    </g>
 
-                                <!-- Sculpted 3D Mucosal Folds (paired shadow + specular ridge) -->
-                                <path class="pt-rugae-shadow" d="M 33.5 34 Q 50 41.5 66.5 34 M 27.8 54 Q 50 63.5 72.2 54 M 28.8 75 Q 50 83 71.2 75 M 35 92 Q 50 97.5 65 92" />
-                                <path class="pt-rugae-light" d="M 34 32.8 Q 50 40 66 32.8 M 28.2 52.8 Q 50 62 71.8 52.8 M 29.2 73.8 Q 50 81.6 70.8 73.8 M 35.4 90.8 Q 50 96 64.6 90.8" />
-
-                                <!-- Sculpted 3D Layered Anal Sphincter Ring Cushions -->
-                                <path class="pt-anal-sphincter-cushion" fill="url(#pt-sphincter-grad-{{@index}})"
-                                      d="M 36.5 104.5 C 33.5 108 35.5 115 43.2 115.6 C 46.5 115.8 49.2 114.2 49.6 111.4 C 46.2 110.8 40.5 108.5 36.5 104.5 Z" />
-                                <path class="pt-anal-sphincter-cushion" fill="url(#pt-sphincter-grad-{{@index}})"
-                                      d="M 63.5 104.5 C 66.5 108 64.5 115 56.8 115.6 C 53.5 115.8 50.8 114.2 50.4 111.4 C 53.8 110.8 59.5 108.5 63.5 104.5 Z" />
-                                <!-- Sphincter pucker creases & specular rim -->
-                                <path d="M 38.5 109.5 Q 44.5 113 48.2 112.5 M 61.5 109.5 Q 55.5 113 51.8 112.5"
-                                      fill="none" stroke="rgba(255,235,255,0.34)" stroke-width="1" stroke-linecap="round" />
+                                    <!-- Sculpted 3D Layered Anal Sphincter Ring Cushions -->
+                                    <g class="pt-sphincter-left">
+                                        <path class="pt-anal-sphincter-cushion" fill="url(#pt-sphincter-grad-{{@index}})"
+                                              d="M 36.5 104.5 C 33.5 108 35.5 115 43.2 115.6 C 46.5 115.8 49.2 114.2 49.6 111.4 C 46.2 110.8 40.5 108.5 36.5 104.5 Z" />
+                                        <path d="M 38.5 109.5 Q 44.5 113 48.2 112.5" fill="none" stroke="rgba(255,235,255,0.34)" stroke-width="1" stroke-linecap="round" />
+                                    </g>
+                                    <g class="pt-sphincter-right">
+                                        <path class="pt-anal-sphincter-cushion" fill="url(#pt-sphincter-grad-{{@index}})"
+                                              d="M 63.5 104.5 C 66.5 108 64.5 115 56.8 115.6 C 53.5 115.8 50.8 114.2 50.4 111.4 C 53.8 110.8 59.5 108.5 63.5 104.5 Z" />
+                                        <path d="M 61.5 109.5 Q 55.5 113 51.8 112.5" fill="none" stroke="rgba(255,235,255,0.34)" stroke-width="1" stroke-linecap="round" />
+                                    </g>
+                                </g>
 
                                 <!-- Base Pearlescent Semen Fill (behind penetrating shaft) -->
-                                <g clip-path="url(#pt-anal-clip-{{@index}})">
-                                    <rect class="pt-anal-liquid" fill="url(#pt-anal-semen-grad-{{@index}})" x="0" y="{{analFillTop stats.anal_fullness_pct}}" width="100" height="{{analFillHeight stats.anal_fullness_pct}}" />
+                                <g clip-path="url(#pt-anal-clip-{{@index}})" pointer-events="none">
+                                    <g class="pt-fluid-surge-group">
+                                        <rect class="pt-anal-liquid" fill="url(#pt-anal-semen-grad-{{@index}})" x="0" y="{{analFillTop stats.anal_fullness_pct}}" width="100" height="{{analFillHeight stats.anal_fullness_pct}}" />
+                                    </g>
                                     <rect x="62" y="15" width="16" height="94" fill="rgba(28,4,42,0.20)" />
                                     <rect x="24" y="15" width="7" height="94" fill="rgba(255,255,255,0.10)" />
                                 </g>
 
                                 {{#if (gt stats.anal_depth_pct 0)}}
-                                <!-- Sculpted 3D Penetrating Phallus (submerged naturally in fluid) -->
-                                <g clip-path="url(#pt-anal-shaft-clip-{{@index}})">
+                                <!-- Sculpted 3D Penetrating Phallus (turn-delta thrust-in + micro-bob) -->
+                                <g clip-path="url(#pt-anal-shaft-clip-{{@index}})" data-pt-action="clench-anal" data-pt-tip="{{physiology.analTip}}">
                                     <g transform="translate(0, {{analShaftTopY stats}})">
-                                        <!-- Cast shadow on rear canal wall -->
-                                        <path d="M 52 10 C 60.5 11 61 22 60 120 L 44 120 C 43 22 44 11 52 10 Z" fill="rgba(10,1,16,0.42)" />
-                                        <!-- Cylindrical 3D Shaft -->
-                                        <path class="pt-shaft-body" fill="url(#pt-anal-shaft-skin-{{@index}})"
-                                              d="M 42.8 13 C 42 34 42 74 42.4 122 L 57.6 122 C 58 74 58 34 57.2 13 Z" />
-                                        <!-- Wet specular strip & dorsal vein -->
-                                        <path d="M 45.8 16 L 45.5 118" fill="none" stroke="rgba(255,244,236,0.42)" stroke-width="2.1" stroke-linecap="round" />
-                                        <path class="pt-shaft-vein" d="M 53 19 C 54.8 34 51.2 49 53.6 67 C 55 80 52 94 53.5 110" />
-                                        <path class="pt-shaft-vein-gloss" d="M 52.3 19 C 54.1 34 50.5 49 52.9 67" />
-                                        <!-- Coronal Sulcus undercut shadow -->
-                                        <path class="pt-shaft-sulcus" d="M 42 13.8 Q 50 18.2 58 13.8" />
-                                        <!-- Flared Coronal Ridge -->
-                                        <path fill="url(#pt-anal-corona-skin-{{@index}})" stroke="rgba(90,26,38,0.48)" stroke-width="0.6"
-                                              d="M 40.6 11.4 C 40.6 15 44.8 16.8 50 16.8 C 55.2 16.8 59.4 15 59.4 11.4 C 59.4 9.2 55.2 8.2 50 8.2 C 44.8 8.2 40.6 9.2 40.6 11.4 Z" />
-                                        <!-- Sculpted Domed 3D Glans -->
-                                        <path class="pt-shaft-glans" fill="url(#pt-anal-glans-skin-{{@index}})"
-                                              d="M 50 0 C 56 0 59.4 5.4 59 11.4 C 58.6 14 54.8 15.6 50 15.6 C 45.2 15.6 41.4 14 41 11.4 C 40.6 5.4 44 0 50 0 Z" />
-                                        <path d="M 44.4 4.6 C 45.6 2.2 48.2 1.6 49.4 2.4 C 47.2 4.4 46 7.4 45.4 10.4 C 43.8 9.6 43.7 6.4 44.4 4.6 Z" fill="rgba(255,248,250,0.58)" />
-                                        <path d="M 42.8 12.4 Q 50 14.8 56.2 12.6" fill="none" stroke="rgba(255,235,240,0.45)" stroke-width="0.85" stroke-linecap="round" />
-                                        <path class="pt-shaft-meatus" d="M 50 1.4 L 50 4.5" />
+                                        <g class="pt-anal-shaft-motion">
+                                            <path d="M 52 10 C 60.5 11 61 22 60 120 L 44 120 C 43 22 44 11 52 10 Z" fill="rgba(10,1,16,0.42)" />
+                                            <path class="pt-shaft-body" fill="url(#pt-anal-shaft-skin-{{@index}})"
+                                                  d="M 42.8 13 C 42 34 42 74 42.4 122 L 57.6 122 C 58 74 58 34 57.2 13 Z" />
+                                            <path d="M 45.8 16 L 45.5 118" fill="none" stroke="rgba(255,244,236,0.42)" stroke-width="2.1" stroke-linecap="round" />
+                                            <path class="pt-shaft-vein" d="M 53 19 C 54.8 34 51.2 49 53.6 67 C 55 80 52 94 53.5 110" />
+                                            <path class="pt-shaft-vein-gloss" d="M 52.3 19 C 54.1 34 50.5 49 52.9 67" />
+                                            <path class="pt-shaft-sulcus" d="M 42 13.8 Q 50 18.2 58 13.8" />
+                                            <path fill="url(#pt-anal-corona-skin-{{@index}})" stroke="rgba(90,26,38,0.48)" stroke-width="0.6"
+                                                  d="M 40.6 11.4 C 40.6 15 44.8 16.8 50 16.8 C 55.2 16.8 59.4 15 59.4 11.4 C 59.4 9.2 55.2 8.2 50 8.2 C 44.8 8.2 40.6 9.2 40.6 11.4 Z" />
+                                            <path class="pt-shaft-glans" fill="url(#pt-anal-glans-skin-{{@index}})"
+                                                  d="M 50 0 C 56 0 59.4 5.4 59 11.4 C 58.6 14 54.8 15.6 50 15.6 C 45.2 15.6 41.4 14 41 11.4 C 40.6 5.4 44 0 50 0 Z" />
+                                            <path d="M 44.4 4.6 C 45.6 2.2 48.2 1.6 49.4 2.4 C 47.2 4.4 46 7.4 45.4 10.4 C 43.8 9.6 43.7 6.4 44.4 4.6 Z" fill="rgba(255,248,250,0.58)" />
+                                            <path d="M 42.8 12.4 Q 50 14.8 56.2 12.6" fill="none" stroke="rgba(255,235,240,0.45)" stroke-width="0.85" stroke-linecap="round" />
+                                            <path class="pt-shaft-meatus" d="M 50 1.4 L 50 4.5" />
+                                        </g>
                                     </g>
                                 </g>
-                                <!-- Front stretched sphincter collar gripping the penetrating shaft -->
-                                <path d="M 38 111.2 Q 50 116.2 62 111.2" fill="none" stroke="rgba(236,154,252,0.72)" stroke-width="1.9" stroke-linecap="round" />
+                                <path d="M 38 111.2 Q 50 116.2 62 111.2" fill="none" stroke="rgba(236,154,252,0.72)" stroke-width="1.9" stroke-linecap="round" pointer-events="none" />
                                 {{/if}}
 
-                                <!-- Translucent Foreground Fluid Wash + Meniscus + Micro-bubbles (submerges shaft realistically) -->
+                                <!-- Translucent Foreground Fluid Wash + Sloshing Meniscus + Bubbles -->
                                 {{#if (gt stats.anal_fullness_pct 0)}}
-                                <g clip-path="url(#pt-anal-clip-{{@index}})">
-                                    <rect class="pt-anal-liquid" fill="url(#pt-anal-semen-grad-{{@index}})" opacity="0.34" x="0" y="{{analFillTop stats.anal_fullness_pct}}" width="100" height="{{analFillHeight stats.anal_fullness_pct}}" />
-                                    <ellipse class="pt-meniscus-top" cx="50" cy="{{analFillTop stats.anal_fullness_pct}}" rx="26" ry="3.2" opacity="0.88" />
-                                    <path class="pt-meniscus-glint" d="M 33 {{subtract (analFillTop stats.anal_fullness_pct) 0.3}} Q 47 {{add (analFillTop stats.anal_fullness_pct) 1.6}} 61 {{subtract (analFillTop stats.anal_fullness_pct) 0.2}}" />
-                                    <circle cx="38" cy="{{add (analFillTop stats.anal_fullness_pct) 8}}" r="1.2" fill="rgba(255,255,255,0.62)" />
-                                    <circle cx="60" cy="{{add (analFillTop stats.anal_fullness_pct) 12}}" r="1.0" fill="rgba(255,255,255,0.52)" />
+                                <g clip-path="url(#pt-anal-clip-{{@index}})" pointer-events="none">
+                                    <g class="pt-fluid-surge-group">
+                                        <rect class="pt-anal-liquid" fill="url(#pt-anal-semen-grad-{{@index}})" opacity="0.34" x="0" y="{{analFillTop stats.anal_fullness_pct}}" width="100" height="{{analFillHeight stats.anal_fullness_pct}}" />
+                                        <g class="pt-meniscus-slosh">
+                                            <ellipse class="pt-meniscus-top" cx="50" cy="{{analFillTop stats.anal_fullness_pct}}" rx="26" ry="3.2" opacity="0.88" />
+                                            <path class="pt-meniscus-glint" d="M 33 {{subtract (analFillTop stats.anal_fullness_pct) 0.3}} Q 47 {{add (analFillTop stats.anal_fullness_pct) 1.6}} 61 {{subtract (analFillTop stats.anal_fullness_pct) 0.2}}" />
+                                        </g>
+                                        <circle class="pt-fluid-bubble" cx="38" cy="{{add (analFillTop stats.anal_fullness_pct) 8}}" r="1.2" fill="rgba(255,255,255,0.62)" />
+                                        <circle class="pt-fluid-bubble" style="animation-delay: 1.3s;" cx="60" cy="{{add (analFillTop stats.anal_fullness_pct) 12}}" r="1.0" fill="rgba(255,255,255,0.52)" />
+                                    </g>
                                 </g>
                                 {{/if}}
+                                <circle class="pt-haptic-ring pt-haptic-ring-canal" cx="50" cy="78" r="12" />
                             </svg>
                         </div>
                         <div class="pt-bio-panel">
@@ -5844,7 +6761,8 @@ var pulse_thread_tracker_default = {
 
                     {{#if (or (eqi stats.sex "male") (eqi stats.sex "female") (eqi stats.sex "futanari") (eqi stats.sex "futa") (eqi stats.sex "both") (eqi stats.sex "intersex") (eqi stats.sex "hermaphrodite") (gt stats.bladder_fullness_pct 0) (gt stats.urination_need_pct 0) (gt stats.bladder_pressure_pct 0))}}
                     <!-- BLADDER, KIDNEYS, URETERS & MUSCULAR SPHINCTER -->
-                <div class="pt-bio-zone pt-zone-bladder">
+                <div class="pt-bio-zone pt-zone-bladder {{#if physiology.isBladderStrained}}is-strained{{/if}} {{#if physiology.evtBladderSurge}}evt-bladder-surge{{/if}}">
+                        <div class="pt-part-hud" aria-hidden="true"></div>
                         <div class="pt-bladder-vessel">
                             <svg class="pt-bladder-svg" viewBox="-4 0 108 160" aria-hidden="true" focusable="false">
                                 <defs>
@@ -5899,27 +6817,30 @@ var pulse_thread_tracker_default = {
                                 <path d="M 50 66 L 50 43" fill="none" stroke="rgba(255,216,115,0.24)" stroke-width="2" stroke-linecap="round" stroke-dasharray="2.5 3" />
 
                                 <!-- Tubular 3-Pass Ureters descending from Renal Hilum to Bladder -->
-                                <path class="pt-bladder-ureter-wall" d="M 31 28 C 32 43 37 54 43 69" />
-                                <path class="pt-bladder-ureter-core" d="M 31 28 C 32 43 37 54 43 69" />
-                                <path class="pt-bladder-ureter-gloss" d="M 30.2 29 C 31.2 43 36.2 54 42 68" />
+                                <!-- Tubular 3-Pass Ureters + Animated Golden Peristaltic Boluses + Kidneys -->
+                                <g data-pt-action="pulse-bladder" data-pt-tip="{{physiology.kidneyTip}}">
+                                    <path class="pt-bladder-ureter-wall" d="M 31 28 C 32 43 37 54 43 69" />
+                                    <path class="pt-bladder-ureter-core" d="M 31 28 C 32 43 37 54 43 69" />
+                                    <path class="pt-bladder-ureter-gloss" d="M 30.2 29 C 31.2 43 36.2 54 42 68" />
+                                    <path class="pt-ureter-flow" d="M 31 28 C 32 43 37 54 43 69" />
 
-                                <path class="pt-bladder-ureter-wall" d="M 69 28 C 68 43 63 54 57 69" />
-                                <path class="pt-bladder-ureter-core" d="M 69 28 C 68 43 63 54 57 69" />
-                                <path class="pt-bladder-ureter-gloss" d="M 68.2 29 C 67.2 43 62.2 54 56 68" />
+                                    <path class="pt-bladder-ureter-wall" d="M 69 28 C 68 43 63 54 57 69" />
+                                    <path class="pt-bladder-ureter-core" d="M 69 28 C 68 43 63 54 57 69" />
+                                    <path class="pt-bladder-ureter-gloss" d="M 68.2 29 C 67.2 43 62.2 54 56 68" />
+                                    <path class="pt-ureter-flow pt-ureter-flow-r" d="M 69 28 C 68 43 63 54 57 69" />
 
-                                <!-- Bean-shaped 3D Kidneys with Concave Hilum, Renal Calyx & Specular Highlight -->
-                                <g class="pt-bladder-kidney">
-                                    <!-- Left Kidney -->
-                                    <path fill="url(#pt-kidney-grad-{{@index}})"
-                                          d="M 27 8 C 19 7.5 14 15.5 15.5 25 C 17 33.5 23.5 38.5 30 35.5 C 33.2 34 34 29.5 31.4 26.8 C 29.4 24.8 29.4 20.5 31.2 18.2 C 33.4 15.2 31.8 8.3 27 8 Z" />
-                                    <path d="M 19.5 15 C 17.8 20 18.4 25.5 21 29.5" fill="none" stroke="rgba(255,244,218,0.45)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
-                                    <path d="M 23.5 17.5 C 25.5 20.5 25.5 24.5 23.8 27.5" fill="none" stroke="rgba(255,220,140,0.30)" stroke-width="1" stroke-linecap="round" />
+                                    <!-- Bean-shaped 3D Kidneys with Concave Hilum, Renal Calyx & Specular Highlight -->
+                                    <g class="pt-bladder-kidney">
+                                        <path fill="url(#pt-kidney-grad-{{@index}})"
+                                              d="M 27 8 C 19 7.5 14 15.5 15.5 25 C 17 33.5 23.5 38.5 30 35.5 C 33.2 34 34 29.5 31.4 26.8 C 29.4 24.8 29.4 20.5 31.2 18.2 C 33.4 15.2 31.8 8.3 27 8 Z" />
+                                        <path d="M 19.5 15 C 17.8 20 18.4 25.5 21 29.5" fill="none" stroke="rgba(255,244,218,0.45)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+                                        <path d="M 23.5 17.5 C 25.5 20.5 25.5 24.5 23.8 27.5" fill="none" stroke="rgba(255,220,140,0.30)" stroke-width="1" stroke-linecap="round" />
 
-                                    <!-- Right Kidney -->
-                                    <path fill="url(#pt-kidney-grad-{{@index}})"
-                                          d="M 73 8 C 81 7.5 86 15.5 84.5 25 C 83 33.5 76.5 38.5 70 35.5 C 66.8 34 66 29.5 68.6 26.8 C 70.6 24.8 70.6 20.5 68.8 18.2 C 66.6 15.2 68.2 8.3 73 8 Z" />
-                                    <path d="M 76.5 14 C 79.2 18 80.2 23.5 78.6 28.5" fill="none" stroke="rgba(255,244,218,0.32)" stroke-width="1.3" stroke-linecap="round" />
-                                    <path d="M 76.5 17.5 C 74.5 20.5 74.5 24.5 76.2 27.5" fill="none" stroke="rgba(255,220,140,0.30)" stroke-width="1" stroke-linecap="round" />
+                                        <path fill="url(#pt-kidney-grad-{{@index}})"
+                                              d="M 73 8 C 81 7.5 86 15.5 84.5 25 C 83 33.5 76.5 38.5 70 35.5 C 66.8 34 66 29.5 68.6 26.8 C 70.6 24.8 70.6 20.5 68.8 18.2 C 66.6 15.2 68.2 8.3 73 8 Z" />
+                                        <path d="M 76.5 14 C 79.2 18 80.2 23.5 78.6 28.5" fill="none" stroke="rgba(255,244,218,0.32)" stroke-width="1.3" stroke-linecap="round" />
+                                        <path d="M 76.5 17.5 C 74.5 20.5 74.5 24.5 76.2 27.5" fill="none" stroke="rgba(255,220,140,0.30)" stroke-width="1" stroke-linecap="round" />
+                                    </g>
                                 </g>
 
                                 {{#if (gt stats.bladder_pressure_pct 60)}}
@@ -5928,53 +6849,55 @@ var pulse_thread_tracker_default = {
                                 <ellipse class="pt-bladder-strain-ring" cx="50" cy="96.5" rx="34" ry="33" style="animation-delay: 0.7s;" />
                                 {{/if}}
 
-                                <!-- Thick Muscular 3D Detrusor Bladder Shell -->
-                                <path class="pt-bladder-wall {{#if (gt stats.bladder_pressure_pct 60)}}straining{{/if}}" fill="url(#pt-bladder-wall-grad-{{@index}})"
-                                      d="M 50 64 C 70 64 82 78 82 96 C 82 115 69 129 50 129 C 31 129 18 115 18 96 C 18 78 30 64 50 64 Z" />
-                                <!-- Upper-left 3D dome glass specular arc -->
-                                <path d="M 24.5 89 C 26 75.5 35.5 68 48 67.2" fill="none" stroke="rgba(255,250,224,0.44)" stroke-width="1.8" stroke-linecap="round" />
+                                <!-- Interactive Detrusor Bladder Body + Urine Fill + Sphincter (trembles under strain) -->
+                                <g class="pt-bladder-body-group" data-pt-action="pulse-bladder" data-pt-tip="{{physiology.bladderTip}}">
+                                    <path class="pt-bladder-wall {{#if (gt stats.bladder_pressure_pct 60)}}straining{{/if}}" fill="url(#pt-bladder-wall-grad-{{@index}})"
+                                          d="M 50 64 C 70 64 82 78 82 96 C 82 115 69 129 50 129 C 31 129 18 115 18 96 C 18 78 30 64 50 64 Z" />
+                                    <path d="M 24.5 89 C 26 75.5 35.5 68 48 67.2" fill="none" stroke="rgba(255,250,224,0.44)" stroke-width="1.8" stroke-linecap="round" />
+                                    <path class="pt-bladder-inner" fill="url(#pt-bladder-cav-{{@index}})"
+                                          d="M 50 70 C 66 70 77 81 77 96 C 77 112 66 124 50 124 C 34 124 23 112 23 96 C 23 81 34 70 50 70 Z" />
+                                    <path class="pt-rugae-shadow" d="M 33 88 Q 50 94 67 88 M 31 100 Q 50 106 69 100 M 35 112 Q 50 117 65 112" />
+                                    <path d="M 33.4 86.8 Q 50 92.6 66.6 86.8 M 31.4 98.8 Q 50 104.6 68.6 98.8 M 35.4 110.8 Q 50 115.6 64.6 110.8"
+                                          fill="none" stroke="rgba(255,228,150,0.18)" stroke-width="1" stroke-linecap="round" />
+                                    <path d="M 41 112 L 59 112 L 50 122 Z" fill="rgba(255,214,110,0.08)" stroke="rgba(255,214,110,0.16)" stroke-width="0.7" />
 
-                                <!-- Recessed 3D Inner Bladder Cavity -->
-                                <path class="pt-bladder-inner" fill="url(#pt-bladder-cav-{{@index}})"
-                                      d="M 50 70 C 66 70 77 81 77 96 C 77 112 66 124 50 124 C 34 124 23 112 23 96 C 23 81 34 70 50 70 Z" />
-                                <!-- Sculpted Detrusor Trabeculae & Trigonum Vesicae -->
-                                <path class="pt-rugae-shadow" d="M 33 88 Q 50 94 67 88 M 31 100 Q 50 106 69 100 M 35 112 Q 50 117 65 112" />
-                                <path d="M 33.4 86.8 Q 50 92.6 66.6 86.8 M 31.4 98.8 Q 50 104.6 68.6 98.8 M 35.4 110.8 Q 50 115.6 64.6 110.8"
-                                      fill="none" stroke="rgba(255,228,150,0.18)" stroke-width="1" stroke-linecap="round" />
-                                <path d="M 41 112 L 59 112 L 50 122 Z" fill="rgba(255,214,110,0.08)" stroke="rgba(255,214,110,0.16)" stroke-width="0.7" />
+                                    <!-- Urethral Neck & 3D Muscular Sphincter Torus -->
+                                    <path d="M 45.2 127 C 45.2 135 46.8 140 47.6 144 L 52.4 144 C 53.2 140 54.8 135 54.8 127 Z"
+                                          fill="url(#pt-bladder-wall-grad-{{@index}})" stroke="rgba(255,224,130,0.5)" stroke-width="1" />
+                                    <path d="M 48.2 128 L 49 143 M 51.8 128 L 51 143" fill="none" stroke="rgba(16,10,2,0.58)" stroke-width="1" />
+                                    <g class="pt-bladder-sphincter {{#if (gt stats.bladder_pressure_pct 60)}}straining{{/if}}">
+                                        <ellipse cx="50" cy="133.5" rx="8.6" ry="4.4" fill="url(#pt-bladder-sphincter-grad-{{@index}})" />
+                                        <path d="M 43.8 132 Q 50 130.2 56.2 132" fill="none" stroke="rgba(255,250,224,0.52)" stroke-width="1" stroke-linecap="round" />
+                                    </g>
 
-                                <!-- Urethral Neck & 3D Muscular Sphincter Torus -->
-                                <path d="M 45.2 127 C 45.2 135 46.8 140 47.6 144 L 52.4 144 C 53.2 140 54.8 135 54.8 127 Z"
-                                      fill="url(#pt-bladder-wall-grad-{{@index}})" stroke="rgba(255,224,130,0.5)" stroke-width="1" />
-                                <path d="M 48.2 128 L 49 143 M 51.8 128 L 51 143" fill="none" stroke="rgba(16,10,2,0.58)" stroke-width="1" />
-                                <g class="pt-bladder-sphincter {{#if (gt stats.bladder_pressure_pct 60)}}straining{{/if}}">
-                                    <ellipse cx="50" cy="133.5" rx="8.6" ry="4.4" fill="url(#pt-bladder-sphincter-grad-{{@index}})" />
-                                    <path d="M 43.8 132 Q 50 130.2 56.2 132" fill="none" stroke="rgba(255,250,224,0.52)" stroke-width="1" stroke-linecap="round" />
-                                </g>
-
-                                <!-- Luminous Golden 3D Urine Fill + Elliptical Meniscus + Micro-bubbles -->
-                                <g clip-path="url(#pt-bladder-clip-{{@index}})">
-                                    <rect class="pt-bladder-liquid" fill="url(#pt-urine-grad-{{@index}})" x="0" y="{{subtract 124 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)}}" width="100" height="{{multiply (clampPercent stats.bladder_fullness_pct) 0.54}}" />
-                                    {{#if (gt stats.bladder_fullness_pct 0)}}
-                                    <ellipse cx="50" cy="{{subtract 124 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)}}" rx="27" ry="3.4" fill="rgba(255,248,200,0.82)" stroke="rgba(255,255,235,0.9)" stroke-width="0.6" />
-                                    <path d="M 35 {{subtract 123.6 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)}} Q 47 {{subtract 125.6 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)}} 59 {{subtract 123.8 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)}}"
-                                          fill="none" stroke="rgba(255,255,255,0.94)" stroke-width="1.35" stroke-linecap="round" />
-                                    <circle cx="42" cy="{{add (subtract 124 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)) 8}}" r="1.2" fill="rgba(255,255,230,0.68)" />
-                                    <circle cx="57" cy="{{add (subtract 124 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)) 12}}" r="1.0" fill="rgba(255,255,230,0.55)" />
-                                    <circle cx="49" cy="{{add (subtract 124 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)) 16}}" r="1.35" fill="rgba(255,255,230,0.48)" />
-                                    {{/if}}
-                                    <!-- Cylindrical liquid shading inside cavity -->
-                                    <rect x="64" y="68" width="14" height="58" fill="rgba(40,24,2,0.24)" />
-                                    <rect x="23" y="68" width="7" height="58" fill="rgba(255,255,220,0.14)" />
+                                    <!-- Luminous Golden 3D Urine Fill + Sloshing Meniscus + Floating Bubbles -->
+                                    <g clip-path="url(#pt-bladder-clip-{{@index}})" pointer-events="none">
+                                        <g class="pt-fluid-surge-group">
+                                            <rect class="pt-bladder-liquid" fill="url(#pt-urine-grad-{{@index}})" x="0" y="{{subtract 124 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)}}" width="100" height="{{multiply (clampPercent stats.bladder_fullness_pct) 0.54}}" />
+                                            {{#if (gt stats.bladder_fullness_pct 0)}}
+                                            <g class="pt-meniscus-slosh">
+                                                <ellipse cx="50" cy="{{subtract 124 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)}}" rx="27" ry="3.4" fill="rgba(255,248,200,0.82)" stroke="rgba(255,255,235,0.9)" stroke-width="0.6" />
+                                                <path d="M 35 {{subtract 123.6 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)}} Q 47 {{subtract 125.6 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)}} 59 {{subtract 123.8 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)}}"
+                                                      fill="none" stroke="rgba(255,255,255,0.94)" stroke-width="1.35" stroke-linecap="round" />
+                                            </g>
+                                            <circle class="pt-fluid-bubble" cx="42" cy="{{add (subtract 124 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)) 8}}" r="1.2" fill="rgba(255,255,230,0.68)" />
+                                            <circle class="pt-fluid-bubble" style="animation-delay: 1.2s;" cx="57" cy="{{add (subtract 124 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)) 12}}" r="1.0" fill="rgba(255,255,230,0.55)" />
+                                            <circle class="pt-fluid-bubble" style="animation-delay: 2.3s;" cx="49" cy="{{add (subtract 124 (multiply (clampPercent stats.bladder_fullness_pct) 0.54)) 16}}" r="1.35" fill="rgba(255,255,230,0.48)" />
+                                            {{/if}}
+                                        </g>
+                                        <rect x="64" y="68" width="14" height="58" fill="rgba(40,24,2,0.24)" />
+                                        <rect x="23" y="68" width="7" height="58" fill="rgba(255,255,220,0.14)" />
+                                    </g>
                                 </g>
 
                                 {{#if (or (gt stats.bladder_pressure_pct 85) (gte stats.bladder_fullness_pct 95))}}
                                 <!-- Animated glossy golden teardrop leaking past strained sphincter -->
-                                <g class="pt-bladder-drip">
+                                <g class="pt-bladder-drip" pointer-events="none">
                                     <path d="M 50 144 C 50 144 52.3 147.8 52.3 149.4 C 52.3 150.7 51.3 151.7 50 151.7 C 48.7 151.7 47.7 150.7 47.7 149.4 C 47.7 147.8 50 144 50 144 Z" fill="rgba(255,230,115,0.96)" />
                                     <circle cx="49.3" cy="148.8" r="0.65" fill="#ffffff" />
                                 </g>
                                 {{/if}}
+                                <circle class="pt-haptic-ring pt-haptic-ring-bladder" cx="50" cy="96" r="14" />
                             </svg>
                         </div>
                         <div class="pt-bio-panel">
